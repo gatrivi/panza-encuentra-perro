@@ -1,0 +1,12 @@
+node_modules
+dist
+.firebase
+*.local
+.env
+.env.*.local
+functions/node_modules
+functions/lib
+seed/emulator-data
+coverage
+.DS_Store
+*.log

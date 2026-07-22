@@ -1,0 +1,25 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isActiveMember(caseId) {
+      return signedIn()
+        && firestore.get(/databases/(default)/documents/cases/$(caseId)/members/$(request.auth.uid)).data.active == true;
+    }
+
+    match /cases/{caseId}/{allPaths=**} {
+      allow read: if isActiveMember(caseId);
+      allow write: if isActiveMember(caseId)
+        && request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*|text/.*|application/pdf');
+    }
+
+    // Public report uploads go through Cloud Functions (Admin SDK), not client writes
+    match /publicUploads/{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
