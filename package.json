@@ -3,6 +3,9 @@
   "description": "Mapa y tablero compartido para buscar a Pancita, también llamada Panza o Pancite.",
   "private": true,
   "version": "0.2.0",
+  "engines": {
+    "node": ">=22"
+  },
   "keywords": [
     "pancita",
     "pancite",

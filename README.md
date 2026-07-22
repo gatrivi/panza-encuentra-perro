@@ -19,7 +19,7 @@ La respuesta de campo sigue principios conservadores usados en búsqueda de perr
 
 ## Inicio local
 
-Requiere Node 20+, Yarn 1 y Java para el emulador de Firestore.
+Requiere Node 22+, Yarn 1 y Java para el emulador de Firestore.
 
 ```bash
 yarn install
