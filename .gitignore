@@ -7,6 +7,6 @@ dist
 functions/node_modules
 functions/lib
 seed/emulator-data
-coverage
+/coverage
 .DS_Store
 *.log
