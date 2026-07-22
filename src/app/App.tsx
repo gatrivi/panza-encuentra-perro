@@ -74,7 +74,7 @@ function PrivateGate({ children }: { children: React.ReactNode }) {
           >
             {copy.actions.signInGoogle}
           </button>
-          <Link to="/c/pancite" className="muted" style={{ textAlign: 'center' }}>
+          <Link to="/c/pancita" className="muted" style={{ textAlign: 'center' }}>
             Ir a la página pública
           </Link>
         </form>
@@ -89,6 +89,7 @@ export function App() {
   return (
     <AuthProvider>
       <Routes>
+        <Route path="/c/pancite" element={<Navigate to="/c/pancita" replace />} />
         <Route path="/c/:slug" element={<PublicCasePage />} />
         <Route path="/p/:posterCode" element={<PosterRedirect />} />
         <Route

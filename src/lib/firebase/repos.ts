@@ -81,24 +81,27 @@ export async function findActiveMembership(uid: string): Promise<{
   caseId: string
   member: Member
 } | null> {
-  // ponytail: MVP = one case per deployment; collectionGroup later for multi-case
-  const caseSlug = import.meta.env.VITE_CASE_SLUG || 'pancite'
-  const publicSnap = await getDoc(doc(db, 'publicCases', caseSlug))
-  if (!publicSnap.exists()) return null
-  const caseId = publicSnap.data().caseId as string
-  const member = await getMember(caseId, uid)
-  if (!member || !member.active) return null
-  return { caseId, member }
+  const preferred = import.meta.env.VITE_CASE_SLUG || 'pancita'
+  const slugs = preferred === 'pancita' ? ['pancita', 'pancite'] : [preferred, 'pancita', 'pancite']
+  for (const caseSlug of slugs) {
+    const publicSnap = await getDoc(doc(db, 'publicCases', caseSlug))
+    if (!publicSnap.exists()) continue
+    const caseId = publicSnap.data().caseId as string
+    const member = await getMember(caseId, uid)
+    if (member?.active) return { caseId, member }
+  }
+  return null
 }
 
-export async function claimFirstOwnerIfNeeded(uid: string): Promise<Member | null> {
-  const claim = httpsCallable(functions, 'claimFirstOwner')
+export async function joinCaseIfNeeded(uid: string): Promise<Member | null> {
+  const join = httpsCallable(functions, 'joinCase')
   try {
-    const result = await claim({ slug: import.meta.env.VITE_CASE_SLUG || 'pancite' })
+    const result = await join({ slug: import.meta.env.VITE_CASE_SLUG || 'pancita' })
     const data = result.data as { caseId?: string }
     if (!data.caseId) return null
     return getMember(data.caseId, uid)
-  } catch {
+  } catch (e) {
+    console.error(e)
     return null
   }
 }

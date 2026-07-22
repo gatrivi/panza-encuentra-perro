@@ -88,46 +88,64 @@ export const submitPublicReport = onCall(
 )
 
 /**
- * First authenticated user becomes owner when the case has zero members.
- * Later members must be invited by the owner (UI in a later milestone).
+ * Join the operativo.
+ * - First member → owner (Paula / whoever arrives first keeps it)
+ * - Later signed-in users → coordinator (family MVP: Gastón, Rodrigo, etc.)
+ * Does not steal ownership from an existing owner.
  */
-export const claimFirstOwner = onCall(
-  { region: 'southamerica-east1' },
-  async (request) => {
-    if (!request.auth?.uid || !request.auth.token.email) {
-      throw new HttpsError('unauthenticated', 'Sign in required')
-    }
-    const email = String(request.auth.token.email).toLowerCase()
-    const slug = String(request.data?.slug || process.env.CASE_SLUG || 'pancite')
+export const joinCase = onCall({ region: 'southamerica-east1' }, async (request) => {
+  if (!request.auth?.uid || !request.auth.token.email) {
+    throw new HttpsError('unauthenticated', 'Sign in required')
+  }
+  const email = String(request.auth.token.email).toLowerCase()
+  const displayName =
+    (request.auth.token.name as string | undefined) ||
+    email.split('@')[0] ||
+    email
+  const requested = String(request.data?.slug || process.env.CASE_SLUG || 'pancita')
+  const slugs = requested === 'pancita' ? ['pancita', 'pancite'] : [requested, 'pancita', 'pancite']
+
+  let caseId: string | null = null
+  for (const slug of slugs) {
     const publicSnap = await db.collection('publicCases').doc(slug).get()
-    if (!publicSnap.exists) {
-      throw new HttpsError('not-found', 'Case not found')
+    if (publicSnap.exists) {
+      caseId = publicSnap.data()!.caseId as string
+      break
     }
-    const caseId = publicSnap.data()!.caseId as string
-    const members = db.collection('cases').doc(caseId).collection('members')
-    const memberRef = members.doc(request.auth.uid)
-    const existing = await memberRef.get()
-    if (existing.exists) {
-      return { ok: true, caseId, already: true }
+  }
+  if (!caseId) {
+    throw new HttpsError('not-found', 'Case not found')
+  }
+
+  const members = db.collection('cases').doc(caseId).collection('members')
+  const memberRef = members.doc(request.auth.uid)
+  const existing = await memberRef.get()
+  if (existing.exists) {
+    if (existing.data()?.active === false) {
+      await memberRef.update({
+        active: true,
+        lastSeenAt: FieldValue.serverTimestamp(),
+      })
     }
+    return { ok: true, caseId, already: true, role: existing.data()?.role }
+  }
 
-    const anyMember = await members.limit(1).get()
-    if (!anyMember.empty) {
-      throw new HttpsError('permission-denied', 'Case already has an owner; ask for an invite')
-    }
+  const anyMember = await members.limit(1).get()
+  const role = anyMember.empty ? 'owner' : 'coordinator'
 
-    await memberRef.set({
-      role: 'owner',
-      displayName: request.auth.token.name || email,
-      email,
-      active: true,
-      createdAt: FieldValue.serverTimestamp(),
-      lastSeenAt: FieldValue.serverTimestamp(),
-    })
+  await memberRef.set({
+    role,
+    displayName,
+    email,
+    active: true,
+    createdAt: FieldValue.serverTimestamp(),
+    lastSeenAt: FieldValue.serverTimestamp(),
+  })
 
-    return { ok: true, caseId }
-  },
-)
+  return { ok: true, caseId, role }
+})
 
-/** @deprecated use claimFirstOwner */
-export const claimOwnerBootstrap = claimFirstOwner
+/** @deprecated alias */
+export const claimFirstOwner = joinCase
+/** @deprecated alias */
+export const claimOwnerBootstrap = joinCase

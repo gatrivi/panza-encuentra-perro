@@ -10,9 +10,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'Operativo Pancite',
-        short_name: 'Pancite',
-        description: 'Mapa operativo compartido para buscar a Pancite',
+        name: 'Operativo Pancita',
+        short_name: 'Pancita',
+        description: 'Mapa operativo compartido para buscar a Pancita',
         theme_color: '#1a3a2a',
         background_color: '#f3efe6',
         display: 'standalone',

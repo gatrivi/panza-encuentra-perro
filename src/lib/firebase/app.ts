@@ -25,4 +25,4 @@ export function connectEmulatorsIfNeeded() {
   emulatorsConnected = true
 }
 
-export const defaultCaseSlug = (import.meta.env.VITE_CASE_SLUG as string) || 'pancite'
+export const defaultCaseSlug = (import.meta.env.VITE_CASE_SLUG as string) || 'pancita'

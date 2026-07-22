@@ -8,7 +8,7 @@ import {
   type User,
 } from 'firebase/auth'
 import { auth, connectEmulatorsIfNeeded, googleProvider } from '@/lib/firebase/app'
-import { claimFirstOwnerIfNeeded, findActiveMembership } from '@/lib/firebase/repos'
+import { findActiveMembership, joinCaseIfNeeded } from '@/lib/firebase/repos'
 import type { Member } from '@/domain/schemas'
 import { t } from '@/i18n/es-AR'
 import { AuthContext } from './auth-context'
@@ -35,8 +35,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         let membership = await findActiveMembership(next.uid)
         if (!membership) {
-          // ponytail: first account on an empty case becomes owner; others need invite
-          await claimFirstOwnerIfNeeded(next.uid)
+          // Paula owner stays; Gastón/Rodrigo join as coordinators
+          await joinCaseIfNeeded(next.uid)
           membership = await findActiveMembership(next.uid)
         }
         if (!membership) {

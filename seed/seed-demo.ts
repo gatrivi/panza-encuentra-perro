@@ -15,8 +15,8 @@ import {
 } from 'firebase/firestore'
 
 const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'demo-pancite'
-const CASE_ID = 'case_pancite_demo'
-const SLUG = 'pancite'
+const CASE_ID = 'case_pancita_demo'
+const SLUG = 'pancita'
 
 const app = initializeApp({
   apiKey: 'demo',
@@ -32,8 +32,8 @@ async function main() {
     slug: SLUG,
     status: 'active',
     animal: {
-      name: 'Pancite',
-      aliases: ['Panza'],
+      name: 'Pancita',
+      aliases: ['Panza', 'Pancite'],
       species: 'dog',
       breed: 'Caniche',
       color: 'Negro',
@@ -61,8 +61,32 @@ async function main() {
     caseId: CASE_ID,
     status: 'active',
     animal: {
-      name: 'Pancite',
-      aliases: ['Panza'],
+      name: 'Pancita',
+      aliases: ['Panza', 'Pancite'],
+      species: 'dog',
+      breed: 'Caniche',
+      color: 'Negro',
+      sex: 'female',
+      size: 'mediano',
+      distinguishingMarks: 'Hembra, pelaje negro rizado',
+      photos: [],
+    },
+    publicContact: {
+      displayPhone: '',
+      whatsapp: '',
+    },
+    publicInstructions:
+      'No la persigas. Observá la dirección, fotografiá con seguridad e informá al toque.',
+    updatedAt: now,
+  })
+
+  // legacy slug alias
+  await setDoc(doc(db, 'publicCases', 'pancite'), {
+    caseId: CASE_ID,
+    status: 'active',
+    animal: {
+      name: 'Pancita',
+      aliases: ['Panza', 'Pancite'],
       species: 'dog',
       breed: 'Caniche',
       color: 'Negro',
