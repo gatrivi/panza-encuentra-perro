@@ -15,7 +15,7 @@ import {
 } from 'firebase/firestore'
 import { db, defaultCaseSlug } from './app'
 import { requireDate, toDate } from './converters'
-import { operatorByEmail } from '../operators'
+import type { OPERATORS } from '../operators'
 import {
   PANZA_ANIMAL,
   PANZA_CASE_ID,
@@ -90,25 +90,13 @@ export async function getMember(caseId: string, uid: string): Promise<Member | n
 
 function candidateSlugs(): string[] {
   const preferred = defaultCaseSlug
-  return preferred === 'pancita' ? ['pancita', 'pancite'] : [preferred, 'pancita', 'pancite']
+  return preferred === 'pancita'
+    ? ['pancita', 'pancite', 'panza']
+    : [preferred, 'pancita', 'pancite', 'panza']
 }
 
-export async function findActiveMembership(uid: string): Promise<{
-  caseId: string
-  member: Member
-} | null> {
-  for (const caseSlug of candidateSlugs()) {
-    const publicSnap = await getDoc(doc(db, 'publicCases', caseSlug))
-    if (!publicSnap.exists()) continue
-    const caseId = publicSnap.data().caseId as string
-    const member = await getMember(caseId, uid)
-    if (member?.active) return { caseId, member }
-  }
-  return null
-}
-
-/** Resolve or bootstrap Panza case (Spark, no CF). */
-async function resolveOrBootstrapCaseId(): Promise<string> {
+/** Bootstrap Panza case + public projection if missing. */
+export async function ensurePanzaCase(): Promise<string> {
   for (const caseSlug of candidateSlugs()) {
     const publicSnap = await getDoc(doc(db, 'publicCases', caseSlug))
     if (publicSnap.exists()) return publicSnap.data().caseId as string
@@ -144,7 +132,6 @@ async function resolveOrBootstrapCaseId(): Promise<string> {
   await setDoc(doc(db, 'publicCases', 'pancita'), publicPayload)
   await setDoc(doc(db, 'publicCases', 'pancite'), publicPayload)
   await setDoc(doc(db, 'publicCases', 'panza'), publicPayload)
-
   return caseId
 }
 
@@ -186,41 +173,31 @@ async function seedSocialLeadsIfEmpty(caseId: string): Promise<void> {
   })
 }
 
-/** Join as fixed operator (paula=owner, rodrigo/gaston=coordinator). */
-export async function joinCaseIfNeeded(
-  uid: string,
-  profile: { email: string; displayName?: string | null },
-): Promise<Member | null> {
-  const email = profile.email.toLowerCase()
-  const op = operatorByEmail(email)
-  if (!op) return null
+type Operator = (typeof OPERATORS)[keyof typeof OPERATORS]
 
-  try {
-    const caseId = await resolveOrBootstrapCaseId()
-    const memberRef = doc(db, 'cases', caseId, 'members', uid)
-    const existing = await getDoc(memberRef)
-    if (existing.exists()) {
-      if (existing.data()?.active === false) {
-        await updateDoc(memberRef, { active: true, lastSeenAt: serverTimestamp() })
-      }
-      await seedSocialLeadsIfEmpty(caseId)
-      return getMember(caseId, uid)
-    }
-
+/** Upsert member doc keyed by username; seed social leads once. */
+export async function ensureOperatorMember(
+  caseId: string,
+  op: Operator,
+): Promise<Member> {
+  const memberRef = doc(db, 'cases', caseId, 'members', op.username)
+  const existing = await getDoc(memberRef)
+  if (existing.exists()) {
+    await updateDoc(memberRef, { active: true, lastSeenAt: serverTimestamp() })
+  } else {
     await setDoc(memberRef, {
       role: op.role,
       displayName: op.displayName,
-      email: op.email,
+      email: `${op.username}@panza.local`,
       active: true,
       createdAt: serverTimestamp(),
       lastSeenAt: serverTimestamp(),
     })
-    await seedSocialLeadsIfEmpty(caseId)
-    return getMember(caseId, uid)
-  } catch (e) {
-    console.error(e)
-    return null
   }
+  await seedSocialLeadsIfEmpty(caseId)
+  const member = await getMember(caseId, op.username)
+  if (!member) throw new Error('member write failed')
+  return member
 }
 
 export async function submitPublicReport(input: {

@@ -6,7 +6,6 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
-  assertFails,
   assertSucceeds,
   initializeTestEnvironment,
   type RulesTestEnvironment,
@@ -42,149 +41,41 @@ beforeEach(async () => {
     await setDoc(doc(db, 'publicCases', 'pancite'), {
       caseId: CASE_ID,
       status: 'active',
-      animal: { name: 'Pancite', aliases: [], photos: [] },
+      animal: { name: 'Panza', aliases: [], photos: [] },
       publicContact: {},
       updatedAt: new Date(),
     })
     await setDoc(doc(db, 'cases', CASE_ID), {
       slug: 'pancite',
       status: 'active',
-      animal: { name: 'Pancite', aliases: [], photos: [] },
+      animal: { name: 'Panza', aliases: [], photos: [] },
       mapCenter: [-58.49, -34.51],
       createdAt: new Date(),
       updatedAt: new Date(),
     })
-    await setDoc(doc(db, 'cases', CASE_ID, 'members', 'owner1'), {
-      role: 'owner',
-      displayName: 'Owner',
-      email: 'owner@example.com',
-      active: true,
-      createdAt: new Date(),
-    })
-    await setDoc(doc(db, 'cases', CASE_ID, 'members', 'searcher1'), {
-      role: 'searcher',
-      displayName: 'Searcher',
-      email: 'searcher@example.com',
-      active: true,
-      createdAt: new Date(),
-    })
-    await setDoc(doc(db, 'cases', CASE_ID, 'members', 'coord1'), {
-      role: 'coordinator',
-      displayName: 'Coord',
-      email: 'coord@example.com',
-      active: true,
-      createdAt: new Date(),
-    })
-    await setDoc(doc(db, 'cases', CASE_ID, 'leads', 'lead1'), {
-      origin: 'other',
-      status: 'new',
-      capturedAt: new Date(),
-      attachmentPaths: [],
-      reporter: { phone: 'PRIVATE' },
-    })
   })
 })
 
-describe('firestore rules', () => {
-  it('anonymous can read public case but not private leads', async () => {
+describe('firestore rules (open family MVP)', () => {
+  it('anonymous can read public case and private leads', async () => {
     const anon = testEnv.unauthenticatedContext().firestore()
     await assertSucceeds(getDoc(doc(anon, 'publicCases', 'pancite')))
-    await assertFails(getDocs(collection(anon, 'cases', CASE_ID, 'leads')))
-    await assertFails(getDoc(doc(anon, 'cases', CASE_ID)))
+    await assertSucceeds(getDocs(collection(anon, 'cases', CASE_ID, 'leads')))
   })
 
-  it('searcher cannot create sightings', async () => {
-    const searcher = testEnv.authenticatedContext('searcher1').firestore()
-    await assertFails(
-      setDoc(doc(searcher, 'cases', CASE_ID, 'sightings', 's1'), {
-        confidence: 'confirmed',
-        point: [-58.49, -34.51],
-        observedAt: new Date(),
-        reportedAt: new Date(),
-        createdByUid: 'searcher1',
-        evidence: { leadIds: [], photos: [], sourceLinks: [] },
-        affectsOfficialZone: true,
-      }),
-    )
-  })
-
-  it('coordinator can create sightings', async () => {
-    const coord = testEnv.authenticatedContext('coord1').firestore()
-    await assertSucceeds(
-      setDoc(doc(coord, 'cases', CASE_ID, 'sightings', 's1'), {
-        confidence: 'probable',
-        point: [-58.49, -34.51],
-        observedAt: new Date(),
-        reportedAt: new Date(),
-        createdByUid: 'coord1',
-        evidence: { leadIds: [], photos: [], sourceLinks: [] },
-        affectsOfficialZone: false,
-      }),
-    )
-  })
-
-  it('archived member loses access', async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'cases', CASE_ID, 'members', 'searcher1'), {
-        role: 'searcher',
-        displayName: 'Searcher',
-        email: 'searcher@example.com',
-        active: false,
-        createdAt: new Date(),
-      })
-    })
-    const searcher = testEnv.authenticatedContext('searcher1').firestore()
-    await assertFails(getDoc(doc(searcher, 'cases', CASE_ID)))
-  })
-
-  it('anonymous can create public_form lead but not read it back', async () => {
+  it('anonymous can create public_form lead', async () => {
     const anon = testEnv.unauthenticatedContext().firestore()
     await assertSucceeds(
       setDoc(doc(anon, 'cases', CASE_ID, 'leads', 'pub1'), {
         origin: 'public_form',
         rawText: 'LA ESTOY VIENDO',
-        attachmentPaths: [],
-        capturedAt: new Date(),
-        reporter: { phone: null, preferredContact: 'anonymous' },
-        parserSuggestions: { dates: [], locations: [], phones: [], keywords: [] },
         status: 'new',
         priority: 'high',
-      }),
-    )
-    await assertFails(getDoc(doc(anon, 'cases', CASE_ID, 'leads', 'pub1')))
-  })
-
-  it('signed-in non-member can self-join as coordinator', async () => {
-    const newbie = testEnv
-      .authenticatedContext('newbie1', { email: 'rodrigo@panza.local' })
-      .firestore()
-    await assertSucceeds(
-      setDoc(doc(newbie, 'cases', CASE_ID, 'members', 'newbie1'), {
-        role: 'coordinator',
-        displayName: 'Rodrigo',
-        email: 'rodrigo@panza.local',
-        active: true,
-        createdAt: new Date(),
-      }),
-    )
-  })
-
-  it('random email cannot self-join', async () => {
-    const rando = testEnv
-      .authenticatedContext('rando1', { email: 'rando@example.com' })
-      .firestore()
-    await assertFails(
-      setDoc(doc(rando, 'cases', CASE_ID, 'members', 'rando1'), {
-        role: 'coordinator',
-        displayName: 'Rando',
-        email: 'rando@example.com',
-        active: true,
-        createdAt: new Date(),
       }),
     )
   })
 
   it('loads rules file', () => {
-    expect(readFileSync(resolve(root, 'firestore.rules'), 'utf8')).toContain('publicCases')
+    expect(readFileSync(resolve(root, 'firestore.rules'), 'utf8')).toContain('ponytail')
   })
 })

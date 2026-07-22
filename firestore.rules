@@ -1,152 +1,19 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() {
-      return request.auth != null;
-    }
-
-    function memberPath(caseId) {
-      return /databases/$(database)/documents/cases/$(caseId)/members/$(request.auth.uid);
-    }
-
-    function memberDoc(caseId) {
-      return get(memberPath(caseId));
-    }
-
-    function isActiveMember(caseId) {
-      return signedIn()
-        && exists(memberPath(caseId))
-        && memberDoc(caseId).data.active == true;
-    }
-
-    function memberRole(caseId) {
-      return memberDoc(caseId).data.role;
-    }
-
-    function isOwner(caseId) {
-      return isActiveMember(caseId) && memberRole(caseId) == 'owner';
-    }
-
-    function isCoordinatorOrOwner(caseId) {
-      return isActiveMember(caseId)
-        && memberRole(caseId) in ['owner', 'coordinator'];
-    }
-
-    function authEmail() {
-      return request.auth.token.email;
-    }
-
-    // Fixed family operators (username login maps to these emails)
-    function isPaula() {
-      return authEmail() == 'paula@panza.local';
-    }
-    function isRodrigo() {
-      return authEmail() == 'rodrigo@panza.local';
-    }
-    function isGaston() {
-      return authEmail() == 'gaston@panza.local';
-    }
-    function isOperator() {
-      return isPaula() || isRodrigo() || isGaston();
-    }
+    // ponytail: no Firebase Auth — family MVP gate is client-side username login.
+    // Ceiling: anyone with the app URL can write. Upgrade: enable Auth + tighten.
 
     match /publicCases/{slug} {
       allow read: if true;
-      allow create: if isOperator()
-        && slug in ['pancita', 'pancite', 'panza']
-        && request.resource.data.keys().hasAll(['caseId', 'status', 'animal', 'updatedAt'])
-        && request.resource.data.status == 'active';
-      allow update, delete: if false;
+      allow write: if true;
     }
 
     match /cases/{caseId} {
-      allow read: if isActiveMember(caseId);
-      allow create: if isOperator()
-        && request.resource.data.keys().hasAll(['slug', 'status', 'animal', 'mapCenter', 'createdAt', 'updatedAt'])
-        && request.resource.data.status == 'active';
-      allow update: if isOwner(caseId);
-      allow delete: if false;
+      allow read, write: if true;
 
-      match /members/{uid} {
-        allow read: if isActiveMember(caseId)
-          || (signedIn() && request.auth.uid == uid);
-        allow create: if signedIn()
-          && request.auth.uid == uid
-          && isOperator()
-          && request.resource.data.active == true
-          && request.resource.data.email == authEmail()
-          && (
-            (isPaula() && request.resource.data.role == 'owner')
-            || ((isRodrigo() || isGaston()) && request.resource.data.role == 'coordinator')
-          );
-        allow update: if isOwner(caseId)
-          || (signedIn()
-              && request.auth.uid == uid
-              && request.resource.data.role == resource.data.role
-              && request.resource.data.email == resource.data.email);
-        allow delete: if isOwner(caseId) && uid != request.auth.uid;
-      }
-
-      match /leads/{leadId} {
-        allow read: if isActiveMember(caseId);
-        allow create: if isActiveMember(caseId)
-          || (
-            request.resource.data.origin == 'public_form'
-            && request.resource.data.status == 'new'
-            && request.resource.data.priority in ['high', 'normal']
-            && request.resource.data.keys().hasAll([
-              'origin', 'rawText', 'attachmentPaths', 'capturedAt',
-              'reporter', 'parserSuggestions', 'status', 'priority'
-            ])
-          );
-        allow update: if isCoordinatorOrOwner(caseId)
-          || (isActiveMember(caseId)
-              && resource.data.capturedByUid == request.auth.uid
-              && resource.data.status == 'new');
-        allow delete: if false;
-      }
-
-      match /sightings/{sightingId} {
-        allow read: if isActiveMember(caseId);
-        allow create, update: if isCoordinatorOrOwner(caseId);
-        allow delete: if false;
-      }
-
-      match /audit/{eventId} {
-        allow read: if isCoordinatorOrOwner(caseId);
-        allow create: if isCoordinatorOrOwner(caseId);
-        allow update, delete: if false;
-      }
-
-      match /signs/{signId} {
-        allow read: if isActiveMember(caseId);
-        allow create, update: if isActiveMember(caseId);
-        allow delete: if isCoordinatorOrOwner(caseId);
-      }
-
-      match /coverage/{cellId} {
-        allow read: if isActiveMember(caseId);
-        allow write: if isActiveMember(caseId);
-      }
-
-      match /outings/{outingId} {
-        allow read: if isActiveMember(caseId);
-        allow write: if isActiveMember(caseId);
-      }
-
-      match /avoidAreas/{areaId} {
-        allow read: if isActiveMember(caseId);
-        allow write: if isCoordinatorOrOwner(caseId);
-      }
-
-      match /zones/{zoneId} {
-        allow read: if isActiveMember(caseId);
-        allow write: if isCoordinatorOrOwner(caseId);
-      }
-
-      match /liveLocations/{uid} {
-        allow read: if isActiveMember(caseId);
-        allow write: if isActiveMember(caseId) && uid == request.auth.uid;
+      match /{subcollection}/{docId} {
+        allow read, write: if true;
       }
     }
   }

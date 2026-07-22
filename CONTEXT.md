@@ -1,13 +1,8 @@
 # Buscamos a Panza — context
 
-No Cloud Functions. Login: usuario `paula` | `rodrigo` | `gaston` (sin email en UI).
-Contraseña compartida (familia): pedíla a Gastón — no va en el repo.
-Sesión: `browserLocalPersistence` → mismo dispositivo entra directo al mapa.
+**No Firebase Auth.** Login = usuario (`paula`/`rodrigo`/`gaston`) + pass familiar en cliente.
+Sesión en `localStorage` → mismo dispositivo entra al mapa.
 
-Fotos: `public/panza/{pnan2.jpg,panrec.png,panz.jpg}`
-Fuentes seed: FB share + IG `@buscamos.a.panza`
+Firestore rules abiertas (MVP familiar). Ceiling: URL pública puede escribir. Upgrade: Auth.
 
-**Una vez en Console:** Authentication → Get started → Email/Password ON.
-Authorized domains: `localhost` (+ Vercel host).
-
-Next: más datos seed cuando lleguen.
+Fotos: `public/panza/*` · Seed: FB + IG `@buscamos.a.panza`
