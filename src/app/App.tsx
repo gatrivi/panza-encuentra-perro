@@ -9,6 +9,7 @@ import { PlanScreen } from '@/features/coverage/PlanScreen'
 import { PublicCasePage } from '@/features/public-report/PublicCasePage'
 import { PosterRedirect } from '@/features/public-report/PosterRedirect'
 import { t } from '@/i18n/es-AR'
+import { publicCasePath } from '@/domain/caseIdentity'
 
 function PrivateGate({ children }: { children: React.ReactNode }) {
   const { user, member, loading, error, signInGoogle, signInWithEmail } = useAuth()
@@ -74,7 +75,7 @@ function PrivateGate({ children }: { children: React.ReactNode }) {
           >
             {copy.actions.signInGoogle}
           </button>
-          <Link to="/c/pancite" className="muted" style={{ textAlign: 'center' }}>
+          <Link to={publicCasePath()} className="muted" style={{ textAlign: 'center' }}>
             Ir a la página pública
           </Link>
         </form>

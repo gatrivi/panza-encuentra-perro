@@ -6,6 +6,9 @@ dist
 .env.*.local
 functions/node_modules
 functions/lib
+functions/.env
+functions/.env.*
+!functions/.env.example
 seed/emulator-data
 /coverage
 .DS_Store

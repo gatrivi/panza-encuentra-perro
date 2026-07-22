@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { httpsCallable } from 'firebase/functions'
 import { connectEmulatorsIfNeeded, functions } from '@/lib/firebase/app'
 import { getPublicCase } from '@/lib/firebase/repos'
 import type { CompassDirection, PublicCase } from '@/domain/schemas'
+import { normalizeCaseSlug } from '@/domain/caseIdentity'
 import { t } from '@/i18n/es-AR'
 
 const DIRECTIONS: CompassDirection[] = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
 
 export function PublicCasePage() {
-  const { slug = '' } = useParams()
+  const params = useParams()
+  const [searchParams] = useSearchParams()
+  const slug = normalizeCaseSlug(params.slug)
+  const posterCode = searchParams.get('poster') || undefined
   const [pub, setPub] = useState<PublicCase | null>(null)
   const [loading, setLoading] = useState(true)
   const [mode, setMode] = useState<'idle' | 'seeing_now' | 'think_i_saw' | 'done'>('idle')
@@ -21,6 +25,14 @@ export function PublicCasePage() {
       .then(setPub)
       .finally(() => setLoading(false))
   }, [slug])
+
+  useEffect(() => {
+    if (!pub) return
+    document.title = `Buscamos a ${pub.animal.name} · Operativo Pancita`
+    return () => {
+      document.title = 'Operativo Pancita'
+    }
+  }, [pub])
 
   if (loading) {
     return (
@@ -55,6 +67,9 @@ export function PublicCasePage() {
             .join(' · ')}
         </p>
         {animal.distinguishingMarks ? <p>{animal.distinguishingMarks}</p> : null}
+        {animal.aliases.length > 0 ? (
+          <p>También conocida como {animal.aliases.join(' / ')}</p>
+        ) : null}
       </section>
 
       <div className="public-body">
@@ -87,6 +102,7 @@ export function PublicCasePage() {
           <UrgentReportForm
             slug={slug}
             mode={mode}
+            posterCode={posterCode}
             onDone={() => setMode('done')}
             onCancel={() => setMode('idle')}
           />
@@ -122,11 +138,13 @@ function ContactActions({ phone, wa }: { phone?: string; wa?: string }) {
 function UrgentReportForm({
   slug,
   mode,
+  posterCode,
   onDone,
   onCancel,
 }: {
   slug: string
   mode: 'seeing_now' | 'think_i_saw'
+  posterCode?: string
   onDone: () => void
   onCancel: () => void
 }) {
@@ -170,6 +188,7 @@ function UrgentReportForm({
         direction,
         phone: anonymous ? undefined : phone,
         anonymous,
+        posterCode,
         honeypot,
       })
       onDone()

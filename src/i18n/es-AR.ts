@@ -1,5 +1,5 @@
 export const esAR = {
-  appName: 'Operativo Pancite',
+  appName: 'Operativo Pancita',
   nav: {
     map: 'Mapa',
     inbox: 'Bandeja',
@@ -9,7 +9,7 @@ export const esAR = {
     possibleSighting: 'Posible avistaje',
     pastePost: 'Pegar publicación',
     placeSign: 'Cartel colocado',
-    startOuting: 'Empezar recorrido',
+    startOuting: 'Planificar recorrido',
     save: 'Guardar',
     saved: 'Guardado',
     cancel: 'Cancelar',
@@ -37,8 +37,6 @@ export const esAR = {
   },
   plan: {
     title: 'Plan',
-    milestoneNote:
-      'Cobertura, carteles y recorridos llegan en el próximo hito. Por ahora usá Mapa y Bandeja.',
   },
   public: {
     seeingNow: 'LA ESTOY VIENDO',
@@ -72,7 +70,7 @@ export const esAR = {
     loading: 'Cargando…',
     email: 'Email',
     password: 'Contraseña',
-    hint: 'Si sos el primero en entrar, quedás como responsable del operativo.',
+    hint: 'Entrá con el email configurado como owner o con uno que ya fue invitado.',
   },
   errors: {
     generic: 'Algo falló. Probá de nuevo.',

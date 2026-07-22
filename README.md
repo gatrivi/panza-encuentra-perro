@@ -1,25 +1,25 @@
-# Operativo Pancite
+# Operativo Pancita (Panza / Pancite)
 
-Mobile-first installable web app that turns sightings, social posts and search outings into one verified operational map.
+PWA móvil para coordinar la búsqueda de **Pancita**, también llamada **Panza** o **Pancite**. Convierte reportes públicos, publicaciones pegadas, avistajes, carteles y tareas de campo en un mapa operativo compartido.
 
-**Version:** `0.1.0` — Milestone 1 vertical slice  
-**License:** AGPL-3.0  
-**Language:** Spanish (Argentina) first
+**Versión:** `0.2.0` · **Licencia:** AGPL-3.0 · **Idioma:** español (Argentina)
 
-## Milestone 1 (this release)
+## Qué funciona
 
-- PWA shell + `es-AR` i18n dictionary
-- Google / emulator sign-in with Firestore membership roles
-- Public page `/c/:slug` + **LA ESTOY VIENDO** via Cloud Function
-- Private **Bandeja** paste capture (text/URL/image) with IndexedDB draft then Firestore lead
-- Coordinator promote lead → sighting
-- Operational map with confidence markers
-- Firestore/Storage rules + emulator rule tests
-- Demo seed (San Ramón y Maipú; Cementerio de Olivos focus)
+- `/c/pancita` es la URL canónica; `/c/pancite` y `/c/panza` siguen funcionando.
+- **La estoy viendo** crea un lead privado prioritario mediante Cloud Function.
+- **Bandeja** acepta texto, URL o imagen pegada y conserva borradores offline.
+- Owner/coordinador verifica leads y los promueve a avistajes con fecha, punto y confianza.
+- El mapa muestra avistajes, carteles por tier y una zona operativa ajustable.
+- **Plan** ofrece tareas compartidas, responsables, prioridades, carteles y mantenimiento.
+- Invitaciones seguras por email para el equipo; producción no tiene “primer usuario = owner”.
+- Firestore separa reportería pública, datos privados, roles e invitaciones.
 
-Not in M1: OCR, coverage grid, routing, live tracking, Facebook scraping.
+La respuesta de campo sigue principios conservadores usados en búsqueda de perros perdidos: no perseguir ni llamar a un perro huidizo, registrar hora/dirección/evidencia, centralizar información y usar comida, cámaras o trampas sólo con una persona responsable y monitoreo. La organización adopta un ciclo simple de briefing → tareas con responsable → debrief, inspirado en planificación de incidentes. Referencias: [Missing Animal Response Network](https://www.missinganimalresponse.com/lost-dog-behavior/), [Humane World for Animals](https://www.humaneworld.org/en/resources/how-find-lost-dog) y [FEMA Incident Action Planning](https://emilms.fema.gov/is_822/groups/310.html).
 
-## Quick start (local)
+## Inicio local
+
+Requiere Node 22+, Yarn 1 y Java para el emulador de Firestore.
 
 ```bash
 yarn install
@@ -28,61 +28,61 @@ yarn --cwd functions build
 cp .env.example .env
 ```
 
-Terminal A — emulators:
+Terminal A:
 
 ```bash
 yarn emulators
-# or: npx firebase emulators:start
 ```
 
-Terminal B — seed + app:
+Terminal B:
 
 ```bash
 yarn seed
 yarn dev
 ```
 
-- App: http://127.0.0.1:5173  
-- Public: http://127.0.0.1:5173/c/pancite  
-- Emulator UI: http://127.0.0.1:4000  
+- App: http://127.0.0.1:5173
+- Página pública: http://127.0.0.1:5173/c/pancita
+- Alias compatibles: `/c/pancite`, `/c/panza`
+- Emulator UI: http://127.0.0.1:4000
+- Login demo owner: `owner@example.com` con cualquier contraseña nueva de 6+ caracteres
 
-Login: email + contraseña en la UI (o Google). El **primer** usuario que entra a un caso vacío queda como owner; el resto necesita invitación.
+## Firebase y Google Auth en producción
 
-## Quality gates
+1. Creá un proyecto Firebase y una Web App.
+2. En **Authentication → Sign-in method**, habilitá **Google** (y Email/Password si lo querés conservar), elegí el email de soporte y agregá el dominio de producción a **Authorized domains**.
+3. Copiá la configuración web a `.env` y dejá `VITE_USE_EMULATORS=false`.
+4. Copiá `functions/.env.example` a `functions/.env.<project-id>` y configurá `OWNER_BOOTSTRAP_EMAIL` con tu email real. No lo subas al repositorio.
+5. Adaptá `seed/seed-demo.ts` o tu import seguro para crear `publicCases/pancita`, `publicCases/pancite` y `publicCases/panza`, sin teléfonos privados.
+6. Compilá y desplegá reglas y Functions. Entrá primero con el email configurado; luego invitá a tu hermana y cuñado desde **Plan → Equipo**.
 
 ```bash
-yarn typecheck && yarn lint && yarn test && yarn build
+yarn build
+yarn --cwd functions build
+firebase deploy --only firestore:rules,storage,functions
 ```
 
-Firestore tests need the Firestore emulator (requires **Java** on PATH):
+## Controles de calidad
 
 ```bash
+yarn typecheck
+yarn lint
+yarn test
 yarn test:rules
+yarn build
+yarn --cwd functions build
 ```
 
-If Java is missing, unit tests still run; install a JDK to execute rules tests.
+## Privacidad y seguridad
 
-## Firebase setup (production)
+- Clientes públicos sólo leen la proyección sanitizada `publicCases/{slug}`.
+- Contactos de reporteros, leads, tareas, ubicaciones y zonas de seguridad son privados.
+- Invitaciones contienen emails y sólo son accesibles mediante Functions confiables.
+- Un reporte sin verificar nunca mueve la zona operativa.
+- Los riesgos de recorrido deben describirse con hechos observables; no se etiquetan barrios o personas.
 
-1. Create a Firebase project; enable Auth (**Email/Password** + optional Google), Firestore, Storage, Functions.
-2. Copy web config into `.env` from `.env.example`.
-3. Set `VITE_USE_EMULATORS=false`.
-4. Deploy rules, functions, and host the Vite `dist/` (or Firebase Hosting).
-5. Run a one-time seed/import (adapt `seed/seed-demo.ts`) **without** private phones in the public repo.
-6. First person to sign in becomes owner automatically.
+## Próximos pasos
 
-Public reports never write Firestore directly; they call `submitPublicReport`.
+H3 para cobertura por manzana, salidas con GPS temporal, rutas con áreas privadas a evitar, OCR, Share Target y asistencia de navegador para capturar publicaciones públicas. No se incluye scraping autónomo ni acceso a cuentas de Facebook.
 
-## Privacy
-
-- Public clients only read `publicCases/{slug}`.
-- Reporter contact, leads, live locations and avoid areas stay private.
-- Soft-archive evidence; do not silently destroy operational records.
-
-See `OPERATIVO_PANCITE_BUILD_BRIEF.md` for the full product contract.
-
-## Context for agents
-
-- Stack: React 19 + Vite + TS strict + Firebase + Leaflet + Zod + vite-plugin-pwa
-- Feature folders under `src/features/*`; domain schemas in `src/domain/schemas.ts`
-- Continue **one milestone at a time** after M1 is verified
+El contrato de producto completo permanece en `OPERATIVO_PANCITE_BUILD_BRIEF.md` por compatibilidad histórica; su nombre canónico actual es **Operativo Pancita**.

@@ -3,10 +3,10 @@
  * Florida Oeste must not become active from discarded reports alone.
  */
 export const panzaImportExample = {
-  slug: 'pancite',
+  slug: 'pancita',
   animal: {
-    name: 'Pancite',
-    aliases: ['Panza'],
+    name: 'Pancita',
+    aliases: ['Panza', 'Pancite'],
     breed: 'Caniche',
     color: 'Negro',
     sex: 'female' as const,

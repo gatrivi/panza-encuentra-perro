@@ -49,6 +49,11 @@ service cloud.firestore {
         allow delete: if isOwner(caseId) && uid != request.auth.uid;
       }
 
+      // Invitations contain private emails and are only handled by trusted functions.
+      match /invites/{inviteId} {
+        allow read, write: if false;
+      }
+
       match /leads/{leadId} {
         allow read: if isActiveMember(caseId);
         allow create: if isActiveMember(caseId);
@@ -73,8 +78,22 @@ service cloud.firestore {
 
       match /signs/{signId} {
         allow read: if isActiveMember(caseId);
-        allow create, update: if isActiveMember(caseId);
+        allow create: if isActiveMember(caseId)
+          && request.resource.data.createdByUid == request.auth.uid;
+        allow update: if isActiveMember(caseId)
+          && request.resource.data.createdByUid == resource.data.createdByUid;
         allow delete: if isCoordinatorOrOwner(caseId);
+      }
+
+
+      match /tasks/{taskId} {
+        allow read: if isActiveMember(caseId);
+        allow create: if isActiveMember(caseId)
+          && request.resource.data.createdByUid == request.auth.uid
+          && request.resource.data.status == 'open';
+        allow update: if isActiveMember(caseId)
+          && request.resource.data.createdByUid == resource.data.createdByUid;
+        allow delete: if false;
       }
 
       match /coverage/{cellId} {
@@ -94,7 +113,9 @@ service cloud.firestore {
 
       match /zones/{zoneId} {
         allow read: if isActiveMember(caseId);
-        allow write: if isCoordinatorOrOwner(caseId);
+        allow create, update: if isCoordinatorOrOwner(caseId)
+          && request.resource.data.updatedByUid == request.auth.uid;
+        allow delete: if false;
       }
 
       match /liveLocations/{uid} {
