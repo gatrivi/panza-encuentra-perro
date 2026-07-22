@@ -1,11 +1,10 @@
 /**
  * Firestore rules tests — run with:
  *   firebase emulators:exec --only firestore "yarn vitest run --config vitest.rules.config.ts"
- *
- * When emulators are not available, these tests are skipped.
  */
 import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   assertFails,
   assertSucceeds,
@@ -13,38 +12,30 @@ import {
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing'
 import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore'
-import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 const PROJECT_ID = 'demo-pancite-rules'
 const CASE_ID = 'case_rules'
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 
-let testEnv: RulesTestEnvironment | null = null
-
-async function tryInit(): Promise<RulesTestEnvironment | null> {
-  try {
-    return await initializeTestEnvironment({
-      projectId: PROJECT_ID,
-      firestore: {
-        rules: readFileSync(resolve(__dirname, '../firestore.rules'), 'utf8'),
-        host: '127.0.0.1',
-        port: 8080,
-      },
-    })
-  } catch {
-    return null
-  }
-}
+let testEnv: RulesTestEnvironment
 
 beforeAll(async () => {
-  testEnv = await tryInit()
-})
+  testEnv = await initializeTestEnvironment({
+    projectId: PROJECT_ID,
+    firestore: {
+      rules: readFileSync(resolve(root, 'firestore.rules'), 'utf8'),
+      host: '127.0.0.1',
+      port: 8080,
+    },
+  })
+}, 60000)
 
 afterAll(async () => {
   await testEnv?.cleanup()
 })
 
 beforeEach(async () => {
-  if (!testEnv) return
   await testEnv.clearFirestore()
   await testEnv.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore()
@@ -95,17 +86,15 @@ beforeEach(async () => {
 })
 
 describe('firestore rules', () => {
-  it('anonymous can read public case but not private leads', async ({ skip }) => {
-    if (!testEnv) skip()
-    const anon = testEnv!.unauthenticatedContext().firestore()
+  it('anonymous can read public case but not private leads', async () => {
+    const anon = testEnv.unauthenticatedContext().firestore()
     await assertSucceeds(getDoc(doc(anon, 'publicCases', 'pancite')))
     await assertFails(getDocs(collection(anon, 'cases', CASE_ID, 'leads')))
     await assertFails(getDoc(doc(anon, 'cases', CASE_ID)))
   })
 
-  it('searcher cannot create sightings', async ({ skip }) => {
-    if (!testEnv) skip()
-    const searcher = testEnv!.authenticatedContext('searcher1').firestore()
+  it('searcher cannot create sightings', async () => {
+    const searcher = testEnv.authenticatedContext('searcher1').firestore()
     await assertFails(
       setDoc(doc(searcher, 'cases', CASE_ID, 'sightings', 's1'), {
         confidence: 'confirmed',
@@ -119,9 +108,8 @@ describe('firestore rules', () => {
     )
   })
 
-  it('coordinator can create sightings', async ({ skip }) => {
-    if (!testEnv) skip()
-    const coord = testEnv!.authenticatedContext('coord1').firestore()
+  it('coordinator can create sightings', async () => {
+    const coord = testEnv.authenticatedContext('coord1').firestore()
     await assertSucceeds(
       setDoc(doc(coord, 'cases', CASE_ID, 'sightings', 's1'), {
         confidence: 'probable',
@@ -135,9 +123,8 @@ describe('firestore rules', () => {
     )
   })
 
-  it('archived member loses access', async ({ skip }) => {
-    if (!testEnv) skip()
-    await testEnv!.withSecurityRulesDisabled(async (ctx) => {
+  it('archived member loses access', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), 'cases', CASE_ID, 'members', 'searcher1'), {
         role: 'searcher',
         displayName: 'Searcher',
@@ -146,7 +133,11 @@ describe('firestore rules', () => {
         createdAt: new Date(),
       })
     })
-    const searcher = testEnv!.authenticatedContext('searcher1').firestore()
+    const searcher = testEnv.authenticatedContext('searcher1').firestore()
     await assertFails(getDoc(doc(searcher, 'cases', CASE_ID)))
+  })
+
+  it('loads rules file', () => {
+    expect(readFileSync(resolve(root, 'firestore.rules'), 'utf8')).toContain('publicCases')
   })
 })
