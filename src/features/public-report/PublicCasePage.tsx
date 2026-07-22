@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { connectEmulatorsIfNeeded } from '@/lib/firebase/app'
-import { getPublicCase, submitPublicReport } from '@/lib/firebase/repos'
+import { ensurePanzaCase, getPublicCase, submitPublicReport } from '@/lib/firebase/repos'
 import type { CompassDirection, PublicCase } from '@/domain/schemas'
 import { t } from '@/i18n/es-AR'
 
@@ -16,9 +16,17 @@ export function PublicCasePage() {
 
   useEffect(() => {
     connectEmulatorsIfNeeded()
-    void getPublicCase(slug)
-      .then(setPub)
-      .finally(() => setLoading(false))
+    void (async () => {
+      try {
+        await ensurePanzaCase()
+        setPub(await getPublicCase(slug))
+      } catch (e) {
+        console.error(e)
+        setPub(null)
+      } finally {
+        setLoading(false)
+      }
+    })()
   }, [slug])
 
   if (loading) {
