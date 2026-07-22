@@ -138,7 +138,8 @@ export async function findActiveMembership(uid: string): Promise<{
 }
 
 export async function claimMembershipIfEligible(uid: string): Promise<Member | null> {
-  const claim = httpsCallable(functions, 'claimMembership')
+  // joinCase is retained as the stable callable name across v0.1 and v0.2.
+  const claim = httpsCallable(functions, 'joinCase')
   try {
     const result = await claim({ slug: defaultCaseSlug })
     const data = result.data as { caseId?: string }

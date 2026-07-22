@@ -33,12 +33,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
       try {
-        let membership = await findActiveMembership(next.uid)
-        if (!membership) {
-          // Claims either the configured owner bootstrap or an email invitation.
-          await claimMembershipIfEligible(next.uid)
-          membership = await findActiveMembership(next.uid)
-        }
+        // The callable is idempotent and performs the trusted eligibility check.
+        // Calling it before Firestore avoids a circular "member cannot read itself"
+        // bootstrap failure for a brand-new account.
+        const claimed = await claimMembershipIfEligible(next.uid)
+        const membership = claimed ? await findActiveMembership(next.uid) : null
         if (!membership) {
           setMember(null)
           setCaseId(null)

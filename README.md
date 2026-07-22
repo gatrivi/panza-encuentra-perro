@@ -12,7 +12,7 @@ PWA móvil para coordinar la búsqueda de **Pancita**, también llamada **Panza*
 - Owner/coordinador verifica leads y los promueve a avistajes con fecha, punto y confianza.
 - El mapa muestra avistajes, carteles por tier y una zona operativa ajustable.
 - **Plan** ofrece tareas compartidas, responsables, prioridades, carteles y mantenimiento.
-- Invitaciones seguras por email para el equipo; producción no tiene “primer usuario = owner”.
+- Administradores definidos por email en configuración privada; producción no tiene “primer usuario = owner”.
 - Firestore separa reportería pública, datos privados, roles e invitaciones.
 
 La respuesta de campo sigue principios conservadores usados en búsqueda de perros perdidos: no perseguir ni llamar a un perro huidizo, registrar hora/dirección/evidencia, centralizar información y usar comida, cámaras o trampas sólo con una persona responsable y monitoreo. La organización adopta un ciclo simple de briefing → tareas con responsable → debrief, inspirado en planificación de incidentes. Referencias: [Missing Animal Response Network](https://www.missinganimalresponse.com/lost-dog-behavior/), [Humane World for Animals](https://www.humaneworld.org/en/resources/how-find-lost-dog) y [FEMA Incident Action Planning](https://emilms.fema.gov/is_822/groups/310.html).
@@ -52,9 +52,8 @@ yarn dev
 1. Creá un proyecto Firebase y una Web App.
 2. En **Authentication → Sign-in method**, habilitá **Google** (y Email/Password si lo querés conservar), elegí el email de soporte y agregá el dominio de producción a **Authorized domains**.
 3. Copiá la configuración web a `.env` y dejá `VITE_USE_EMULATORS=false`.
-4. Copiá `functions/.env.example` a `functions/.env.<project-id>` y configurá `OWNER_BOOTSTRAP_EMAIL` con tu email real. No lo subas al repositorio.
-5. Adaptá `seed/seed-demo.ts` o tu import seguro para crear `publicCases/pancita`, `publicCases/pancite` y `publicCases/panza`, sin teléfonos privados.
-6. Compilá y desplegá reglas y Functions. Entrá primero con el email configurado; luego invitá a tu hermana y cuñado desde **Plan → Equipo**.
+4. Copiá `functions/.env.example` a `functions/.env.<project-id>` y configurá `ADMIN_EMAILS` con las cuentas administradoras separadas por comas. No lo subas al repositorio.
+5. Compilá y desplegá reglas y Functions. La primera cuenta configurada que entre crea el caso inicial y sus alias; ninguna cuenta obtiene acceso por orden de llegada.
 
 ```bash
 yarn build
@@ -77,7 +76,7 @@ yarn --cwd functions build
 
 - Clientes públicos sólo leen la proyección sanitizada `publicCases/{slug}`.
 - Contactos de reporteros, leads, tareas, ubicaciones y zonas de seguridad son privados.
-- Invitaciones contienen emails y sólo son accesibles mediante Functions confiables.
+- La lista de administradores vive sólo en el entorno de Functions, nunca en el frontend ni en el repositorio.
 - Un reporte sin verificar nunca mueve la zona operativa.
 - Los riesgos de recorrido deben describirse con hechos observables; no se etiquetan barrios o personas.
 

@@ -16,7 +16,8 @@ service cloud.firestore {
     function isActiveMember(caseId) {
       return signedIn()
         && exists(memberPath(caseId))
-        && memberDoc(caseId).data.active == true;
+        && memberDoc(caseId).data.active == true
+        && memberDoc(caseId).data.accessPolicy == 'family-admin-v1';
     }
 
     function memberRole(caseId) {

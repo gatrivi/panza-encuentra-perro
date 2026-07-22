@@ -66,11 +66,11 @@ export const esAR = {
     rejected: 'Rechazado',
   },
   auth: {
-    needInvite: 'Este operativo ya tiene dueño. Pedile que te invite.',
+    needInvite: 'Esta cuenta no está habilitada para el operativo.',
     loading: 'Cargando…',
     email: 'Email',
     password: 'Contraseña',
-    hint: 'Entrá con el email configurado como owner o con uno que ya fue invitado.',
+    hint: 'Paula, Rodrigo o Gastón: entren con su cuenta de Google. Los tres administran por igual.',
   },
   errors: {
     generic: 'Algo falló. Probá de nuevo.',

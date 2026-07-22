@@ -1,5 +1,10 @@
 import { initializeApp } from 'firebase-admin/app'
-import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore'
+import {
+  getFirestore,
+  FieldValue,
+  Timestamp,
+  type DocumentSnapshot,
+} from 'firebase-admin/firestore'
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { z } from 'zod'
 
@@ -7,6 +12,20 @@ initializeApp()
 const db = getFirestore()
 
 const CASE_SLUG_ALIASES = ['pancita', 'pancite', 'panza'] as const
+const DEFAULT_CASE_ID = 'case_pancita_demo'
+const ACCESS_POLICY_VERSION = 'family-admin-v1'
+
+const DEFAULT_ANIMAL = {
+  name: 'Pancita',
+  aliases: ['Panza', 'Pancite'],
+  species: 'dog',
+  breed: 'Caniche',
+  color: 'Negro',
+  sex: 'female',
+  size: 'mediano',
+  distinguishingMarks: 'Hembra, pelaje negro rizado',
+  photos: [],
+} as const
 
 function normalizeSlug(value: unknown): string {
   const slug = String(value ?? '').trim().toLowerCase()
@@ -32,10 +51,144 @@ function normalizedEmail(value: unknown): string {
   return String(value ?? '').trim().toLowerCase()
 }
 
-function ownerBootstrapEmail(): string {
-  const configured = normalizedEmail(process.env.OWNER_BOOTSTRAP_EMAIL)
-  if (configured) return configured
-  return process.env.FUNCTIONS_EMULATOR === 'true' ? 'owner@example.com' : ''
+function configuredAdminEmails(): Set<string> {
+  const configured = String(process.env.ADMIN_EMAILS ?? '')
+    .split(',')
+    .map(normalizedEmail)
+    .filter(Boolean)
+
+  if (configured.length > 0) return new Set(configured)
+  return process.env.FUNCTIONS_EMULATOR === 'true'
+    ? new Set(['owner@example.com'])
+    : new Set()
+}
+
+async function ensurePublicAliases(publicCase: DocumentSnapshot) {
+  const data = publicCase.data()!
+  const batch = db.batch()
+  for (const alias of CASE_SLUG_ALIASES) {
+    batch.set(
+      db.collection('publicCases').doc(alias),
+      { ...data, canonicalSlug: 'pancita' },
+      { merge: true },
+    )
+  }
+  await batch.commit()
+  return db.collection('publicCases').doc('pancita').get()
+}
+
+async function provisionDefaultCase() {
+  const existing = await resolvePublicCase('pancita')
+  if (existing) return ensurePublicAliases(existing)
+
+  const now = Timestamp.now()
+  const observed = new Date()
+  observed.setHours(17, 30, 0, 0)
+
+  const caseRef = db.collection('cases').doc(DEFAULT_CASE_ID)
+  const caseSnap = await caseRef.get()
+  const caseData = caseSnap.data()
+  const animal = caseData?.animal ?? DEFAULT_ANIMAL
+  const publicContact = caseData?.publicContact ?? { displayPhone: '', whatsapp: '' }
+  const publicInstructions =
+    caseData?.publicInstructions ??
+    'No la persigas. Observá la dirección, fotografiá con seguridad e informá al toque.'
+
+  const batch = db.batch()
+  if (!caseSnap.exists) {
+    batch.set(caseRef, {
+      slug: 'pancita',
+      status: 'active',
+      animal,
+      locale: 'es-AR',
+      distanceUnit: 'km',
+      mapCenter: [-58.49, -34.512],
+      publicContact,
+      publicInstructions,
+      zonePolicy: { defaultRadius: 3, unit: 'km' },
+      createdAt: now,
+      updatedAt: now,
+    })
+
+    batch.set(caseRef.collection('sightings').doc('sighting_san_ramon'), {
+      observedAt: Timestamp.fromDate(observed),
+      reportedAt: now,
+      point: [-58.4885, -34.5155],
+      direction: 'SE',
+      movement: 'moving',
+      confidence: 'confirmed',
+      evidence: { leadIds: [], photos: [], sourceLinks: [] },
+      description: 'San Ramón y Maipú, rumbo a 9 de Julio',
+      createdByUid: 'seed',
+      reviewedByUid: 'seed',
+      reviewedAt: now,
+      affectsOfficialZone: true,
+    })
+    batch.set(caseRef.collection('sightings').doc('sighting_cementerio'), {
+      observedAt: Timestamp.fromDate(new Date(observed.getTime() - 2 * 86400000)),
+      reportedAt: now,
+      point: [-58.495, -34.508],
+      direction: 'unknown',
+      movement: 'unknown',
+      confidence: 'unverified',
+      evidence: { leadIds: [], photos: [], sourceLinks: [] },
+      description: 'Foco previo: Cementerio de Olivos y alrededores',
+      createdByUid: 'seed',
+      affectsOfficialZone: false,
+    })
+    batch.set(caseRef.collection('zones').doc('active'), {
+      center: [-58.4885, -34.5155],
+      radiusMeters: 3000,
+      basisSightingId: 'sighting_san_ramon',
+      basisObservedAt: Timestamp.fromDate(observed),
+      updatedByUid: 'seed',
+      createdAt: now,
+      updatedAt: now,
+    })
+    batch.set(caseRef.collection('tasks').doc('task_demo_route'), {
+      title: 'Recorrer Maipú entre San Ramón y 9 de Julio',
+      kind: 'search',
+      status: 'open',
+      priority: 'high',
+      notes: 'Trabajar de a dos y registrar calles ya cubiertas.',
+      createdByUid: 'seed',
+      createdAt: now,
+      updatedAt: now,
+    })
+    batch.set(caseRef.collection('signs').doc('sign_demo_ypf'), {
+      point: [-58.4892, -34.5148],
+      placeName: 'Estación de servicio (demo)',
+      tier: 'A',
+      placeType: 'service_station',
+      status: 'planned',
+      staffPersonallyAlerted: false,
+      posterCode: 'DEMO0001',
+      createdByUid: 'seed',
+      createdAt: now,
+      updatedAt: now,
+    })
+  }
+
+  const publicCase = {
+    caseId: DEFAULT_CASE_ID,
+    canonicalSlug: 'pancita',
+    status: 'active',
+    animal,
+    publicContact,
+    publicInstructions,
+    publicArea: {
+      type: 'Point',
+      coordinates: [-58.49, -34.512],
+      radiusMeters: 3000,
+    },
+    updatedAt: now,
+  }
+  for (const alias of CASE_SLUG_ALIASES) {
+    batch.set(db.collection('publicCases').doc(alias), publicCase)
+  }
+
+  await batch.commit()
+  return db.collection('publicCases').doc('pancita').get()
 }
 
 const PublicReportSchema = z.object({
@@ -133,8 +286,8 @@ export const submitPublicReport = onCall(
 )
 
 /**
- * Claims an existing membership, a one-time email invitation, or the configured
- * owner bootstrap. Production never grants ownership to an arbitrary first user.
+ * The configured family accounts are equivalent administrators. Invited
+ * volunteers can still receive narrower roles in forks of this public app.
  */
 export const claimMembership = onCall(
   { region: 'southamerica-east1' },
@@ -149,18 +302,24 @@ export const claimMembership = onCall(
     }
 
     const email = normalizedEmail(request.auth.token.email)
-    const publicSnap = await resolvePublicCase(
+    const isConfiguredAdmin = configuredAdminEmails().has(email)
+    let publicSnap = await resolvePublicCase(
       parsed.data.slug || process.env.CASE_SLUG || 'pancita',
     )
     if (!publicSnap) {
-      throw new HttpsError('not-found', 'Case not found')
+      if (!isConfiguredAdmin) {
+        throw new HttpsError('permission-denied', 'This account is not enabled')
+      }
+      publicSnap = await provisionDefaultCase()
+    } else if (isConfiguredAdmin) {
+      publicSnap = await ensurePublicAliases(publicSnap)
     }
+
     const caseId = publicSnap.data()!.caseId as string
     const caseRef = db.collection('cases').doc(caseId)
     const members = db.collection('cases').doc(caseId).collection('members')
     const memberRef = members.doc(request.auth.uid)
     const inviteRef = caseRef.collection('invites').doc(encodeURIComponent(email))
-    const bootstrapEmail = ownerBootstrapEmail()
 
     const role = await db.runTransaction(async (transaction) => {
       const [caseSnap, existing, invite] = await Promise.all([
@@ -173,41 +332,52 @@ export const claimMembership = onCall(
         throw new HttpsError('not-found', 'Private case not found')
       }
 
+      if (isConfiguredAdmin) {
+        transaction.set(
+          memberRef,
+          {
+            role: 'owner',
+            displayName: request.auth!.token.name || email.split('@')[0] || email,
+            email,
+            active: true,
+            accessPolicy: ACCESS_POLICY_VERSION,
+            createdAt: existing.data()?.createdAt ?? FieldValue.serverTimestamp(),
+            lastSeenAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        )
+        if (invite.exists) transaction.delete(inviteRef)
+        return 'owner'
+      }
+
       if (existing.exists) {
-        if (existing.data()!.active !== true) {
+        if (
+          existing.data()!.active !== true ||
+          existing.data()!.accessPolicy !== ACCESS_POLICY_VERSION
+        ) {
           throw new HttpsError('permission-denied', 'Membership is inactive')
         }
         const existingRole = String(existing.data()!.role)
         transaction.update(memberRef, { lastSeenAt: FieldValue.serverTimestamp() })
-        if (existingRole === 'owner' && !caseSnap.data()!.ownerUid) {
-          transaction.update(caseRef, { ownerUid: request.auth!.uid })
-        }
         return existingRole
       }
 
-      const configuredOwnerMayClaim =
-        bootstrapEmail.length > 0 &&
-        email === bootstrapEmail &&
-        (!caseSnap.data()!.ownerUid || caseSnap.data()!.ownerUid === request.auth!.uid)
-
       const invitedRole =
         invite.exists && invite.data()!.active === true ? String(invite.data()!.role) : null
-      if (!configuredOwnerMayClaim && !['coordinator', 'searcher'].includes(invitedRole ?? '')) {
+      if (!['coordinator', 'searcher'].includes(invitedRole ?? '')) {
         throw new HttpsError('permission-denied', 'Ask the owner for an invitation')
       }
 
-      const grantedRole = configuredOwnerMayClaim ? 'owner' : invitedRole!
+      const grantedRole = invitedRole!
       transaction.set(memberRef, {
         role: grantedRole,
         displayName: request.auth!.token.name || email.split('@')[0] || email,
         email,
         active: true,
+        accessPolicy: ACCESS_POLICY_VERSION,
         createdAt: FieldValue.serverTimestamp(),
         lastSeenAt: FieldValue.serverTimestamp(),
       })
-      if (configuredOwnerMayClaim) {
-        transaction.update(caseRef, { ownerUid: request.auth!.uid })
-      }
       if (invite.exists) transaction.delete(inviteRef)
       return grantedRole
     })
@@ -231,7 +401,12 @@ export const inviteMember = onCall(
     const email = normalizedEmail(parsed.data.email)
     const caseRef = db.collection('cases').doc(caseId)
     const caller = await caseRef.collection('members').doc(request.auth.uid).get()
-    if (!caller.exists || caller.data()!.active !== true || caller.data()!.role !== 'owner') {
+    if (
+      !caller.exists ||
+      caller.data()!.active !== true ||
+      caller.data()!.accessPolicy !== ACCESS_POLICY_VERSION ||
+      caller.data()!.role !== 'owner'
+    ) {
       throw new HttpsError('permission-denied', 'Only the owner can invite members')
     }
 
@@ -259,3 +434,4 @@ export const inviteMember = onCall(
 /** @deprecated compatibility aliases for v0.1 deployments. */
 export const claimFirstOwner = claimMembership
 export const claimOwnerBootstrap = claimMembership
+export const joinCase = claimMembership

@@ -59,6 +59,7 @@ beforeEach(async () => {
       displayName: 'Owner',
       email: 'owner@example.com',
       active: true,
+      accessPolicy: 'family-admin-v1',
       createdAt: new Date(),
     })
     await setDoc(doc(db, 'cases', CASE_ID, 'members', 'searcher1'), {
@@ -66,6 +67,7 @@ beforeEach(async () => {
       displayName: 'Searcher',
       email: 'searcher@example.com',
       active: true,
+      accessPolicy: 'family-admin-v1',
       createdAt: new Date(),
     })
     await setDoc(doc(db, 'cases', CASE_ID, 'members', 'coord1'), {
@@ -73,6 +75,7 @@ beforeEach(async () => {
       displayName: 'Coord',
       email: 'coord@example.com',
       active: true,
+      accessPolicy: 'family-admin-v1',
       createdAt: new Date(),
     })
     await setDoc(doc(db, 'cases', CASE_ID, 'leads', 'lead1'), {
@@ -186,11 +189,26 @@ describe('firestore rules', () => {
         displayName: 'Searcher',
         email: 'searcher@example.com',
         active: false,
+        accessPolicy: 'family-admin-v1',
         createdAt: new Date(),
       })
     })
     const searcher = testEnv.authenticatedContext('searcher1').firestore()
     await assertFails(getDoc(doc(searcher, 'cases', CASE_ID)))
+  })
+
+  it('legacy first-user memberships do not grant access', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'cases', CASE_ID, 'members', 'legacy1'), {
+        role: 'owner',
+        displayName: 'Legacy owner',
+        email: 'legacy@example.com',
+        active: true,
+        createdAt: new Date(),
+      })
+    })
+    const legacy = testEnv.authenticatedContext('legacy1').firestore()
+    await assertFails(getDoc(doc(legacy, 'cases', CASE_ID)))
   })
 
   it('loads rules file', () => {

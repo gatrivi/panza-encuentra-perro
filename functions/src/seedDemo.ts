@@ -15,7 +15,6 @@ export async function seedDemo(): Promise<void> {
   await db.doc(`cases/${CASE_ID}`).set({
     slug: SLUG,
     status: 'active',
-    ownerUid: null,
     animal: {
       name: 'Pancita',
       aliases: ['Panza', 'Pancite'],
@@ -130,5 +129,5 @@ export async function seedDemo(): Promise<void> {
 
   console.log('Seeded case', CASE_ID, 'canonical slug', SLUG)
   console.log('Public aliases:', PUBLIC_ALIASES.join(', '))
-  console.log('Emulator owner bootstrap: owner@example.com')
+  console.log('Emulator administrator: owner@example.com')
 }
