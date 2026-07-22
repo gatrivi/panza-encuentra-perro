@@ -4,6 +4,10 @@ PWA móvil para coordinar la búsqueda de **Pancita**, también llamada **Panza*
 
 **Versión:** `0.2.0` · **Licencia:** AGPL-3.0 · **Idioma:** español (Argentina)
 
+> **Estado real y próximo trabajo:** leer primero
+> [`docs/LO_QUE_FALTA.md`](docs/LO_QUE_FALTA.md). La aplicación no debe declararse
+> operativa hasta cumplir el P0 y sus pruebas de aceptación.
+
 ## Qué funciona
 
 - `/c/pancita` es la URL canónica; `/c/pancite` y `/c/panza` siguen funcionando.
