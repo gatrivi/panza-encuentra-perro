@@ -15,6 +15,17 @@ import {
 } from 'firebase/firestore'
 import { db, defaultCaseSlug } from './app'
 import { requireDate, toDate } from './converters'
+import { operatorByEmail } from '../operators'
+import {
+  PANZA_ANIMAL,
+  PANZA_CASE_ID,
+  PANZA_CONTACT,
+  PANZA_FB_LEAD_TEXT,
+  PANZA_IG_LEAD_TEXT,
+  PANZA_INSTRUCTIONS,
+  PANZA_MAP_CENTER,
+  PANZA_SOURCES,
+} from '../panzaCase'
 import type {
   Case,
   Lead,
@@ -25,8 +36,6 @@ import type {
   SightingConfidence,
   CompassDirection,
 } from '@/domain/schemas'
-
-const CASE_ID_DEFAULT = 'case_pancita'
 
 export async function getPublicCase(slug: string): Promise<PublicCase | null> {
   const snap = await getDoc(doc(db, 'publicCases', slug))
@@ -98,64 +107,94 @@ export async function findActiveMembership(uid: string): Promise<{
   return null
 }
 
-/** Resolve or bootstrap public case (empty Spark project, no CF). */
+/** Resolve or bootstrap Panza case (Spark, no CF). */
 async function resolveOrBootstrapCaseId(): Promise<string> {
   for (const caseSlug of candidateSlugs()) {
     const publicSnap = await getDoc(doc(db, 'publicCases', caseSlug))
     if (publicSnap.exists()) return publicSnap.data().caseId as string
   }
 
-  const caseId = CASE_ID_DEFAULT
+  const caseId = PANZA_CASE_ID
   const now = serverTimestamp()
-  const animal = {
-    name: 'Pancita',
-    aliases: ['Panza', 'Pancite'],
-    species: 'dog',
-    breed: 'Caniche',
-    color: 'Negro',
-    sex: 'female',
-    size: 'mediano',
-    distinguishingMarks: 'Hembra, pelaje negro rizado',
-    photos: [] as string[],
-  }
   const publicPayload = {
     caseId,
     status: 'active',
-    animal,
-    publicContact: { displayPhone: '', whatsapp: '' },
-    publicInstructions:
-      'No la persigas. Observá la dirección, fotografiá con seguridad e informá al toque.',
+    animal: PANZA_ANIMAL,
+    publicContact: {
+      displayPhone: PANZA_CONTACT.displayPhone,
+      whatsapp: PANZA_CONTACT.whatsapp,
+    },
+    publicInstructions: PANZA_INSTRUCTIONS,
     updatedAt: now,
   }
 
   await setDoc(doc(db, 'cases', caseId), {
     slug: 'pancita',
     status: 'active',
-    animal,
+    animal: PANZA_ANIMAL,
     locale: 'es-AR',
     distanceUnit: 'km',
-    mapCenter: [-58.49, -34.512],
-    publicContact: { displayPhone: '', whatsapp: '' },
-    publicInstructions: publicPayload.publicInstructions,
+    mapCenter: PANZA_MAP_CENTER,
+    publicContact: publicPayload.publicContact,
+    publicInstructions: PANZA_INSTRUCTIONS,
     zonePolicy: { defaultRadius: 3, unit: 'km' },
     createdAt: now,
     updatedAt: now,
   })
   await setDoc(doc(db, 'publicCases', 'pancita'), publicPayload)
   await setDoc(doc(db, 'publicCases', 'pancite'), publicPayload)
+  await setDoc(doc(db, 'publicCases', 'panza'), publicPayload)
+
   return caseId
 }
 
-/**
- * Join without Cloud Functions.
- * First signed-in user claims locks/owner → role owner; later → coordinator.
- */
+async function seedSocialLeadsIfEmpty(caseId: string): Promise<void> {
+  const existing = await getDocs(query(collection(db, 'cases', caseId, 'leads')))
+  if (!existing.empty) return
+
+  await addDoc(collection(db, 'cases', caseId, 'leads'), {
+    origin: 'facebook',
+    sourceUrl: PANZA_SOURCES.facebook,
+    rawText: PANZA_FB_LEAD_TEXT,
+    attachmentPaths: [],
+    capturedAt: serverTimestamp(),
+    reporter: {},
+    parserSuggestions: {
+      dates: ['15/7'],
+      locations: ['Olivos', 'Vicente López'],
+      phones: [],
+      keywords: ['recompensa'],
+    },
+    status: 'new',
+    priority: 'high',
+  })
+  await addDoc(collection(db, 'cases', caseId, 'leads'), {
+    origin: 'instagram',
+    sourceUrl: PANZA_SOURCES.instagram,
+    rawText: PANZA_IG_LEAD_TEXT,
+    attachmentPaths: [],
+    capturedAt: serverTimestamp(),
+    reporter: {},
+    parserSuggestions: {
+      dates: ['15/7'],
+      locations: ['Olivos', 'cementerio'],
+      phones: [PANZA_CONTACT.displayPhone, PANZA_CONTACT.secondaryPhone],
+      keywords: ['collar violeta'],
+    },
+    status: 'new',
+    priority: 'normal',
+  })
+}
+
+/** Join as fixed operator (paula=owner, rodrigo/gaston=coordinator). */
 export async function joinCaseIfNeeded(
   uid: string,
   profile: { email: string; displayName?: string | null },
 ): Promise<Member | null> {
   const email = profile.email.toLowerCase()
-  const displayName = profile.displayName?.trim() || email.split('@')[0] || email
+  const op = operatorByEmail(email)
+  if (!op) return null
+
   try {
     const caseId = await resolveOrBootstrapCaseId()
     const memberRef = doc(db, 'cases', caseId, 'members', uid)
@@ -164,26 +203,19 @@ export async function joinCaseIfNeeded(
       if (existing.data()?.active === false) {
         await updateDoc(memberRef, { active: true, lastSeenAt: serverTimestamp() })
       }
+      await seedSocialLeadsIfEmpty(caseId)
       return getMember(caseId, uid)
     }
 
-    let role: 'owner' | 'coordinator' = 'coordinator'
-    try {
-      await setDoc(doc(db, 'cases', caseId, 'locks', 'owner'), { uid })
-      role = 'owner'
-    } catch {
-      // lock already taken
-      role = 'coordinator'
-    }
-
     await setDoc(memberRef, {
-      role,
-      displayName,
-      email,
+      role: op.role,
+      displayName: op.displayName,
+      email: op.email,
       active: true,
       createdAt: serverTimestamp(),
       lastSeenAt: serverTimestamp(),
     })
+    await seedSocialLeadsIfEmpty(caseId)
     return getMember(caseId, uid)
   } catch (e) {
     console.error(e)

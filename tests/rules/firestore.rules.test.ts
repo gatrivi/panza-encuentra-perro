@@ -156,13 +156,28 @@ describe('firestore rules', () => {
 
   it('signed-in non-member can self-join as coordinator', async () => {
     const newbie = testEnv
-      .authenticatedContext('newbie1', { email: 'newbie@example.com' })
+      .authenticatedContext('newbie1', { email: 'rodrigo@panza.local' })
       .firestore()
     await assertSucceeds(
       setDoc(doc(newbie, 'cases', CASE_ID, 'members', 'newbie1'), {
         role: 'coordinator',
-        displayName: 'Newbie',
-        email: 'newbie@example.com',
+        displayName: 'Rodrigo',
+        email: 'rodrigo@panza.local',
+        active: true,
+        createdAt: new Date(),
+      }),
+    )
+  })
+
+  it('random email cannot self-join', async () => {
+    const rando = testEnv
+      .authenticatedContext('rando1', { email: 'rando@example.com' })
+      .firestore()
+    await assertFails(
+      setDoc(doc(rando, 'cases', CASE_ID, 'members', 'rando1'), {
+        role: 'coordinator',
+        displayName: 'Rando',
+        email: 'rando@example.com',
         active: true,
         createdAt: new Date(),
       }),

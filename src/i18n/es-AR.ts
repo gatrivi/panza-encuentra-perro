@@ -1,5 +1,5 @@
 export const esAR = {
-  appName: 'Operativo Pancita',
+  appName: 'Buscamos a Panza',
   nav: {
     map: 'Mapa',
     inbox: 'Bandeja',
@@ -68,11 +68,14 @@ export const esAR = {
     rejected: 'Rechazado',
   },
   auth: {
-    needInvite: 'No pudimos sumarte al operativo. Probá de nuevo o pedile a Paula/Gastón.',
+    needInvite: 'Usuario no autorizado. Usá paula, rodrigo o gaston.',
     loading: 'Cargando…',
     email: 'Email',
+    username: 'Usuario',
     password: 'Contraseña',
-    hint: 'Paula, Rodrigo o Gastón: entrá con tu email y contraseña. Si ya hay un responsable, te sumás al equipo sin sacarle el control.',
+    unknownUser: 'Usuario desconocido. Probá paula, rodrigo o gaston.',
+    badPassword: 'Contraseña incorrecta.',
+    hint: 'Este dispositivo guarda la sesión. Si ya entraste, vas directo al mapa.',
   },
   errors: {
     generic: 'Algo falló. Probá de nuevo.',

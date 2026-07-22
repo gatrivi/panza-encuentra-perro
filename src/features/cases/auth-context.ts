@@ -8,8 +8,8 @@ export type AuthState = {
   caseId: string | null
   loading: boolean
   error: string | null
-  signInGoogle: () => Promise<void>
-  signInWithEmail: (email: string, password: string) => Promise<void>
+  rememberedUsername: string
+  signInWithUsername: (username: string, password: string) => Promise<void>
   signOut: () => Promise<void>
 }
 

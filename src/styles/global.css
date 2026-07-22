@@ -362,6 +362,48 @@ a {
   flex-direction: column;
   justify-content: flex-end;
   padding: 1.5rem 1.25rem 1.75rem;
+  overflow: hidden;
+}
+
+.public-hero-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.public-hero .brand,
+.public-hero p,
+.public-photo-row {
+  position: relative;
+  z-index: 1;
+}
+
+.public-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 20%, rgba(18, 36, 28, 0.85));
+  z-index: 0;
+  pointer-events: none;
+}
+
+.public-photo-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  overflow-x: auto;
+}
+
+.public-photo-row img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
 }
 
 .public-hero .brand {

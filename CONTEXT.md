@@ -1,12 +1,13 @@
-# Milestone 1 — context
+# Buscamos a Panza — context
 
-Shipped: vertical slice (auth, public report, bandeja save-first, promote, map, rules, seed).
+No Cloud Functions. Login: usuario `paula` | `rodrigo` | `gaston` (sin email en UI).
+Contraseña compartida (familia): pedíla a Gastón — no va en el repo.
+Sesión: `browserLocalPersistence` → mismo dispositivo entra directo al mapa.
 
-**No Cloud Functions / Blaze.** Join + public report = client SDK + Firestore rules.
-- First signed-in user claims `cases/{id}/locks/owner` → owner
-- Later family → coordinator
-- Empty project: first sign-in bootstraps `cases` + `publicCases`
+Fotos: `public/panza/{pnan2.jpg,panrec.png,panz.jpg}`
+Fuentes seed: FB share + IG `@buscamos.a.panza`
 
-Next when asked: Milestone 2 (signs + zones) only.
+**Una vez en Console:** Authentication → Get started → Email/Password ON.
+Authorized domains: `localhost` (+ Vercel host).
 
-Decision pending human: real public phone/WhatsApp; Storage “Get Started” in console if photos needed.
+Next: más datos seed cuando lleguen.

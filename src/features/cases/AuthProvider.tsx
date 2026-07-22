@@ -1,17 +1,21 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
+  browserLocalPersistence,
   onAuthStateChanged,
-  signInWithPopup,
+  setPersistence,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   type User,
 } from 'firebase/auth'
-import { auth, connectEmulatorsIfNeeded, googleProvider } from '@/lib/firebase/app'
+import { auth, connectEmulatorsIfNeeded } from '@/lib/firebase/app'
 import { findActiveMembership, joinCaseIfNeeded } from '@/lib/firebase/repos'
+import { resolveOperator } from '@/lib/operators'
 import type { Member } from '@/domain/schemas'
 import { t } from '@/i18n/es-AR'
 import { AuthContext } from './auth-context'
+
+const USERNAME_KEY = 'panza.username'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -22,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     connectEmulatorsIfNeeded()
+    void setPersistence(auth, browserLocalPersistence)
     return onAuthStateChanged(auth, async (next) => {
       setLoading(true)
       setError(null)
@@ -40,7 +45,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setLoading(false)
             return
           }
-          // First arriver = owner; later family = coordinator (client + rules, no CF)
           await joinCaseIfNeeded(next.uid, {
             email: next.email,
             displayName: next.displayName,
@@ -64,17 +68,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  const signInGoogle = useCallback(async () => {
+  const signInWithUsername = useCallback(async (username: string, password: string) => {
     setError(null)
-    await signInWithPopup(auth, googleProvider)
-  }, [])
-
-  const signInWithEmail = useCallback(async (email: string, password: string) => {
-    setError(null)
+    const op = resolveOperator(username)
+    if (!op) {
+      setError(t().auth.unknownUser)
+      return
+    }
+    localStorage.setItem(USERNAME_KEY, op.username)
+    await setPersistence(auth, browserLocalPersistence)
     try {
-      await signInWithEmailAndPassword(auth, email.trim(), password)
+      await signInWithEmailAndPassword(auth, op.email, password)
     } catch {
-      await createUserWithEmailAndPassword(auth, email.trim(), password)
+      try {
+        await createUserWithEmailAndPassword(auth, op.email, password)
+      } catch (e) {
+        const code = (e as { code?: string }).code
+        if (code === 'auth/email-already-in-use') {
+          setError(t().auth.badPassword)
+          return
+        }
+        console.error(e)
+        setError(t().errors.generic)
+      }
     }
   }, [])
 
@@ -89,11 +105,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       caseId,
       loading,
       error,
-      signInGoogle,
-      signInWithEmail,
+      rememberedUsername: localStorage.getItem(USERNAME_KEY) ?? '',
+      signInWithUsername,
       signOut,
     }),
-    [user, member, caseId, loading, error, signInGoogle, signInWithEmail, signOut],
+    [user, member, caseId, loading, error, signInWithUsername, signOut],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

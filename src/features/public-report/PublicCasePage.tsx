@@ -47,6 +47,15 @@ export function PublicCasePage() {
   return (
     <div className="public-page">
       <section className="public-hero" aria-label={animal.name}>
+        {animal.photos?.[0] ? (
+          <img
+            className="public-hero-img"
+            src={animal.photos[0]}
+            alt={animal.name}
+            width={640}
+            height={640}
+          />
+        ) : null}
         <div className="brand">{animal.name}</div>
         <p>
           {[animal.breed, animal.color, animal.sex === 'female' ? 'hembra' : animal.sex]
@@ -54,6 +63,13 @@ export function PublicCasePage() {
             .join(' · ')}
         </p>
         {animal.distinguishingMarks ? <p>{animal.distinguishingMarks}</p> : null}
+        {animal.photos && animal.photos.length > 1 ? (
+          <div className="public-photo-row">
+            {animal.photos.slice(1).map((src) => (
+              <img key={src} src={src} alt="" width={160} height={160} />
+            ))}
+          </div>
+        ) : null}
       </section>
 
       <div className="public-body">
