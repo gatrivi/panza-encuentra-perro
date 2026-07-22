@@ -1,7 +1,7 @@
-# Milestone 1 — context
+# v0.2 coordination slice — context
 
-Shipped: vertical slice (auth, public report CF, bandeja save-first, promote, map, rules, seed).
+Shipped: M1 vertical slice plus Pancita/Panza/Pancite aliases, secure owner bootstrap, email invitations, shared field tasks, tiered signs, active radius zone, map overlays, rules and demo data.
 
-Next when asked: Milestone 2 (signs + zones) only.
+Next: finish coverage cells/outings (H3 + temporary GPS), sign history/QR attribution, routing with factual private safety areas, OCR and Share Target.
 
-Decision pending human: production Firebase project IDs, real public phone/WhatsApp, license already AGPL-3.0 in repo.
+Human configuration still required: production Firebase project, `OWNER_BOOTSTRAP_EMAIL`, Google Auth, public phone/WhatsApp and real animal photos. License: AGPL-3.0.

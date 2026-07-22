@@ -1,7 +1,7 @@
-# Operativo Pancite — Cursor Build Brief
+# Operativo Pancita (Panza / Pancite) — Cursor Build Brief
 
 Status: implementation-ready product contract  
-Primary case: Pancite/Panza, a missing black female poodle  
+Primary case: Pancita, also known as Panza/Pancite, a missing black female poodle
 Primary operators: owner, sister, brother-in-law  
 Default language: Spanish (Argentina)  
 Target: mobile-first installable web app; public open-source repository
@@ -10,9 +10,9 @@ Target: mobile-first installable web app; public open-source repository
 
 Place this file in the repository root and give Cursor this prompt:
 
-> Read `OPERATIVO_PANCITE_BUILD_BRIEF.md` completely and treat it as the source of truth. First inspect the repository and preserve all working behavior. If the repository is empty, scaffold the stack specified below with Yarn. Implement Milestone 1 as a complete vertical slice, including tests, Firebase rules and the demo seed. Run typecheck, lint, unit tests and production build. Stop after Milestone 1, report what works, what remains, and any decision that genuinely requires human input. Do not implement autonomous Facebook scraping, speculative animal-location prediction, multi-tenant billing, or unrelated redesigns.
+> Read `OPERATIVO_PANCITE_BUILD_BRIEF.md` and `CONTEXT.md` completely. Inspect the repository first and preserve all working behavior. The current v0.2 implementation includes the M1 vertical slice plus aliases, secure invitations, shared tasks, tiered signs and a sighting-based active zone. Continue only the requested next slice, including tests and rules. Run typecheck, lint, unit tests and production build. Do not implement autonomous Facebook scraping, speculative animal-location prediction, multi-tenant billing, or unrelated redesigns.
 
-After Milestone 1 is verified, ask Cursor to continue one milestone at a time.
+Continue one usable, verified slice at a time.
 
 ---
 
@@ -20,7 +20,7 @@ After Milestone 1 is verified, ask Cursor to continue one milestone at a time.
 
 ### 1.1 One sentence
 
-Operativo Pancite turns scattered sightings, social posts, signs and family search outings into one verified, shared operational map.
+Operativo Pancita turns scattered sightings, social posts, signs and family search outings into one verified, shared operational map.
 
 ### 1.2 Actual outcome
 
@@ -673,6 +673,9 @@ Hard stop: no OCR, coverage grid, routing, live tracking or autonomous browsing 
 - Radius units configurable km/mi.
 - Timeline/filter controls for sightings.
 - Sign maintenance queue.
+- Shared field-task board with priority, claimant and completion state.
+- Owner-managed email invitations for the three-person team.
+- Operational briefing: do not chase/call; record time, direction and evidence.
 
 ### Milestone 3 — Coverage and outings
 

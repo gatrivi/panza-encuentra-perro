@@ -1,7 +1,17 @@
 {
-  "name": "operativo-pancite",
+  "name": "operativo-pancita",
+  "description": "Mapa y tablero compartido para buscar a Pancita, también llamada Panza o Pancite.",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "keywords": [
+    "pancita",
+    "pancite",
+    "panza",
+    "perro perdido",
+    "busqueda canina",
+    "missing dog",
+    "animal search and rescue"
+  ],
   "type": "module",
   "packageManager": "yarn@1.22.19",
   "scripts": {
@@ -14,7 +24,7 @@
     "test:watch": "vitest",
     "test:rules": "firebase emulators:exec --only firestore \"vitest run --config vitest.rules.config.ts\"",
     "emulators": "firebase emulators:start --import=./seed/emulator-data --export-on-exit=./seed/emulator-data",
-    "seed": "tsx seed/seed-demo.ts"
+    "seed": "node --import tsx seed/seed-demo.ts"
   },
   "dependencies": {
     "firebase": "^11.10.0",

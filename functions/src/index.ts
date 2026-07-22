@@ -6,6 +6,38 @@ import { z } from 'zod'
 initializeApp()
 const db = getFirestore()
 
+const CASE_SLUG_ALIASES = ['pancita', 'pancite', 'panza'] as const
+
+function normalizeSlug(value: unknown): string {
+  const slug = String(value ?? '').trim().toLowerCase()
+  return CASE_SLUG_ALIASES.includes(slug as (typeof CASE_SLUG_ALIASES)[number])
+    ? 'pancita'
+    : slug
+}
+
+function slugCandidates(value: unknown): string[] {
+  const normalized = normalizeSlug(value)
+  return normalized === 'pancita' ? [...CASE_SLUG_ALIASES] : [normalized]
+}
+
+async function resolvePublicCase(value: unknown) {
+  for (const slug of slugCandidates(value)) {
+    const snap = await db.collection('publicCases').doc(slug).get()
+    if (snap.exists) return snap
+  }
+  return null
+}
+
+function normalizedEmail(value: unknown): string {
+  return String(value ?? '').trim().toLowerCase()
+}
+
+function ownerBootstrapEmail(): string {
+  const configured = normalizedEmail(process.env.OWNER_BOOTSTRAP_EMAIL)
+  if (configured) return configured
+  return process.env.FUNCTIONS_EMULATOR === 'true' ? 'owner@example.com' : ''
+}
+
 const PublicReportSchema = z.object({
   slug: z.string().min(1),
   mode: z.enum(['seeing_now', 'think_i_saw']),
@@ -18,6 +50,17 @@ const PublicReportSchema = z.object({
   photoBase64: z.string().max(2_000_000).optional(),
   posterCode: z.string().max(64).optional(),
   honeypot: z.string().max(0).optional(),
+  claimedObservationAt: z.string().datetime().optional(),
+})
+
+const ClaimMembershipSchema = z.object({
+  slug: z.string().min(1).max(80).default('pancita'),
+})
+
+const InviteMemberSchema = z.object({
+  caseId: z.string().min(1).max(160),
+  email: z.string().email().max(320),
+  role: z.enum(['coordinator', 'searcher']),
 })
 
 /** Very small in-memory rate limit for emulator / single instance. */
@@ -52,10 +95,10 @@ export const submitPublicReport = onCall(
     }
 
     const ip = request.rawRequest?.ip || 'unknown'
-    rateLimit(`${data.slug}:${ip}`)
+    rateLimit(`${normalizeSlug(data.slug)}:${ip}`)
 
-    const publicSnap = await db.collection('publicCases').doc(data.slug).get()
-    if (!publicSnap.exists) {
+    const publicSnap = await resolvePublicCase(data.slug)
+    if (!publicSnap) {
       throw new HttpsError('not-found', 'Case not found')
     }
     const publicCase = publicSnap.data()!
@@ -76,7 +119,9 @@ export const submitPublicReport = onCall(
       },
       claimedPoint: data.point ?? null,
       claimedDirection: data.direction ?? null,
-      claimedObservationAt: Timestamp.now(),
+      claimedObservationAt: data.claimedObservationAt
+        ? Timestamp.fromDate(new Date(data.claimedObservationAt))
+        : Timestamp.now(),
       parserSuggestions: { dates: [], locations: [], phones: [], keywords: [] },
       status: 'new',
       priority: data.mode === 'seeing_now' ? 'high' : 'normal',
@@ -88,46 +133,129 @@ export const submitPublicReport = onCall(
 )
 
 /**
- * First authenticated user becomes owner when the case has zero members.
- * Later members must be invited by the owner (UI in a later milestone).
+ * Claims an existing membership, a one-time email invitation, or the configured
+ * owner bootstrap. Production never grants ownership to an arbitrary first user.
  */
-export const claimFirstOwner = onCall(
+export const claimMembership = onCall(
   { region: 'southamerica-east1' },
   async (request) => {
     if (!request.auth?.uid || !request.auth.token.email) {
       throw new HttpsError('unauthenticated', 'Sign in required')
     }
-    const email = String(request.auth.token.email).toLowerCase()
-    const slug = String(request.data?.slug || process.env.CASE_SLUG || 'pancite')
-    const publicSnap = await db.collection('publicCases').doc(slug).get()
-    if (!publicSnap.exists) {
+
+    const parsed = ClaimMembershipSchema.safeParse(request.data ?? {})
+    if (!parsed.success) {
+      throw new HttpsError('invalid-argument', 'Invalid payload')
+    }
+
+    const email = normalizedEmail(request.auth.token.email)
+    const publicSnap = await resolvePublicCase(
+      parsed.data.slug || process.env.CASE_SLUG || 'pancita',
+    )
+    if (!publicSnap) {
       throw new HttpsError('not-found', 'Case not found')
     }
     const caseId = publicSnap.data()!.caseId as string
+    const caseRef = db.collection('cases').doc(caseId)
     const members = db.collection('cases').doc(caseId).collection('members')
     const memberRef = members.doc(request.auth.uid)
-    const existing = await memberRef.get()
-    if (existing.exists) {
-      return { ok: true, caseId, already: true }
-    }
+    const inviteRef = caseRef.collection('invites').doc(encodeURIComponent(email))
+    const bootstrapEmail = ownerBootstrapEmail()
 
-    const anyMember = await members.limit(1).get()
-    if (!anyMember.empty) {
-      throw new HttpsError('permission-denied', 'Case already has an owner; ask for an invite')
-    }
+    const role = await db.runTransaction(async (transaction) => {
+      const [caseSnap, existing, invite] = await Promise.all([
+        transaction.get(caseRef),
+        transaction.get(memberRef),
+        transaction.get(inviteRef),
+      ])
 
-    await memberRef.set({
-      role: 'owner',
-      displayName: request.auth.token.name || email,
-      email,
-      active: true,
-      createdAt: FieldValue.serverTimestamp(),
-      lastSeenAt: FieldValue.serverTimestamp(),
+      if (!caseSnap.exists) {
+        throw new HttpsError('not-found', 'Private case not found')
+      }
+
+      if (existing.exists) {
+        if (existing.data()!.active !== true) {
+          throw new HttpsError('permission-denied', 'Membership is inactive')
+        }
+        const existingRole = String(existing.data()!.role)
+        transaction.update(memberRef, { lastSeenAt: FieldValue.serverTimestamp() })
+        if (existingRole === 'owner' && !caseSnap.data()!.ownerUid) {
+          transaction.update(caseRef, { ownerUid: request.auth!.uid })
+        }
+        return existingRole
+      }
+
+      const configuredOwnerMayClaim =
+        bootstrapEmail.length > 0 &&
+        email === bootstrapEmail &&
+        (!caseSnap.data()!.ownerUid || caseSnap.data()!.ownerUid === request.auth!.uid)
+
+      const invitedRole =
+        invite.exists && invite.data()!.active === true ? String(invite.data()!.role) : null
+      if (!configuredOwnerMayClaim && !['coordinator', 'searcher'].includes(invitedRole ?? '')) {
+        throw new HttpsError('permission-denied', 'Ask the owner for an invitation')
+      }
+
+      const grantedRole = configuredOwnerMayClaim ? 'owner' : invitedRole!
+      transaction.set(memberRef, {
+        role: grantedRole,
+        displayName: request.auth!.token.name || email.split('@')[0] || email,
+        email,
+        active: true,
+        createdAt: FieldValue.serverTimestamp(),
+        lastSeenAt: FieldValue.serverTimestamp(),
+      })
+      if (configuredOwnerMayClaim) {
+        transaction.update(caseRef, { ownerUid: request.auth!.uid })
+      }
+      if (invite.exists) transaction.delete(inviteRef)
+      return grantedRole
     })
 
-    return { ok: true, caseId }
+    return { ok: true, caseId, role }
   },
 )
 
-/** @deprecated use claimFirstOwner */
-export const claimOwnerBootstrap = claimFirstOwner
+export const inviteMember = onCall(
+  { region: 'southamerica-east1' },
+  async (request) => {
+    if (!request.auth?.uid) {
+      throw new HttpsError('unauthenticated', 'Sign in required')
+    }
+    const parsed = InviteMemberSchema.safeParse(request.data)
+    if (!parsed.success) {
+      throw new HttpsError('invalid-argument', 'Invalid invitation')
+    }
+
+    const { caseId, role } = parsed.data
+    const email = normalizedEmail(parsed.data.email)
+    const caseRef = db.collection('cases').doc(caseId)
+    const caller = await caseRef.collection('members').doc(request.auth.uid).get()
+    if (!caller.exists || caller.data()!.active !== true || caller.data()!.role !== 'owner') {
+      throw new HttpsError('permission-denied', 'Only the owner can invite members')
+    }
+
+    const existing = await caseRef
+      .collection('members')
+      .where('email', '==', email)
+      .limit(1)
+      .get()
+    if (!existing.empty) {
+      return { ok: true, alreadyMember: true }
+    }
+
+    await caseRef.collection('invites').doc(encodeURIComponent(email)).set({
+      email,
+      role,
+      active: true,
+      invitedByUid: request.auth.uid,
+      createdAt: FieldValue.serverTimestamp(),
+    })
+
+    return { ok: true, alreadyMember: false }
+  },
+)
+
+/** @deprecated compatibility aliases for v0.1 deployments. */
+export const claimFirstOwner = claimMembership
+export const claimOwnerBootstrap = claimMembership

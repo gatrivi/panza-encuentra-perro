@@ -1,7 +1,7 @@
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { Circle, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { useEffect } from 'react'
-import type { Sighting } from '@/domain/schemas'
+import type { SearchZone, Sign, Sighting } from '@/domain/schemas'
 import { t } from '@/i18n/es-AR'
 import 'leaflet/dist/leaflet.css'
 
@@ -40,22 +40,63 @@ function markerIcon(confidence: Sighting['confidence']) {
   })
 }
 
-function FitBounds({ sightings }: { sightings: Sighting[] }) {
+function signIcon(sign: Sign) {
+  const colors: Record<Sign['tier'], string> = {
+    A: '#1a3a2a',
+    B: '#2f6b4f',
+    C: '#c45c26',
+    D: '#8a6b55',
+  }
+  const opacity = sign.status === 'placed' ? 1 : 0.45
+  return L.divIcon({
+    className: `marker-sign marker-sign-${sign.tier.toLowerCase()}`,
+    html: `<span style="display:flex;width:22px;height:22px;border-radius:5px;align-items:center;justify-content:center;background:${colors[sign.tier]};color:white;opacity:${opacity};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.35);font-size:11px;font-weight:800">${sign.tier}</span>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  })
+}
+
+function FitBounds({
+  sightings,
+  signs,
+  zone,
+}: {
+  sightings: Sighting[]
+  signs: Sign[]
+  zone: SearchZone | null
+}) {
   const map = useMap()
   useEffect(() => {
-    if (sightings.length === 0) {
+    if (sightings.length === 0 && signs.length === 0 && !zone) {
       map.setView([-34.512, -58.49], 14)
       return
     }
-    const bounds = L.latLngBounds(
-      sightings.map((s) => [s.point[1], s.point[0]] as [number, number]),
-    )
+    const points = [
+      ...sightings.map((s) => [s.point[1], s.point[0]] as [number, number]),
+      ...signs.map((s) => [s.point[1], s.point[0]] as [number, number]),
+    ]
+    const bounds = points.length > 0
+      ? L.latLngBounds(points)
+      : L.latLngBounds([zone!.center[1], zone!.center[0]], [zone!.center[1], zone!.center[0]])
+    if (zone) {
+      bounds.extend(
+        L.circle([zone.center[1], zone.center[0]], { radius: zone.radiusMeters }).getBounds(),
+      )
+    }
     map.fitBounds(bounds.pad(0.25))
-  }, [map, sightings])
+  }, [map, sightings, signs, zone])
   return null
 }
 
-export function OperationalMap({ sightings }: { sightings: Sighting[] }) {
+export function OperationalMap({
+  sightings,
+  signs,
+  zone,
+}: {
+  sightings: Sighting[]
+  signs: Sign[]
+  zone: SearchZone | null
+}) {
   const copy = t()
 
   return (
@@ -70,7 +111,20 @@ export function OperationalMap({ sightings }: { sightings: Sighting[] }) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <FitBounds sightings={sightings} />
+        <FitBounds sightings={sightings} signs={signs} zone={zone} />
+        {zone ? (
+          <Circle
+            center={[zone.center[1], zone.center[0]]}
+            radius={zone.radiusMeters}
+            pathOptions={{ color: '#1a3a2a', fillColor: '#2f6b4f', fillOpacity: 0.1 }}
+          >
+            <Popup>
+              <strong>Zona operativa</strong>
+              <br />Radio: {(zone.radiusMeters / 1000).toLocaleString('es-AR')} km
+              {zone.basisObservedAt ? <><br />Base: {zone.basisObservedAt.toLocaleString('es-AR')}</> : null}
+            </Popup>
+          </Circle>
+        ) : null}
         {sightings.map((s) => (
           <Marker
             key={s.id}
@@ -104,7 +158,24 @@ export function OperationalMap({ sightings }: { sightings: Sighting[] }) {
             </Popup>
           </Marker>
         ))}
+        {signs.map((sign) => (
+          <Marker key={sign.id} position={[sign.point[1], sign.point[0]]} icon={signIcon(sign)}>
+            <Popup>
+              <div className="sighting-popup">
+                <h3>Cartel {sign.tier}</h3>
+                <p><strong>{sign.placeName || 'Sin nombre'}</strong></p>
+                <p>Estado: {sign.status} · {sign.staffPersonallyAlerted ? 'personal avisado' : 'aviso no confirmado'}</p>
+                {sign.lastCheckedAt ? <p>Revisado: {sign.lastCheckedAt.toLocaleString('es-AR')}</p> : null}
+              </div>
+            </Popup>
+          </Marker>
+        ))}
       </MapContainer>
+      <div className="map-legend" aria-label="Leyenda del mapa">
+        <span><i className="legend-dot confirmed" /> avistaje confirmado</span>
+        <span><i className="legend-square" /> cartel</span>
+        <span><i className="legend-zone" /> zona operativa</span>
+      </div>
     </div>
   )
 }

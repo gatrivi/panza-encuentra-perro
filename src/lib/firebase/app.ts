@@ -3,6 +3,7 @@ import { connectAuthEmulator, getAuth, GoogleAuthProvider } from 'firebase/auth'
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore'
 import { connectFunctionsEmulator, getFunctions } from 'firebase/functions'
 import { connectStorageEmulator, getStorage } from 'firebase/storage'
+import { CANONICAL_CASE_SLUG, normalizeCaseSlug } from '@/domain/caseIdentity'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -34,4 +35,6 @@ export function connectEmulatorsIfNeeded() {
   emulatorsConnected = true
 }
 
-export const defaultCaseSlug = (import.meta.env.VITE_CASE_SLUG as string) || 'pancite'
+export const defaultCaseSlug = normalizeCaseSlug(
+  (import.meta.env.VITE_CASE_SLUG as string) || CANONICAL_CASE_SLUG,
+)

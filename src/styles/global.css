@@ -334,6 +334,51 @@ a {
 .map-container {
   flex: 1;
   min-height: 320px;
+  position: relative;
+}
+
+.map-legend {
+  position: absolute;
+  z-index: 500;
+  left: 0.75rem;
+  bottom: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-elevated) 92%, transparent);
+  box-shadow: var(--shadow);
+  font-size: 0.72rem;
+}
+
+.map-legend span {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.map-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+}
+
+.legend-dot.confirmed {
+  border-radius: 50%;
+  background: var(--brand);
+}
+
+.legend-square {
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.legend-zone {
+  border: 2px solid var(--brand-soft);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--brand-soft) 15%, transparent);
 }
 
 .sighting-popup h3 {
@@ -448,6 +493,289 @@ a {
   opacity: 0.55;
 }
 
+.plan-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.plan-heading,
+.section-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.plan-heading p,
+.section-title p {
+  margin: 0;
+}
+
+.plan-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(82px, 1fr));
+  gap: 0.4rem;
+  min-width: 180px;
+}
+
+.plan-metrics span {
+  display: flex;
+  flex-direction: column;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+}
+
+.plan-metrics strong {
+  color: var(--brand);
+  font-size: 1.15rem;
+}
+
+.plan-card,
+.protocol-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.protocol-card {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: #fff8f1;
+}
+
+.protocol-card ol {
+  margin: 0.65rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.protocol-card li + li {
+  margin-top: 0.35rem;
+}
+
+.notice {
+  position: sticky;
+  top: 68px;
+  z-index: 15;
+  margin: 0;
+  padding: 0.65rem 0.8rem;
+  border-radius: 10px;
+  background: var(--ok);
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+
+.composer {
+  margin-top: 0.8rem;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 0.65rem 0;
+}
+
+.composer summary {
+  min-height: var(--touch);
+  display: flex;
+  align-items: center;
+  color: var(--brand);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.composer form {
+  padding: 0.65rem 0 0;
+}
+
+.field-grid,
+.invite-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.invite-form {
+  grid-template-columns: minmax(0, 2fr) minmax(120px, 1fr) auto;
+  align-items: end;
+  margin-top: 0.75rem;
+}
+
+.invite-form .field {
+  margin: 0;
+}
+
+.check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 0.25rem 0 0.85rem;
+}
+
+.check-row input {
+  width: 20px;
+  height: 20px;
+}
+
+.task-list,
+.compact-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.8rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.task-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--border);
+  border-radius: 10px;
+}
+
+.task-card.priority-high {
+  border-left-color: var(--accent);
+}
+
+.task-card.priority-urgent {
+  border-left-color: var(--danger);
+}
+
+.task-card.done {
+  opacity: 0.62;
+}
+
+.task-card.done strong {
+  text-decoration: line-through;
+}
+
+.task-main {
+  min-width: 0;
+}
+
+.task-main p {
+  margin: 0.25rem 0;
+  white-space: pre-wrap;
+}
+
+.task-main small,
+.compact-list small {
+  display: block;
+  color: var(--ink-muted);
+}
+
+.task-labels,
+.task-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.task-labels {
+  margin-bottom: 0.3rem;
+}
+
+.task-actions {
+  flex: 0 0 auto;
+}
+
+.task-actions .btn {
+  border-radius: 10px;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.82rem;
+}
+
+.tier-key {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin-top: 0.65rem;
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+}
+
+.tier-key strong {
+  color: var(--brand);
+}
+
+.compact-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.team-list {
+  list-style: none;
+  margin: 0.9rem 0 0;
+  padding: 0;
+}
+
+.team-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.team-list small {
+  display: block;
+  color: var(--ink-muted);
+}
+
+.compact-list select {
+  max-width: 116px;
+  min-height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.tier {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  color: #fff;
+  font-weight: 800;
+}
+
+.tier-A { background: var(--brand); }
+.tier-B { background: var(--ok); }
+.tier-C { background: var(--accent); }
+.tier-D { background: #8a6b55; }
+
+.empty-state,
+.zone-basis {
+  margin: 0.75rem 0 0;
+  color: var(--ink-muted);
+}
+
+.zone-controls {
+  display: flex;
+  align-items: end;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.zone-controls .field {
+  flex: 1;
+  margin: 0;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -462,5 +790,29 @@ a {
 @media (min-width: 768px) {
   .public-hero {
     min-height: 60dvh;
+  }
+}
+
+@media (max-width: 620px) {
+  .plan-heading,
+  .task-card,
+  .zone-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .plan-metrics,
+  .field-grid,
+  .invite-form {
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .invite-form .btn {
+    grid-column: 1 / -1;
+  }
+
+  .task-actions .btn {
+    flex: 1;
   }
 }

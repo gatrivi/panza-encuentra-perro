@@ -58,6 +58,53 @@ export const CompassDirectionSchema = z.enum([
 ])
 export type CompassDirection = z.infer<typeof CompassDirectionSchema>
 
+export const TaskKindSchema = z.enum([
+  'search',
+  'sign',
+  'contact',
+  'camera',
+  'feeding',
+  'other',
+])
+export type TaskKind = z.infer<typeof TaskKindSchema>
+
+export const TaskStatusSchema = z.enum(['open', 'claimed', 'done'])
+export type TaskStatus = z.infer<typeof TaskStatusSchema>
+
+export const TaskPrioritySchema = z.enum(['normal', 'high', 'urgent'])
+export type TaskPriority = z.infer<typeof TaskPrioritySchema>
+
+export const SignTierSchema = z.enum(['A', 'B', 'C', 'D'])
+export type SignTier = z.infer<typeof SignTierSchema>
+
+export const SignStatusSchema = z.enum([
+  'planned',
+  'placed',
+  'missing',
+  'damaged',
+  'removed',
+])
+export type SignStatus = z.infer<typeof SignStatusSchema>
+
+export const SignPlaceTypeSchema = z.enum([
+  'service_station',
+  'police',
+  'security',
+  'business_24h',
+  'vet',
+  'pet_shop',
+  'groomer',
+  'shelter',
+  'supermarket',
+  'transit',
+  'pharmacy',
+  'school',
+  'club',
+  'street',
+  'other',
+])
+export type SignPlaceType = z.infer<typeof SignPlaceTypeSchema>
+
 export const AnimalSchema = z.object({
   name: z.string().min(1),
   aliases: z.array(z.string()).default([]),
@@ -189,6 +236,56 @@ export const SightingSchema = z.object({
   affectsOfficialZone: z.boolean().default(false),
 })
 export type Sighting = z.infer<typeof SightingSchema>
+
+export const SearchTaskSchema = z.object({
+  id: z.string(),
+  caseId: z.string(),
+  title: z.string().min(1),
+  kind: TaskKindSchema,
+  status: TaskStatusSchema,
+  priority: TaskPrioritySchema,
+  notes: z.string().optional(),
+  point: GeoPointSchema.optional(),
+  assigneeUid: z.string().optional(),
+  assigneeName: z.string().optional(),
+  createdByUid: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  completedAt: z.date().optional(),
+})
+export type SearchTask = z.infer<typeof SearchTaskSchema>
+
+export const SignSchema = z.object({
+  id: z.string(),
+  caseId: z.string(),
+  point: GeoPointSchema,
+  placeName: z.string().optional(),
+  tier: SignTierSchema,
+  placeType: SignPlaceTypeSchema,
+  status: SignStatusSchema,
+  staffPersonallyAlerted: z.boolean(),
+  notes: z.string().optional(),
+  posterCode: z.string().optional(),
+  createdByUid: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  placedAt: z.date().optional(),
+  lastCheckedAt: z.date().optional(),
+})
+export type Sign = z.infer<typeof SignSchema>
+
+export const SearchZoneSchema = z.object({
+  id: z.string(),
+  caseId: z.string(),
+  center: GeoPointSchema,
+  radiusMeters: z.number().positive(),
+  basisSightingId: z.string().optional(),
+  basisObservedAt: z.date().optional(),
+  updatedByUid: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+export type SearchZone = z.infer<typeof SearchZoneSchema>
 
 export const AuditEventSchema = z.object({
   id: z.string(),

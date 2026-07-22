@@ -14,7 +14,7 @@ import {
 import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-const PROJECT_ID = 'demo-pancite-rules'
+const PROJECT_ID = 'demo-pancita-rules'
 const CASE_ID = 'case_rules'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 
@@ -39,17 +39,17 @@ beforeEach(async () => {
   await testEnv.clearFirestore()
   await testEnv.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore()
-    await setDoc(doc(db, 'publicCases', 'pancite'), {
+    await setDoc(doc(db, 'publicCases', 'pancita'), {
       caseId: CASE_ID,
       status: 'active',
-      animal: { name: 'Pancite', aliases: [], photos: [] },
+      animal: { name: 'Pancita', aliases: ['Panza', 'Pancite'], photos: [] },
       publicContact: {},
       updatedAt: new Date(),
     })
     await setDoc(doc(db, 'cases', CASE_ID), {
-      slug: 'pancite',
+      slug: 'pancita',
       status: 'active',
-      animal: { name: 'Pancite', aliases: [], photos: [] },
+      animal: { name: 'Pancita', aliases: ['Panza', 'Pancite'], photos: [] },
       mapCenter: [-58.49, -34.51],
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -88,7 +88,7 @@ beforeEach(async () => {
 describe('firestore rules', () => {
   it('anonymous can read public case but not private leads', async () => {
     const anon = testEnv.unauthenticatedContext().firestore()
-    await assertSucceeds(getDoc(doc(anon, 'publicCases', 'pancite')))
+    await assertSucceeds(getDoc(doc(anon, 'publicCases', 'pancita')))
     await assertFails(getDocs(collection(anon, 'cases', CASE_ID, 'leads')))
     await assertFails(getDoc(doc(anon, 'cases', CASE_ID)))
   })
@@ -121,6 +121,62 @@ describe('firestore rules', () => {
         affectsOfficialZone: false,
       }),
     )
+  })
+
+  it('searcher can coordinate tasks and signs but cannot move the official zone', async () => {
+    const searcher = testEnv.authenticatedContext('searcher1').firestore()
+    await assertSucceeds(
+      setDoc(doc(searcher, 'cases', CASE_ID, 'tasks', 'task1'), {
+        title: 'Recorrer Maipú',
+        kind: 'search',
+        status: 'open',
+        priority: 'normal',
+        createdByUid: 'searcher1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }),
+    )
+    await assertSucceeds(
+      setDoc(doc(searcher, 'cases', CASE_ID, 'signs', 'sign1'), {
+        point: [-58.49, -34.51],
+        tier: 'A',
+        placeType: 'service_station',
+        status: 'placed',
+        staffPersonallyAlerted: true,
+        createdByUid: 'searcher1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }),
+    )
+    await assertFails(
+      setDoc(doc(searcher, 'cases', CASE_ID, 'zones', 'active'), {
+        center: [-58.49, -34.51],
+        radiusMeters: 3000,
+        updatedByUid: 'searcher1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }),
+    )
+  })
+
+  it('coordinator can move the official zone', async () => {
+    const coord = testEnv.authenticatedContext('coord1').firestore()
+    await assertSucceeds(
+      setDoc(doc(coord, 'cases', CASE_ID, 'zones', 'active'), {
+        center: [-58.49, -34.51],
+        radiusMeters: 3000,
+        updatedByUid: 'coord1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }),
+    )
+  })
+
+  it('member invitation documents are inaccessible to clients', async () => {
+    const owner = testEnv.authenticatedContext('owner1').firestore()
+    const invite = doc(owner, 'cases', CASE_ID, 'invites', 'person%40example.com')
+    await assertFails(getDoc(invite))
+    await assertFails(setDoc(invite, { email: 'person@example.com', role: 'searcher' }))
   })
 
   it('archived member loses access', async () => {

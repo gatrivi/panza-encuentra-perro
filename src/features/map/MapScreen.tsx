@@ -1,7 +1,11 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { useAuth } from '@/features/cases/useAuth'
-import { subscribeSightings } from '@/lib/firebase/repos'
-import type { Sighting } from '@/domain/schemas'
+import {
+  subscribeActiveZone,
+  subscribeSigns,
+  subscribeSightings,
+} from '@/lib/firebase/repos'
+import type { SearchZone, Sign, Sighting } from '@/domain/schemas'
 import { t } from '@/i18n/es-AR'
 
 const OperationalMap = lazy(() =>
@@ -11,17 +15,25 @@ const OperationalMap = lazy(() =>
 export function MapScreen() {
   const { caseId } = useAuth()
   const [sightings, setSightings] = useState<Sighting[]>([])
+  const [signs, setSigns] = useState<Sign[]>([])
+  const [zone, setZone] = useState<SearchZone | null>(null)
   const [showRejected, setShowRejected] = useState(false)
   const copy = t()
 
   useEffect(() => {
     if (!caseId) return
-    return subscribeSightings(caseId, setSightings)
+    const unsubscribe = [
+      subscribeSightings(caseId, setSightings),
+      subscribeSigns(caseId, setSigns),
+      subscribeActiveZone(caseId, setZone),
+    ]
+    return () => unsubscribe.forEach((stop) => stop())
   }, [caseId])
 
   const visible = sightings.filter((s) =>
     showRejected ? true : s.confidence !== 'rejected',
   )
+  const visibleSigns = signs.filter((sign) => sign.status !== 'removed')
 
   return (
     <div className="map-screen">
@@ -36,13 +48,13 @@ export function MapScreen() {
           Incluir rechazados
         </label>
       </div>
-      {visible.length === 0 ? (
+      {visible.length === 0 && visibleSigns.length === 0 && !zone ? (
         <p className="muted" style={{ padding: '0 1rem' }}>
           {copy.map.noSightings}
         </p>
       ) : null}
       <Suspense fallback={<p style={{ padding: '1rem' }}>{copy.auth.loading}</p>}>
-        <OperationalMap sightings={visible} />
+        <OperationalMap sightings={visible} signs={visibleSigns} zone={zone} />
       </Suspense>
     </div>
   )
