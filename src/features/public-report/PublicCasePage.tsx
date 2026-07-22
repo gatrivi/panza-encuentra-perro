@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { httpsCallable } from 'firebase/functions'
-import { connectEmulatorsIfNeeded, functions } from '@/lib/firebase/app'
-import { getPublicCase } from '@/lib/firebase/repos'
+import { connectEmulatorsIfNeeded } from '@/lib/firebase/app'
+import { getPublicCase, submitPublicReport } from '@/lib/firebase/repos'
 import type { CompassDirection, PublicCase } from '@/domain/schemas'
 import { t } from '@/i18n/es-AR'
 
@@ -162,8 +161,7 @@ function UrgentReportForm({
     setSubmitting(true)
     setError(null)
     try {
-      const report = httpsCallable(functions, 'submitPublicReport')
-      await report({
+      await submitPublicReport({
         slug,
         mode,
         point,
@@ -175,8 +173,7 @@ function UrgentReportForm({
       onDone()
     } catch (err) {
       console.error(err)
-      const msg = err instanceof Error ? err.message : ''
-      setError(msg.includes('resource-exhausted') ? copy.errors.rateLimited : copy.errors.generic)
+      setError(copy.errors.generic)
     } finally {
       setSubmitting(false)
     }

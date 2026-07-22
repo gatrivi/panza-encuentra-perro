@@ -137,6 +137,38 @@ describe('firestore rules', () => {
     await assertFails(getDoc(doc(searcher, 'cases', CASE_ID)))
   })
 
+  it('anonymous can create public_form lead but not read it back', async () => {
+    const anon = testEnv.unauthenticatedContext().firestore()
+    await assertSucceeds(
+      setDoc(doc(anon, 'cases', CASE_ID, 'leads', 'pub1'), {
+        origin: 'public_form',
+        rawText: 'LA ESTOY VIENDO',
+        attachmentPaths: [],
+        capturedAt: new Date(),
+        reporter: { phone: null, preferredContact: 'anonymous' },
+        parserSuggestions: { dates: [], locations: [], phones: [], keywords: [] },
+        status: 'new',
+        priority: 'high',
+      }),
+    )
+    await assertFails(getDoc(doc(anon, 'cases', CASE_ID, 'leads', 'pub1')))
+  })
+
+  it('signed-in non-member can self-join as coordinator', async () => {
+    const newbie = testEnv
+      .authenticatedContext('newbie1', { email: 'newbie@example.com' })
+      .firestore()
+    await assertSucceeds(
+      setDoc(doc(newbie, 'cases', CASE_ID, 'members', 'newbie1'), {
+        role: 'coordinator',
+        displayName: 'Newbie',
+        email: 'newbie@example.com',
+        active: true,
+        createdAt: new Date(),
+      }),
+    )
+  })
+
   it('loads rules file', () => {
     expect(readFileSync(resolve(root, 'firestore.rules'), 'utf8')).toContain('publicCases')
   })

@@ -35,8 +35,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         let membership = await findActiveMembership(next.uid)
         if (!membership) {
-          // Paula owner stays; Gastón/Rodrigo join as coordinators
-          await joinCaseIfNeeded(next.uid)
+          if (!next.email) {
+            setError(t().auth.needInvite)
+            setLoading(false)
+            return
+          }
+          // First arriver = owner; later family = coordinator (client + rules, no CF)
+          await joinCaseIfNeeded(next.uid, {
+            email: next.email,
+            displayName: next.displayName,
+          })
           membership = await findActiveMembership(next.uid)
         }
         if (!membership) {

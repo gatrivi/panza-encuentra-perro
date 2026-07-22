@@ -32,26 +32,72 @@ service cloud.firestore {
         && memberRole(caseId) in ['owner', 'coordinator'];
     }
 
-    // Sanitized public projection only
+    // Sanitized public projection — signed-in may bootstrap first case (no Blaze/CF)
     match /publicCases/{slug} {
       allow read: if true;
-      allow write: if false; // owner/coordinator publication via Admin SDK / trusted function
+      allow create: if signedIn()
+        && slug in ['pancita', 'pancite']
+        && request.resource.data.keys().hasAll(['caseId', 'status', 'animal', 'updatedAt'])
+        && request.resource.data.status == 'active';
+      allow update, delete: if false;
     }
 
     match /cases/{caseId} {
       allow read: if isActiveMember(caseId);
-      allow create, update: if isOwner(caseId);
+      allow create: if signedIn()
+        && request.resource.data.keys().hasAll(['slug', 'status', 'animal', 'mapCenter', 'createdAt', 'updatedAt'])
+        && request.resource.data.status == 'active'
+        && request.resource.data.slug in ['pancita', 'pancite'];
+      allow update: if isOwner(caseId);
       allow delete: if false;
 
+      // First writer wins owner; others join as coordinator (ponytail: no CF)
+      match /locks/{lockId} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && lockId == 'owner'
+          && request.resource.data.uid == request.auth.uid;
+        allow update, delete: if false;
+      }
+
       match /members/{uid} {
-        allow read: if isActiveMember(caseId);
-        allow create, update: if isOwner(caseId);
+        allow read: if isActiveMember(caseId)
+          || (signedIn() && request.auth.uid == uid);
+        allow create: if signedIn()
+          && request.auth.uid == uid
+          && request.resource.data.active == true
+          && request.resource.data.email == request.auth.token.email
+          && request.resource.data.role in ['owner', 'coordinator']
+          && (
+            request.resource.data.role == 'coordinator'
+            || (
+              request.resource.data.role == 'owner'
+              && exists(/databases/$(database)/documents/cases/$(caseId)/locks/owner)
+              && get(/databases/$(database)/documents/cases/$(caseId)/locks/owner).data.uid
+                == request.auth.uid
+            )
+          );
+        allow update: if isOwner(caseId)
+          || (signedIn()
+              && request.auth.uid == uid
+              && request.resource.data.role == resource.data.role
+              && request.resource.data.email == resource.data.email);
         allow delete: if isOwner(caseId) && uid != request.auth.uid;
       }
 
       match /leads/{leadId} {
         allow read: if isActiveMember(caseId);
-        allow create: if isActiveMember(caseId);
+        // Members + anonymous public_form (replaces submitPublicReport CF)
+        allow create: if isActiveMember(caseId)
+          || (
+            request.resource.data.origin == 'public_form'
+            && request.resource.data.status == 'new'
+            && request.resource.data.priority in ['high', 'normal']
+            && request.resource.data.keys().hasAll([
+              'origin', 'rawText', 'attachmentPaths', 'capturedAt',
+              'reporter', 'parserSuggestions', 'status', 'priority'
+            ])
+          );
         allow update: if isCoordinatorOrOwner(caseId)
           || (isActiveMember(caseId)
               && resource.data.capturedByUid == request.auth.uid

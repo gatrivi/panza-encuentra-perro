@@ -8,12 +8,12 @@ import {
   updateDoc,
   where,
   addDoc,
+  setDoc,
   serverTimestamp,
   Timestamp,
   type Unsubscribe,
 } from 'firebase/firestore'
-import { httpsCallable } from 'firebase/functions'
-import { db, functions } from './app'
+import { db, defaultCaseSlug } from './app'
 import { requireDate, toDate } from './converters'
 import type {
   Case,
@@ -25,6 +25,8 @@ import type {
   SightingConfidence,
   CompassDirection,
 } from '@/domain/schemas'
+
+const CASE_ID_DEFAULT = 'case_pancita'
 
 export async function getPublicCase(slug: string): Promise<PublicCase | null> {
   const snap = await getDoc(doc(db, 'publicCases', slug))
@@ -77,13 +79,16 @@ export async function getMember(caseId: string, uid: string): Promise<Member | n
   }
 }
 
+function candidateSlugs(): string[] {
+  const preferred = defaultCaseSlug
+  return preferred === 'pancita' ? ['pancita', 'pancite'] : [preferred, 'pancita', 'pancite']
+}
+
 export async function findActiveMembership(uid: string): Promise<{
   caseId: string
   member: Member
 } | null> {
-  const preferred = import.meta.env.VITE_CASE_SLUG || 'pancita'
-  const slugs = preferred === 'pancita' ? ['pancita', 'pancite'] : [preferred, 'pancita', 'pancite']
-  for (const caseSlug of slugs) {
+  for (const caseSlug of candidateSlugs()) {
     const publicSnap = await getDoc(doc(db, 'publicCases', caseSlug))
     if (!publicSnap.exists()) continue
     const caseId = publicSnap.data().caseId as string
@@ -93,17 +98,138 @@ export async function findActiveMembership(uid: string): Promise<{
   return null
 }
 
-export async function joinCaseIfNeeded(uid: string): Promise<Member | null> {
-  const join = httpsCallable(functions, 'joinCase')
+/** Resolve or bootstrap public case (empty Spark project, no CF). */
+async function resolveOrBootstrapCaseId(): Promise<string> {
+  for (const caseSlug of candidateSlugs()) {
+    const publicSnap = await getDoc(doc(db, 'publicCases', caseSlug))
+    if (publicSnap.exists()) return publicSnap.data().caseId as string
+  }
+
+  const caseId = CASE_ID_DEFAULT
+  const now = serverTimestamp()
+  const animal = {
+    name: 'Pancita',
+    aliases: ['Panza', 'Pancite'],
+    species: 'dog',
+    breed: 'Caniche',
+    color: 'Negro',
+    sex: 'female',
+    size: 'mediano',
+    distinguishingMarks: 'Hembra, pelaje negro rizado',
+    photos: [] as string[],
+  }
+  const publicPayload = {
+    caseId,
+    status: 'active',
+    animal,
+    publicContact: { displayPhone: '', whatsapp: '' },
+    publicInstructions:
+      'No la persigas. Observá la dirección, fotografiá con seguridad e informá al toque.',
+    updatedAt: now,
+  }
+
+  await setDoc(doc(db, 'cases', caseId), {
+    slug: 'pancita',
+    status: 'active',
+    animal,
+    locale: 'es-AR',
+    distanceUnit: 'km',
+    mapCenter: [-58.49, -34.512],
+    publicContact: { displayPhone: '', whatsapp: '' },
+    publicInstructions: publicPayload.publicInstructions,
+    zonePolicy: { defaultRadius: 3, unit: 'km' },
+    createdAt: now,
+    updatedAt: now,
+  })
+  await setDoc(doc(db, 'publicCases', 'pancita'), publicPayload)
+  await setDoc(doc(db, 'publicCases', 'pancite'), publicPayload)
+  return caseId
+}
+
+/**
+ * Join without Cloud Functions.
+ * First signed-in user claims locks/owner → role owner; later → coordinator.
+ */
+export async function joinCaseIfNeeded(
+  uid: string,
+  profile: { email: string; displayName?: string | null },
+): Promise<Member | null> {
+  const email = profile.email.toLowerCase()
+  const displayName = profile.displayName?.trim() || email.split('@')[0] || email
   try {
-    const result = await join({ slug: import.meta.env.VITE_CASE_SLUG || 'pancita' })
-    const data = result.data as { caseId?: string }
-    if (!data.caseId) return null
-    return getMember(data.caseId, uid)
+    const caseId = await resolveOrBootstrapCaseId()
+    const memberRef = doc(db, 'cases', caseId, 'members', uid)
+    const existing = await getDoc(memberRef)
+    if (existing.exists()) {
+      if (existing.data()?.active === false) {
+        await updateDoc(memberRef, { active: true, lastSeenAt: serverTimestamp() })
+      }
+      return getMember(caseId, uid)
+    }
+
+    let role: 'owner' | 'coordinator' = 'coordinator'
+    try {
+      await setDoc(doc(db, 'cases', caseId, 'locks', 'owner'), { uid })
+      role = 'owner'
+    } catch {
+      // lock already taken
+      role = 'coordinator'
+    }
+
+    await setDoc(memberRef, {
+      role,
+      displayName,
+      email,
+      active: true,
+      createdAt: serverTimestamp(),
+      lastSeenAt: serverTimestamp(),
+    })
+    return getMember(caseId, uid)
   } catch (e) {
     console.error(e)
     return null
   }
+}
+
+export async function submitPublicReport(input: {
+  slug: string
+  mode: 'seeing_now' | 'think_i_saw'
+  point?: [number, number]
+  direction?: CompassDirection
+  phone?: string
+  anonymous: boolean
+  honeypot?: string
+  posterCode?: string
+}): Promise<{ ok: true; leadId: string }> {
+  if (input.honeypot) return { ok: true, leadId: 'honeypot' }
+  if (!input.anonymous && !input.phone) {
+    throw new Error('Phone required unless anonymous')
+  }
+
+  const publicSnap = await getDoc(doc(db, 'publicCases', input.slug))
+  if (!publicSnap.exists()) throw new Error('Case not found')
+  const pub = publicSnap.data()
+  if (pub.status !== 'active') throw new Error('Case not accepting reports')
+  const caseId = pub.caseId as string
+
+  const ref = await addDoc(collection(db, 'cases', caseId, 'leads'), {
+    origin: 'public_form',
+    rawText: input.mode === 'seeing_now' ? 'LA ESTOY VIENDO' : 'CREO QUE LA VI',
+    attachmentPaths: [],
+    capturedAt: serverTimestamp(),
+    reporter: {
+      phone: input.anonymous ? null : input.phone,
+      preferredContact: input.anonymous ? 'anonymous' : 'whatsapp',
+    },
+    claimedPoint: input.point ?? null,
+    claimedDirection: input.direction ?? null,
+    claimedObservationAt: Timestamp.now(),
+    parserSuggestions: { dates: [], locations: [], phones: [], keywords: [] },
+    status: 'new',
+    priority: input.mode === 'seeing_now' ? 'high' : 'normal',
+    posterCode: input.posterCode ?? null,
+  })
+  return { ok: true, leadId: ref.id }
 }
 
 function mapLead(id: string, caseId: string, d: Record<string, unknown>): Lead {
