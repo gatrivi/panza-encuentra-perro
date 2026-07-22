@@ -9,7 +9,7 @@ export type AuthState = {
   loading: boolean
   error: string | null
   signInGoogle: () => Promise<void>
-  signInDemo: (email: string, password: string) => Promise<void>
+  signInWithEmail: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
 }
 

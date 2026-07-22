@@ -16,7 +16,8 @@ export const esAR = {
     promote: 'Promover',
     locate: 'Ubicar',
     discard: 'Descartar',
-    signIn: 'Entrar con Google',
+    signIn: 'Entrar',
+    signInGoogle: 'Entrar con Google',
     signOut: 'Salir',
     submit: 'Enviar',
   },
@@ -67,8 +68,11 @@ export const esAR = {
     rejected: 'Rechazado',
   },
   auth: {
-    needInvite: 'Necesitás una invitación para entrar al operativo.',
+    needInvite: 'Este operativo ya tiene dueño. Pedile que te invite.',
     loading: 'Cargando…',
+    email: 'Email',
+    password: 'Contraseña',
+    hint: 'Si sos el primero en entrar, quedás como responsable del operativo.',
   },
   errors: {
     generic: 'Algo falló. Probá de nuevo.',

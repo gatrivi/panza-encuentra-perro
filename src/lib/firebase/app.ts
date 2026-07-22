@@ -34,8 +34,4 @@ export function connectEmulatorsIfNeeded() {
   emulatorsConnected = true
 }
 
-export const ownerBootstrapEmail = (
-  import.meta.env.VITE_OWNER_BOOTSTRAP_EMAIL as string | undefined
-)?.toLowerCase()
-
 export const defaultCaseSlug = (import.meta.env.VITE_CASE_SLUG as string) || 'pancite'

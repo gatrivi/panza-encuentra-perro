@@ -46,7 +46,7 @@ yarn dev
 - Public: http://127.0.0.1:5173/c/pancite  
 - Emulator UI: http://127.0.0.1:4000  
 
-Local demo login: **Demo local (owner)** uses `owner@example.com` (matches `VITE_OWNER_BOOTSTRAP_EMAIL`). Owner membership is bootstrapped on first sign-in when that email matches.
+Login: email + contraseña en la UI (o Google). El **primer** usuario que entra a un caso vacío queda como owner; el resto necesita invitación.
 
 ## Quality gates
 
@@ -64,12 +64,12 @@ If Java is missing, unit tests still run; install a JDK to execute rules tests.
 
 ## Firebase setup (production)
 
-1. Create a Firebase project; enable Auth (Google), Firestore, Storage, Functions.
+1. Create a Firebase project; enable Auth (**Email/Password** + optional Google), Firestore, Storage, Functions.
 2. Copy web config into `.env` from `.env.example`.
-3. Set `VITE_OWNER_BOOTSTRAP_EMAIL` to the owner Google account.
-4. Set `VITE_USE_EMULATORS=false`.
-5. Deploy rules, functions, and host the Vite `dist/` (or Firebase Hosting).
-6. Run a one-time seed/import (adapt `seed/seed-demo.ts`) **without** private phones in the public repo.
+3. Set `VITE_USE_EMULATORS=false`.
+4. Deploy rules, functions, and host the Vite `dist/` (or Firebase Hosting).
+5. Run a one-time seed/import (adapt `seed/seed-demo.ts`) **without** private phones in the public repo.
+6. First person to sign in becomes owner automatically.
 
 Public reports never write Firestore directly; they call `submitPublicReport`.
 

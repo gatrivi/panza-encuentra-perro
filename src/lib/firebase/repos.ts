@@ -91,20 +91,16 @@ export async function findActiveMembership(uid: string): Promise<{
   return { caseId, member }
 }
 
-export async function bootstrapOwnerIfNeeded(
-  _uid: string,
-  email: string,
-  _displayName: string,
-  bootstrapEmail: string | undefined,
-): Promise<Member | null> {
-  if (!bootstrapEmail || email.toLowerCase() !== bootstrapEmail.toLowerCase()) {
+export async function claimFirstOwnerIfNeeded(uid: string): Promise<Member | null> {
+  const claim = httpsCallable(functions, 'claimFirstOwner')
+  try {
+    const result = await claim({ slug: import.meta.env.VITE_CASE_SLUG || 'pancite' })
+    const data = result.data as { caseId?: string }
+    if (!data.caseId) return null
+    return getMember(data.caseId, uid)
+  } catch {
     return null
   }
-  const claim = httpsCallable(functions, 'claimOwnerBootstrap')
-  const result = await claim({ slug: import.meta.env.VITE_CASE_SLUG || 'pancite' })
-  const data = result.data as { caseId?: string }
-  if (!data.caseId) return null
-  return getMember(data.caseId, _uid)
 }
 
 function mapLead(id: string, caseId: string, d: Record<string, unknown>): Lead {

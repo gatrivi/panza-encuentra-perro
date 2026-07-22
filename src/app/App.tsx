@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/features/cases/AuthProvider'
 import { useAuth } from '@/features/cases/useAuth'
@@ -10,9 +11,11 @@ import { PosterRedirect } from '@/features/public-report/PosterRedirect'
 import { t } from '@/i18n/es-AR'
 
 function PrivateGate({ children }: { children: React.ReactNode }) {
-  const { user, member, loading, error, signInGoogle, signInDemo } = useAuth()
+  const { user, member, loading, error, signInGoogle, signInWithEmail } = useAuth()
   const copy = t()
-  const useEmulators = import.meta.env.VITE_USE_EMULATORS === 'true'
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
 
   if (loading) {
     return (
@@ -26,25 +29,55 @@ function PrivateGate({ children }: { children: React.ReactNode }) {
     return (
       <div className="login-card">
         <h1>{copy.appName}</h1>
-        <p className="muted">Mapa operativo privado — solo miembros invitados.</p>
+        <p className="muted">{copy.auth.hint}</p>
         {error ? <p role="alert">{error}</p> : null}
-        <div className="stack" style={{ marginTop: '1rem' }}>
-          <button type="button" className="btn btn-primary btn-block" onClick={() => void signInGoogle()}>
+        <form
+          className="stack"
+          style={{ marginTop: '1rem' }}
+          onSubmit={(e) => {
+            e.preventDefault()
+            setBusy(true)
+            void signInWithEmail(email, password).finally(() => setBusy(false))
+          }}
+        >
+          <div className="field">
+            <label htmlFor="login-email">{copy.auth.email}</label>
+            <input
+              id="login-email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="login-password">{copy.auth.password}</label>
+            <input
+              id="login-password"
+              type="password"
+              autoComplete="current-password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
             {copy.actions.signIn}
           </button>
-          {useEmulators ? (
-            <button
-              type="button"
-              className="btn btn-ghost btn-block"
-              onClick={() => void signInDemo('owner@example.com', 'demo-pass-123')}
-            >
-              Demo local (owner)
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className="btn btn-ghost btn-block"
+            disabled={busy}
+            onClick={() => void signInGoogle()}
+          >
+            {copy.actions.signInGoogle}
+          </button>
           <Link to="/c/pancite" className="muted" style={{ textAlign: 'center' }}>
             Ir a la página pública
           </Link>
-        </div>
+        </form>
       </div>
     )
   }

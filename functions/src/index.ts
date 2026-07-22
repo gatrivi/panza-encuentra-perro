@@ -88,31 +88,32 @@ export const submitPublicReport = onCall(
 )
 
 /**
- * First owner claim when email matches OWNER_BOOTSTRAP_EMAIL (functions env).
- * Clients cannot write members/{uid} as owner directly.
+ * First authenticated user becomes owner when the case has zero members.
+ * Later members must be invited by the owner (UI in a later milestone).
  */
-export const claimOwnerBootstrap = onCall(
+export const claimFirstOwner = onCall(
   { region: 'southamerica-east1' },
   async (request) => {
     if (!request.auth?.uid || !request.auth.token.email) {
       throw new HttpsError('unauthenticated', 'Sign in required')
     }
-    const bootstrap = (process.env.OWNER_BOOTSTRAP_EMAIL || 'owner@example.com').toLowerCase()
     const email = String(request.auth.token.email).toLowerCase()
-    if (email !== bootstrap) {
-      throw new HttpsError('permission-denied', 'Not the bootstrap owner')
-    }
-
     const slug = String(request.data?.slug || process.env.CASE_SLUG || 'pancite')
     const publicSnap = await db.collection('publicCases').doc(slug).get()
     if (!publicSnap.exists) {
       throw new HttpsError('not-found', 'Case not found')
     }
     const caseId = publicSnap.data()!.caseId as string
-    const memberRef = db.collection('cases').doc(caseId).collection('members').doc(request.auth.uid)
+    const members = db.collection('cases').doc(caseId).collection('members')
+    const memberRef = members.doc(request.auth.uid)
     const existing = await memberRef.get()
     if (existing.exists) {
       return { ok: true, caseId, already: true }
+    }
+
+    const anyMember = await members.limit(1).get()
+    if (!anyMember.empty) {
+      throw new HttpsError('permission-denied', 'Case already has an owner; ask for an invite')
     }
 
     await memberRef.set({
@@ -127,3 +128,6 @@ export const claimOwnerBootstrap = onCall(
     return { ok: true, caseId }
   },
 )
+
+/** @deprecated use claimFirstOwner */
+export const claimOwnerBootstrap = claimFirstOwner

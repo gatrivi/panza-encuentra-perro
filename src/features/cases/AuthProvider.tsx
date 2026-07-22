@@ -7,13 +7,8 @@ import {
   signOut as firebaseSignOut,
   type User,
 } from 'firebase/auth'
-import {
-  auth,
-  connectEmulatorsIfNeeded,
-  googleProvider,
-  ownerBootstrapEmail,
-} from '@/lib/firebase/app'
-import { bootstrapOwnerIfNeeded, findActiveMembership } from '@/lib/firebase/repos'
+import { auth, connectEmulatorsIfNeeded, googleProvider } from '@/lib/firebase/app'
+import { claimFirstOwnerIfNeeded, findActiveMembership } from '@/lib/firebase/repos'
 import type { Member } from '@/domain/schemas'
 import { t } from '@/i18n/es-AR'
 import { AuthContext } from './auth-context'
@@ -39,16 +34,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       try {
         let membership = await findActiveMembership(next.uid)
-        if (!membership && next.email) {
-          const bootstrapped = await bootstrapOwnerIfNeeded(
-            next.uid,
-            next.email,
-            next.displayName || next.email,
-            ownerBootstrapEmail,
-          )
-          if (bootstrapped) {
-            membership = await findActiveMembership(next.uid)
-          }
+        if (!membership) {
+          // ponytail: first account on an empty case becomes owner; others need invite
+          await claimFirstOwnerIfNeeded(next.uid)
+          membership = await findActiveMembership(next.uid)
         }
         if (!membership) {
           setMember(null)
@@ -72,12 +61,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signInWithPopup(auth, googleProvider)
   }, [])
 
-  const signInDemo = useCallback(async (email: string, password: string) => {
+  const signInWithEmail = useCallback(async (email: string, password: string) => {
     setError(null)
     try {
-      await signInWithEmailAndPassword(auth, email, password)
+      await signInWithEmailAndPassword(auth, email.trim(), password)
     } catch {
-      await createUserWithEmailAndPassword(auth, email, password)
+      await createUserWithEmailAndPassword(auth, email.trim(), password)
     }
   }, [])
 
@@ -93,10 +82,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       error,
       signInGoogle,
-      signInDemo,
+      signInWithEmail,
       signOut,
     }),
-    [user, member, caseId, loading, error, signInGoogle, signInDemo, signOut],
+    [user, member, caseId, loading, error, signInGoogle, signInWithEmail, signOut],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

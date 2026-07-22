@@ -119,7 +119,7 @@ async function main() {
   })
 
   console.log('Seeded case', CASE_ID, 'slug', SLUG)
-  console.log('Sign in as owner@example.com (VITE_OWNER_BOOTSTRAP_EMAIL) to bootstrap owner membership.')
+  console.log('First person to sign in (email or Google) becomes owner.')
 }
 
 main().catch((e) => {
