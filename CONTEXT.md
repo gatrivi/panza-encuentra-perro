@@ -1,6 +1,6 @@
 # Buscamos a Panza — context
 
-**v0.1.1** · **No Firebase Auth.** Login = usuario (`paula`/`rodrigo`/`gaston`) + pass familiar en cliente.
+**v0.1.2** · **No Firebase Auth.** Login = usuario (`paula`/`rodrigo`/`gaston`) + pass familiar en cliente.
 Sesión en `localStorage` → mismo dispositivo entra al mapa.
 
 Firestore rules abiertas (MVP familiar). Ceiling: URL pública puede escribir. Upgrade: Auth.
@@ -16,9 +16,14 @@ Fotos: `public/panza/*` · Seed: FB + IG `@buscamos.a.panza`
 - **Mapa pin (aprox):** `[-58.508, -34.551]` · foto `public/panza/avistaje-gralpaz-2026-07-23.png`
 - Al login, bootstrap escribe lead+sighting `fb_gralpaz_2026_07_23` y recentra el mapa.
 
-## Mañana (24/7)
+## Mañana (24/7) — bici
 
-1. Banquina Gral Paz Parque Sarmiento → Villa Martelli (ambos lados)
+- Esquema: `public/panza/recorrido-bici-gralpaz.png`
+- Links + paradas: `public/panza/RECORRIDO-BICI.md`
+- App → **Plan** → botones Google Maps (bici) / Waze
+- Loop por Zufriategui / borde parque — **no** calzada Gral Paz
+
+1. Banquina Gral Paz Parque Sarmiento → Villa Martelli (ambos lados, mirando desde paralelo)
 2. Plazoleta El Ombú + borde verde Parque Sarmiento
 3. Villa Martelli: Zufriategui + Perú/Chile/Venezuela pegadas a Gral Paz
 4. Shell/YPF de esa banquina — sin rodear

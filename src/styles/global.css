@@ -452,6 +452,33 @@ a {
   margin: 0.5rem 0 0.25rem;
 }
 
+.plan-nav-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0 0.5rem;
+}
+
+.plan-nav-btn {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  width: 100%;
+}
+
+.plan-bike-note {
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.plan-route-img {
+  width: 100%;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin: 0.5rem 0 0.75rem;
+  display: block;
+}
+
 .plan-list {
   margin: 1rem 0;
   padding-left: 1.25rem;

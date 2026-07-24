@@ -80,6 +80,50 @@ export const PANZA_SEARCH_PLAN_TOMORROW = [
   },
 ] as const
 
+/**
+ * Loop bici ~4–5 km. Calles paralelas (Zufriategui / borde parque).
+ * No entra a la calzada de Gral Paz — mirás banquina desde el costado.
+ * Coords Maps = lat,lng
+ */
+export const PANZA_BIKE_LOOP = [
+  { label: 'Inicio · acceso Parque Sarmiento / Gral Paz', lat: -34.5508, lng: -58.5055 },
+  { label: 'Borde parque · pista / Plazoleta El Ombú', lat: -34.5492, lng: -58.5068 },
+  { label: 'Pin avistaje 23/7 (mirar banquina)', lat: -34.551, lng: -58.508 },
+  { label: 'Zufriategui (Martelli) Norte', lat: -34.5528, lng: -58.5128 },
+  { label: 'Zufriategui × Chile / Perú', lat: -34.5552, lng: -58.5142 },
+  { label: 'Zona Shell (desde paralelo)', lat: -34.5578, lng: -58.5162 },
+  { label: 'Cierre · Plaza Intendentes', lat: -34.5538, lng: -58.5158 },
+] as const
+
+function mapsLatLng(p: { lat: number; lng: number }) {
+  return `${p.lat},${p.lng}`
+}
+
+const bikeOrigin = PANZA_BIKE_LOOP[0]
+const bikeDest = PANZA_BIKE_LOOP[PANZA_BIKE_LOOP.length - 1]
+const bikeWaypoints = PANZA_BIKE_LOOP.slice(1, -1)
+  .map(mapsLatLng)
+  .join('|')
+
+/** Google Maps · modo bici · multi-parada */
+export const PANZA_GMAPS_BIKE_URL =
+  `https://www.google.com/maps/dir/?api=1` +
+  `&origin=${mapsLatLng(bikeOrigin)}` +
+  `&destination=${mapsLatLng(bikeDest)}` +
+  `&waypoints=${bikeWaypoints}` +
+  `&travelmode=bicycling`
+
+/** Waze · navegar al inicio del loop */
+export const PANZA_WAZE_START_URL =
+  `https://waze.com/ul?ll=${mapsLatLng(bikeOrigin)}&navigate=yes&zoom=17`
+
+/** Solo el pin del avistaje (Waze / Maps) */
+export const PANZA_WAZE_SIGHTING_URL =
+  `https://waze.com/ul?ll=${PANZA_LATEST_SIGHTING.point[1]},${PANZA_LATEST_SIGHTING.point[0]}&navigate=yes&zoom=18`
+
+export const PANZA_GMAPS_SIGHTING_URL =
+  `https://www.google.com/maps/search/?api=1&query=${PANZA_LATEST_SIGHTING.point[1]},${PANZA_LATEST_SIGHTING.point[0]}`
+
 export const PANZA_FB_LEAD_TEXT = PANZA_LATEST_SIGHTING.rawText
 
 export const PANZA_IG_LEAD_TEXT = `Cuenta de difusión Instagram @buscamos.a.panza
