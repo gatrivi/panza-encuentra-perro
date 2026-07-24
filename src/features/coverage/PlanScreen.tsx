@@ -1,8 +1,10 @@
 import {
   PANZA_CONTACT,
+  PANZA_GMAPS_BIKE_SARMIENTO_URL,
   PANZA_GMAPS_BIKE_URL,
   PANZA_GMAPS_SIGHTING_URL,
   PANZA_SEARCH_PLAN_TOMORROW,
+  PANZA_WAZE_SARMIENTO_URL,
   PANZA_WAZE_SIGHTING_URL,
   PANZA_WAZE_START_URL,
 } from '@/lib/panzaCase'
@@ -16,6 +18,7 @@ export function PlanScreen() {
       <p className="plan-urgency">{copy.plan.tomorrowHeadline}</p>
       <p className="muted">{copy.plan.tomorrowHint}</p>
 
+      <p className="plan-half-label">{copy.plan.halfMartelli}</p>
       <div className="plan-nav-actions">
         <a
           className="btn primary plan-nav-btn"
@@ -33,6 +36,29 @@ export function PlanScreen() {
         >
           {copy.plan.openWazeStart}
         </a>
+      </div>
+
+      <p className="plan-half-label">{copy.plan.halfSarmiento}</p>
+      <div className="plan-nav-actions">
+        <a
+          className="btn primary plan-nav-btn"
+          href={PANZA_GMAPS_BIKE_SARMIENTO_URL}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {copy.plan.openGmapsSarmiento}
+        </a>
+        <a
+          className="btn plan-nav-btn"
+          href={PANZA_WAZE_SARMIENTO_URL}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {copy.plan.openWazeSarmiento}
+        </a>
+      </div>
+
+      <div className="plan-nav-actions">
         <a
           className="btn plan-nav-btn"
           href={PANZA_GMAPS_SIGHTING_URL}

@@ -81,11 +81,10 @@ export const PANZA_SEARCH_PLAN_TOMORROW = [
 ] as const
 
 /**
- * Loop bici ~4–5 km. Calles paralelas (Zufriategui / borde parque).
- * No entra a la calzada de Gral Paz — mirás banquina desde el costado.
+ * Dos mitades. No entrar a calzada Gral Paz.
  * Coords Maps = lat,lng
  */
-export const PANZA_BIKE_LOOP = [
+export const PANZA_BIKE_LOOP_MARTELLI = [
   { label: 'Inicio · acceso Parque Sarmiento / Gral Paz', lat: -34.5508, lng: -58.5055 },
   { label: 'Borde parque · pista / Plazoleta El Ombú', lat: -34.5492, lng: -58.5068 },
   { label: 'Pin avistaje 23/7 (mirar banquina)', lat: -34.551, lng: -58.508 },
@@ -95,27 +94,55 @@ export const PANZA_BIKE_LOOP = [
   { label: 'Cierre · Plaza Intendentes', lat: -34.5538, lng: -58.5158 },
 ] as const
 
+/** Mitad CABA: Parque Sarmiento, bordes, accesos (sin cruzar a calzada) */
+export const PANZA_BIKE_LOOP_SARMIENTO = [
+  { label: 'Inicio · acceso peatonal Gral Paz / El Ombú', lat: -34.5505, lng: -58.505 },
+  { label: 'Pista Miguel Sánchez · borde oeste', lat: -34.5518, lng: -58.5025 },
+  { label: 'Norte parque · hacia Lugones', lat: -34.5472, lng: -58.5005 },
+  { label: 'Miller / borde NE (mirá Dot)', lat: -34.544, lng: -58.498 },
+  { label: 'Entrada Balbín 4750', lat: -34.5548, lng: -58.4968 },
+  { label: 'Sur parque · juegos / tenis', lat: -34.5568, lng: -58.5005 },
+  { label: 'Borde Gral Paz sur (banquina CABA)', lat: -34.5535, lng: -58.5055 },
+  { label: 'Cierre · acceso peatonal El Ombú', lat: -34.5508, lng: -58.5048 },
+] as const
+
+/** @deprecated alias — loop corto original */
+export const PANZA_BIKE_LOOP = PANZA_BIKE_LOOP_MARTELLI
+
 function mapsLatLng(p: { lat: number; lng: number }) {
   return `${p.lat},${p.lng}`
 }
 
-const bikeOrigin = PANZA_BIKE_LOOP[0]
-const bikeDest = PANZA_BIKE_LOOP[PANZA_BIKE_LOOP.length - 1]
-const bikeWaypoints = PANZA_BIKE_LOOP.slice(1, -1)
-  .map(mapsLatLng)
-  .join('|')
+function gmapsBikeUrl(
+  loop: ReadonlyArray<{ lat: number; lng: number }>,
+): string {
+  const origin = loop[0]
+  const dest = loop[loop.length - 1]
+  const waypoints = loop
+    .slice(1, -1)
+    .map(mapsLatLng)
+    .join('|')
+  return (
+    `https://www.google.com/maps/dir/?api=1` +
+    `&origin=${mapsLatLng(origin)}` +
+    `&destination=${mapsLatLng(dest)}` +
+    `&waypoints=${waypoints}` +
+    `&travelmode=bicycling`
+  )
+}
 
-/** Google Maps · modo bici · multi-parada */
-export const PANZA_GMAPS_BIKE_URL =
-  `https://www.google.com/maps/dir/?api=1` +
-  `&origin=${mapsLatLng(bikeOrigin)}` +
-  `&destination=${mapsLatLng(bikeDest)}` +
-  `&waypoints=${bikeWaypoints}` +
-  `&travelmode=bicycling`
+function wazeUrl(p: { lat: number; lng: number }) {
+  return `https://waze.com/ul?ll=${mapsLatLng(p)}&navigate=yes&zoom=17`
+}
 
-/** Waze · navegar al inicio del loop */
-export const PANZA_WAZE_START_URL =
-  `https://waze.com/ul?ll=${mapsLatLng(bikeOrigin)}&navigate=yes&zoom=17`
+/** Google Maps · Martelli (oeste Gral Paz) */
+export const PANZA_GMAPS_BIKE_URL = gmapsBikeUrl(PANZA_BIKE_LOOP_MARTELLI)
+
+/** Google Maps · Parque Sarmiento (este / CABA) */
+export const PANZA_GMAPS_BIKE_SARMIENTO_URL = gmapsBikeUrl(PANZA_BIKE_LOOP_SARMIENTO)
+
+export const PANZA_WAZE_START_URL = wazeUrl(PANZA_BIKE_LOOP_MARTELLI[0])
+export const PANZA_WAZE_SARMIENTO_URL = wazeUrl(PANZA_BIKE_LOOP_SARMIENTO[0])
 
 /** Solo el pin del avistaje (Waze / Maps) */
 export const PANZA_WAZE_SIGHTING_URL =

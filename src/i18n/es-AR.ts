@@ -40,12 +40,16 @@ export const esAR = {
     tomorrowHeadline: 'Mañana 24/7 — foco Gral Paz / Villa Martelli',
     tomorrowHint:
       'Avistaje 23/7: banquina Parque Sarmiento mano a Villa Martelli. Cansada, asustada, no se deja agarrar. Mejor amanecer y atardecer.',
-    openGmapsBike: 'Google Maps · loop bici',
-    openWazeStart: 'Waze · ir al inicio',
+    halfMartelli: 'Mitad 1 · Villa Martelli (oeste)',
+    halfSarmiento: 'Mitad 2 · Parque Sarmiento (CABA)',
+    openGmapsBike: 'Maps · Martelli bici',
+    openWazeStart: 'Waze · inicio Martelli',
+    openGmapsSarmiento: 'Maps · Parque Sarmiento bici',
+    openWazeSarmiento: 'Waze · inicio Sarmiento',
     openGmapsPin: 'Maps · pin avistaje',
     openWazePin: 'Waze · pin avistaje',
     bikeNote:
-      'Loop ~4–5 km por Zufriategui / borde parque. No circules por la calzada de Gral Paz: mirá la banquina desde el costado.',
+      'Dos loops. Martelli = Zufriategui/Tecnópolis. Sarmiento = bordes del parque, Balbín, Lugones/Miller. No calzada Gral Paz.',
     milestoneNote:
       'Cobertura, carteles y recorridos llegan en el próximo hito. Por ahora usá Mapa y Bandeja.',
   },

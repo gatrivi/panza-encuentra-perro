@@ -466,6 +466,15 @@ a {
   width: 100%;
 }
 
+.plan-half-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+  margin: 1rem 0 0.35rem;
+}
+
 .plan-bike-note {
   font-size: 0.85rem;
   margin-bottom: 1rem;
