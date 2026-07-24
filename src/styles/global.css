@@ -445,6 +445,43 @@ a {
   color: var(--ink-muted);
 }
 
+.plan-urgency {
+  font-size: 1.05rem;
+  font-weight: 650;
+  color: var(--brand);
+  margin: 0.5rem 0 0.25rem;
+}
+
+.plan-list {
+  margin: 1rem 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.plan-list li strong {
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+.plan-list li p {
+  margin: 0;
+}
+
+.plan-call {
+  margin-top: 1.25rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+
+.plan-call a {
+  color: var(--brand);
+}
+
 .stack {
   display: flex;
   flex-direction: column;

@@ -37,6 +37,9 @@ export const esAR = {
   },
   plan: {
     title: 'Plan',
+    tomorrowHeadline: 'Mañana 24/7 — foco Gral Paz / Villa Martelli',
+    tomorrowHint:
+      'Avistaje 23/7: banquina Parque Sarmiento mano a Villa Martelli. Cansada, asustada, no se deja agarrar. Mejor amanecer y atardecer.',
     milestoneNote:
       'Cobertura, carteles y recorridos llegan en el próximo hito. Por ahora usá Mapa y Bandeja.',
   },

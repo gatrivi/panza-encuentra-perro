@@ -20,9 +20,9 @@ import {
   PANZA_ANIMAL,
   PANZA_CASE_ID,
   PANZA_CONTACT,
-  PANZA_FB_LEAD_TEXT,
   PANZA_IG_LEAD_TEXT,
   PANZA_INSTRUCTIONS,
+  PANZA_LATEST_SIGHTING,
   PANZA_MAP_CENTER,
   PANZA_SOURCES,
 } from '../panzaCase'
@@ -137,40 +137,99 @@ export async function ensurePanzaCase(): Promise<string> {
 
 async function seedSocialLeadsIfEmpty(caseId: string): Promise<void> {
   const existing = await getDocs(query(collection(db, 'cases', caseId, 'leads')))
-  if (!existing.empty) return
+  if (existing.empty) {
+    await addDoc(collection(db, 'cases', caseId, 'leads'), {
+      origin: 'instagram',
+      sourceUrl: PANZA_SOURCES.instagram,
+      rawText: PANZA_IG_LEAD_TEXT,
+      attachmentPaths: [],
+      capturedAt: serverTimestamp(),
+      reporter: {},
+      parserSuggestions: {
+        dates: ['15/7'],
+        locations: ['Olivos', 'cementerio'],
+        phones: [PANZA_CONTACT.displayPhone, PANZA_CONTACT.secondaryPhone],
+        keywords: ['collar violeta'],
+      },
+      status: 'new',
+      priority: 'normal',
+    })
+  }
 
-  await addDoc(collection(db, 'cases', caseId, 'leads'), {
-    origin: 'facebook',
-    sourceUrl: PANZA_SOURCES.facebook,
-    rawText: PANZA_FB_LEAD_TEXT,
-    attachmentPaths: [],
-    capturedAt: serverTimestamp(),
-    reporter: {},
-    parserSuggestions: {
-      dates: ['15/7'],
-      locations: ['Olivos', 'Vicente López'],
-      phones: [],
-      keywords: ['recompensa'],
-    },
-    status: 'new',
-    priority: 'high',
+  await ensureLatestPanzaIntel(caseId)
+}
+
+/** Upsert 23/7 Gral Paz lead + probable sighting; recenter map. Idempotent by idKey. */
+async function ensureLatestPanzaIntel(caseId: string): Promise<void> {
+  const leadRef = doc(db, 'cases', caseId, 'leads', PANZA_LATEST_SIGHTING.idKey)
+  const sightingRef = doc(db, 'cases', caseId, 'sightings', PANZA_LATEST_SIGHTING.idKey)
+  const observedAt = Timestamp.fromDate(new Date(PANZA_LATEST_SIGHTING.observedLocal))
+
+  const leadSnap = await getDoc(leadRef)
+  if (!leadSnap.exists()) {
+    await setDoc(leadRef, {
+      origin: 'facebook',
+      sourceUrl: PANZA_LATEST_SIGHTING.sourceUrl,
+      rawText: PANZA_LATEST_SIGHTING.rawText,
+      attachmentPaths: [PANZA_LATEST_SIGHTING.mapPhoto],
+      capturedAt: serverTimestamp(),
+      reporter: {},
+      claimedLocationText: PANZA_LATEST_SIGHTING.locationText,
+      claimedPoint: PANZA_LATEST_SIGHTING.point,
+      claimedDirection: PANZA_LATEST_SIGHTING.direction,
+      claimedObservationAt: observedAt,
+      parserSuggestions: {
+        dates: ['23/7', '15/7'],
+        locations: ['Parque Sarmiento', 'Villa Martelli', 'Gral Paz'],
+        phones: [PANZA_CONTACT.displayPhone, PANZA_CONTACT.secondaryPhone],
+        keywords: ['banquina', 'asustada', 'chapita'],
+      },
+      status: 'promoted',
+      priority: 'high',
+      promotedSightingId: PANZA_LATEST_SIGHTING.idKey,
+    })
+  }
+
+  const sightingSnap = await getDoc(sightingRef)
+  if (!sightingSnap.exists()) {
+    await setDoc(sightingRef, {
+      observedAt,
+      reportedAt: serverTimestamp(),
+      point: PANZA_LATEST_SIGHTING.point,
+      direction: PANZA_LATEST_SIGHTING.direction,
+      movement: 'moving',
+      confidence: PANZA_LATEST_SIGHTING.confidence,
+      evidence: {
+        leadIds: [PANZA_LATEST_SIGHTING.idKey],
+        photos: [PANZA_LATEST_SIGHTING.mapPhoto],
+        sourceLinks: [PANZA_LATEST_SIGHTING.sourceUrl],
+      },
+      description: PANZA_LATEST_SIGHTING.locationText,
+      createdByUid: 'bootstrap',
+      reviewedByUid: 'bootstrap',
+      reviewedAt: serverTimestamp(),
+      // probable ≠ confirmed → no mueve zona oficial sola; recentramos a mano abajo
+      affectsOfficialZone: false,
+    })
+  }
+
+  await updateDoc(doc(db, 'cases', caseId), {
+    mapCenter: PANZA_MAP_CENTER,
+    publicInstructions: PANZA_INSTRUCTIONS,
+    updatedAt: serverTimestamp(),
   })
-  await addDoc(collection(db, 'cases', caseId, 'leads'), {
-    origin: 'instagram',
-    sourceUrl: PANZA_SOURCES.instagram,
-    rawText: PANZA_IG_LEAD_TEXT,
-    attachmentPaths: [],
-    capturedAt: serverTimestamp(),
-    reporter: {},
-    parserSuggestions: {
-      dates: ['15/7'],
-      locations: ['Olivos', 'cementerio'],
-      phones: [PANZA_CONTACT.displayPhone, PANZA_CONTACT.secondaryPhone],
-      keywords: ['collar violeta'],
-    },
-    status: 'new',
-    priority: 'normal',
-  })
+
+  // keep public projection in sync (instructions only; no exact pin)
+  for (const slug of ['pancita', 'pancite', 'panza']) {
+    const pubRef = doc(db, 'publicCases', slug)
+    const pubSnap = await getDoc(pubRef)
+    if (pubSnap.exists()) {
+      await updateDoc(pubRef, {
+        publicInstructions: PANZA_INSTRUCTIONS,
+        updatedAt: serverTimestamp(),
+      })
+    }
+  }
 }
 
 type Operator = (typeof OPERATORS)[keyof typeof OPERATORS]

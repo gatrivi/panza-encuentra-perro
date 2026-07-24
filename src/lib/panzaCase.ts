@@ -29,21 +29,61 @@ export const PANZA_CONTACT = {
 }
 
 export const PANZA_INSTRUCTIONS =
-  'No la persigas. Observá la dirección, fotografiá con seguridad e informá al toque. Se escapó el 15/7 en Olivos, zona cementerio.'
+  'No la persigas ni la agarres. Solo la familia puede retenerla. Seguíla a distancia, avisá YA. Chapita PANZA. Último: 23/7 banquina Gral Paz → Villa Martelli (Parque Sarmiento).'
 
-export const PANZA_MAP_CENTER: [number, number] = [-58.49, -34.512]
+/** Banquina Gral Paz, Parque Sarmiento / mano Villa Martelli (GeoJSON lng,lat) */
+export const PANZA_MAP_CENTER: [number, number] = [-58.508, -34.551]
 
 export const PANZA_SOURCES = {
-  facebook: 'https://www.facebook.com/share/p/1JsbccK79Q/',
+  facebook: 'https://www.facebook.com/share/p/1BgkXzFdgY/',
+  facebookPrev: 'https://www.facebook.com/share/p/1JsbccK79Q/',
   instagram: 'https://www.instagram.com/buscamos.a.panza/',
 } as const
 
-export const PANZA_FB_LEAD_TEXT = `Seguimos buscando a Panchi / Panza. Desde el domingo sin más novedades.
-Puede haberse alejado mucho corriendo (Vicente López / Olivos) o haber sido retenida.
-Ofrecemos recompensa. Grupo ZAGUATES DIFUNDE — Pau Trivi.
-Fuente: ${PANZA_SOURCES.facebook}`
+/** 23/7 noche — Eva Buscando Huellas / Perros PERDIDOS ZONA NORTE */
+export const PANZA_LATEST_SIGHTING = {
+  idKey: 'fb_gralpaz_2026_07_23',
+  sourceUrl: PANZA_SOURCES.facebook,
+  observedLocal: '2026-07-23T21:00:00-03:00',
+  point: [-58.508, -34.551] as [number, number],
+  direction: 'NW' as const,
+  confidence: 'probable' as const,
+  locationText:
+    'Banquina Av. Gral Paz cerca Parque Sarmiento, mano Villa Martelli (Pista Miguel Sánchez / Plazoleta El Ombú)',
+  mapPhoto: '/panza/avistaje-gralpaz-2026-07-23.png',
+  rawText: `URGENTE 23/7 — la vieron caminando por la banquina cerca de Parque Sarmiento yendo para Villa Martelli.
+Cansada y desorientada. No se deja agarrar, está asustada y corre. Tiene chapita identificatoria.
+NO AGARRARLA: seguirla a distancia y llamar a la familia. Solo los dueños pueden retenerla.
+Contactos flyer: ${PANZA_CONTACT.displayPhone} / ${PANZA_CONTACT.secondaryPhone}.
+Grupos: Perros PERDIDOS ZONA NORTE · Eva Buscando Huellas (Martelli y Florida, Vicente López).
+Fuente: ${PANZA_SOURCES.facebook}`,
+} as const
+
+/** Mañana 24/7 — focos a pie (amanecer / atardecer) */
+export const PANZA_SEARCH_PLAN_TOMORROW = [
+  {
+    title: 'Banquina Gral Paz → Villa Martelli',
+    detail:
+      'Tramo Parque Sarmiento / Pista Miguel Sánchez. Ambos lados. Ella va cansada por la banquina.',
+  },
+  {
+    title: 'Verde: Plazoleta El Ombú + borde Parque Sarmiento',
+    detail: 'Perros asustados se meten en pastizal / sombra. No empujar hacia la autopista.',
+  },
+  {
+    title: 'Villa Martelli (lado provincia)',
+    detail: 'Zufriategui y calles perpendiculares (Perú, Chile, Venezuela) pegadas a Gral Paz.',
+  },
+  {
+    title: 'Shell / YPF de esa banquina',
+    detail: 'Olfato a comida. Si la ven: no rodear — un solo contacto a distancia + llamada.',
+  },
+] as const
+
+export const PANZA_FB_LEAD_TEXT = PANZA_LATEST_SIGHTING.rawText
 
 export const PANZA_IG_LEAD_TEXT = `Cuenta de difusión Instagram @buscamos.a.panza
 BUSCAMOS A PANZA. Se escapó el 15/7 al final del partido por Olivos, zona cementerio.
 Hembra, 4 años, collar violeta con chapita. Contacto paupocket / Rodrii Perez Schmidt.
+Último foco: Gral Paz / Parque Sarmiento → Villa Martelli (23/7).
 Fuente: ${PANZA_SOURCES.instagram}`
