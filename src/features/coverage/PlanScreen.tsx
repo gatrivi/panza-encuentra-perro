@@ -2,12 +2,11 @@ import {
   PANZA_CONTACT,
   PANZA_GMAPS_BIKE_SARMIENTO_URL,
   PANZA_GMAPS_BIKE_URL,
-  PANZA_GMAPS_SIGN_TRAMO_1_URL,
-  PANZA_GMAPS_SIGN_TRAMO_2_URL,
-  PANZA_GMAPS_SIGN_TRAMO_3_URL,
+  PANZA_GMAPS_SIGN_IDA_URL,
+  PANZA_GMAPS_SIGN_VUELTA_URL,
   PANZA_GMAPS_SIGHTING_URL,
-  PANZA_SEARCH_PLAN_TOMORROW,
   PANZA_WAZE_SARMIENTO_URL,
+  PANZA_WAZE_SIGN_IDA_END_URL,
   PANZA_WAZE_SIGN_START_URL,
   PANZA_WAZE_SIGHTING_URL,
   PANZA_WAZE_START_URL,
@@ -22,6 +21,9 @@ export function PlanScreen() {
 
       <p className="plan-urgency">{copy.plan.signsHeadline}</p>
       <p className="muted">{copy.plan.signsHint}</p>
+
+      <p className="plan-half-label">{copy.plan.signIda}</p>
+      <p className="muted small">{copy.plan.signIdaStreets}</p>
       <div className="plan-nav-actions">
         <a
           className="btn btn-accent plan-nav-btn"
@@ -33,27 +35,32 @@ export function PlanScreen() {
         </a>
         <a
           className="btn primary plan-nav-btn"
-          href={PANZA_GMAPS_SIGN_TRAMO_1_URL}
+          href={PANZA_GMAPS_SIGN_IDA_URL}
           target="_blank"
           rel="noreferrer"
         >
-          {copy.plan.signTramo1}
+          {copy.plan.mapsSignIda}
         </a>
         <a
-          className="btn primary plan-nav-btn"
-          href={PANZA_GMAPS_SIGN_TRAMO_2_URL}
+          className="btn plan-nav-btn"
+          href={PANZA_WAZE_SIGN_IDA_END_URL}
           target="_blank"
           rel="noreferrer"
         >
-          {copy.plan.signTramo2}
+          {copy.plan.wazeIdaEnd}
         </a>
+      </div>
+
+      <p className="plan-half-label">{copy.plan.signVuelta}</p>
+      <p className="muted small">{copy.plan.signVueltaStreets}</p>
+      <div className="plan-nav-actions">
         <a
           className="btn primary plan-nav-btn"
-          href={PANZA_GMAPS_SIGN_TRAMO_3_URL}
+          href={PANZA_GMAPS_SIGN_VUELTA_URL}
           target="_blank"
           rel="noreferrer"
         >
-          {copy.plan.signTramo3}
+          {copy.plan.mapsSignVuelta}
         </a>
       </div>
 
@@ -78,7 +85,6 @@ export function PlanScreen() {
 
       <details className="plan-details">
         <summary>Recorridos anteriores (Gral Paz / bici)</summary>
-        <p className="plan-half-label">{copy.plan.halfMartelli}</p>
         <div className="plan-nav-actions">
           <a
             className="btn primary plan-nav-btn"
@@ -96,11 +102,8 @@ export function PlanScreen() {
           >
             {copy.plan.openWazeStart}
           </a>
-        </div>
-        <p className="plan-half-label">{copy.plan.halfSarmiento}</p>
-        <div className="plan-nav-actions">
           <a
-            className="btn primary plan-nav-btn"
+            className="btn plan-nav-btn"
             href={PANZA_GMAPS_BIKE_SARMIENTO_URL}
             target="_blank"
             rel="noreferrer"
@@ -124,14 +127,6 @@ export function PlanScreen() {
         <p className="muted plan-bike-note">{copy.plan.bikeNote}</p>
       </details>
 
-      <ol className="plan-list">
-        {PANZA_SEARCH_PLAN_TOMORROW.map((z) => (
-          <li key={z.title}>
-            <strong>{z.title}</strong>
-            <p className="muted">{z.detail}</p>
-          </li>
-        ))}
-      </ol>
       <p className="plan-call">
         Si la ves: no agarrar · seguir · llamar{' '}
         <a href={`tel:${PANZA_CONTACT.displayPhone}`}>{PANZA_CONTACT.displayPhone}</a>

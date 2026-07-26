@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/cases/useAuth'
 import { subscribeSightings } from '@/lib/firebase/repos'
 import {
-  PANZA_WAZE_SIGN_START_URL,
+  PANZA_GMAPS_SIGN_IDA_URL,
   PANZA_WAZE_SIGHTING_URL,
 } from '@/lib/panzaCase'
 import type { Sighting } from '@/domain/schemas'
@@ -53,7 +53,7 @@ export function MapScreen() {
       <div className="field-bar" aria-label="Acciones en calle">
         <a
           className="btn btn-accent field-bar-btn"
-          href={PANZA_WAZE_SIGN_START_URL}
+          href={PANZA_GMAPS_SIGN_IDA_URL}
           target="_blank"
           rel="noopener noreferrer"
         >

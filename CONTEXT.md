@@ -1,39 +1,22 @@
 # Buscamos a Panza — context
 
-**v0.2.0** · **OSINT-first.** Home = **Intel** (`src/features/osint/`). Core: [awesome-osint](https://github.com/jivoi/awesome-osint) + motor estilo [OpenOSINT](https://github.com/OpenOSINT/OpenOSINT). Ver `vendor/OSINT.md`.
+**v0.2.0** · **Mapa = calle.** Home = mapa + barra carteles. OSINT en pestaña Intel (casa). Visión: `docs/VISION.md`
 
-**No Firebase Auth.** Login = usuario (`paula`/`rodrigo`/`gaston`) + pass familiar en cliente.
-Sesión en `localStorage` → mismo dispositivo entra a Intel.
+**Firebase OK** — proyecto `pancita-busca-perro` (consola figura bien). Deploy: `yarn build && firebase deploy --only hosting`
 
-Firestore rules abiertas (MVP familiar). Ceiling: URL pública puede escribir. Upgrade: Auth.
+Login familiar (`paula`/`rodrigo`/`gaston`). Firestore rules abiertas (MVP).
 
-Fotos: `public/panza/*` · Seed: FB + IG `@buscamos.a.panza`
+## Último avistaje (26/7)
 
-## Último avistaje (26/7 tarde)
+- **Dónde:** **Constituyentes × Maipú**
+- **Carteles IDA/VUELTA Tecnópolis:** `public/panza/RECORRIDO-TECNOPOLIS.md`
 
-- **Dónde:** **Av. Constituyentes × Maipú**, Villa Martelli / Villa Maipú.
-- **Recorrido carteles:** `public/panza/RECORRIDO-CONSTITUYENTES.md`
+## Visión producto (resumen)
 
-## Avistaje anterior (23/7 noche)
+Herramienta para encontrar **tu propio** perro: filtrar posteos por área/hora/raza/color + comparar fotos (IA free tier). Red colaborativa → más ojos = más fácil. **Fase 1 ahora:** mapa + recorridos carteles + bandeja.
 
-- **Dónde:** banquina Av. Gral Paz, cerca Parque Sarmiento, **mano Villa Martelli** (Pista Miguel Sánchez / Plazoleta El Ombú).
-- **Estado:** cansada, desorientada, asustada, **no se deja agarrar**, corre. Chapita OK.
-- **Regla:** solo familia retiene. Seguir a distancia → llamar 1156194761 / 1130400210.
-- **FB:** https://www.facebook.com/share/p/1BgkXzFdgY/
-- **Mapa pin (aprox):** `[-58.508, -34.551]` · foto `public/panza/avistaje-gralpaz-2026-07-23.png`
-- Al login, bootstrap escribe lead+sighting `fb_gralpaz_2026_07_23` y recentra el mapa.
+## Avistaje anterior (23/7)
 
-## Mañana (24/7) — bici · dos mitades
+Gral Paz / Parque Sarmiento → `public/panza/RECORRIDO-BICI.md`
 
-- Esquema: `public/panza/recorrido-bici-gralpaz.png`
-- Links: `public/panza/RECORRIDO-BICI.md` · app **Plan**
-- **Martelli (oeste):** Zufriategui / Tecnópolis (tu ruta ~10 km)
-- **Sarmiento (CABA):** bordes parque, pista, Balbín, Lugones/Miller
-- **No** calzada Gral Paz
-
-1. Banquina Gral Paz Parque Sarmiento → Villa Martelli (ambos lados, mirando desde paralelo)
-2. Plazoleta El Ombú + borde verde Parque Sarmiento
-3. Villa Martelli: Zufriategui + Perú/Chile/Venezuela pegadas a Gral Paz
-4. Shell/YPF de esa banquina — sin rodear
-
-Origen escape: 15/7 Olivos cementerio. Ya se movió ~Gral Paz / Martelli.
+Contactos: **1156194761** / **1130400210** · solo familia retiene.

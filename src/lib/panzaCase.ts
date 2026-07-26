@@ -161,18 +161,26 @@ export const PANZA_WAZE_SIGHTING_URL =
 export const PANZA_GMAPS_SIGHTING_URL =
   `https://www.google.com/maps/search/?api=1&query=${PANZA_LATEST_SIGHTING.point[1]},${PANZA_LATEST_SIGHTING.point[0]}`
 
-/** Recorrido 30 carteles · Constituyentes × Maipú */
+/** Recorrido carteles · IDA Tecnópolis + VUELTA */
 export const PANZA_WAZE_SIGN_START_URL =
   'https://waze.com/ul?ll=-34.5633,-58.5152&navigate=yes&zoom=17'
 
-export const PANZA_GMAPS_SIGN_TRAMO_1_URL =
-  'https://www.google.com/maps/dir/?api=1&origin=-34.5633,-58.5152&destination=-34.5496,-58.5007&waypoints=-34.5643,-58.5145%7C-34.5658,-58.5134%7C-34.5632,-58.5153%7C-34.5592,-58.5118%7C-34.5585,-58.5125%7C-34.5570,-58.5105%7C-34.5565,-58.5095%7C-34.5555,-58.5088&travelmode=walking'
+/** Fin ida · Shell Gral Paz */
+export const PANZA_WAZE_SIGN_IDA_END_URL =
+  'https://waze.com/ul?ll=-34.5499,-58.5013&navigate=yes&zoom=17'
 
-export const PANZA_GMAPS_SIGN_TRAMO_2_URL =
-  'https://www.google.com/maps/dir/?api=1&origin=-34.5488,-58.5000&destination=-34.5580,-58.5188&waypoints=-34.5499,-58.5013%7C-34.5510,-58.5035%7C-34.5434,-58.5006%7C-34.5458,-58.4995%7C-34.5490,-58.5197%7C-34.5532,-58.5158%7C-34.5545,-58.5165%7C-34.5569,-58.5197&travelmode=walking'
+/** Const × Maipú → Tecnópolis → Shell Gral Paz */
+export const PANZA_GMAPS_SIGN_IDA_URL =
+  'https://www.google.com/maps/dir/?api=1&origin=-34.5633,-58.5152&destination=-34.5499,-58.5013&waypoints=-34.5585,-58.5155%7C-34.5569,-58.5197%7C-34.5580,-58.5188%7C-34.5632,-58.5153%7C-34.5592,-58.5118%7C-34.5585,-58.5125%7C-34.5570,-58.5105%7C-34.5555,-58.5088%7C-34.5496,-58.5007&travelmode=walking'
 
-export const PANZA_GMAPS_SIGN_TRAMO_3_URL =
-  'https://www.google.com/maps/dir/?api=1&origin=-34.5595,-58.5195&destination=-34.5633,-58.5152&waypoints=-34.5560,-58.5210%7C-34.5704,-58.5214%7C-34.5706,-58.5210%7C-34.5715,-58.5220%7C-34.5666,-58.5123%7C-34.5520,-58.5140%7C-34.5585,-58.5155%7C-34.5665,-58.5148&travelmode=walking'
+/** Shell Gral Paz → Laprida → Const × Maipú */
+export const PANZA_GMAPS_SIGN_VUELTA_URL =
+  'https://www.google.com/maps/dir/?api=1&origin=-34.5499,-58.5013&destination=-34.5633,-58.5152&waypoints=-34.5510,-58.5035%7C-34.5434,-58.5006%7C-34.5532,-58.5158%7C-34.5490,-58.5197%7C-34.5560,-58.5210%7C-34.5658,-58.5134%7C-34.5665,-58.5148&travelmode=walking'
+
+/** @deprecated usar SIGN_IDA / SIGN_VUELTA */
+export const PANZA_GMAPS_SIGN_TRAMO_1_URL = PANZA_GMAPS_SIGN_IDA_URL
+export const PANZA_GMAPS_SIGN_TRAMO_2_URL = PANZA_GMAPS_SIGN_VUELTA_URL
+export const PANZA_GMAPS_SIGN_TRAMO_3_URL = PANZA_GMAPS_SIGN_VUELTA_URL
 
 export const PANZA_FB_LEAD_TEXT = PANZA_LATEST_SIGHTING.rawText
 
