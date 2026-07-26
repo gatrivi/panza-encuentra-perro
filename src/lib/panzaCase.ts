@@ -29,10 +29,10 @@ export const PANZA_CONTACT = {
 }
 
 export const PANZA_INSTRUCTIONS =
-  'No la persigas ni la agarres. Solo la familia puede retenerla. Seguíla a distancia, avisá YA. Chapita PANZA. Último: 23/7 banquina Gral Paz → Villa Martelli (Parque Sarmiento).'
+  'No la persigas ni la agarres. Solo la familia puede retenerla. Seguíla a distancia, avisá YA. Chapita PANZA. Último: 26/7 Constituyentes × Maipú (Villa Martelli).'
 
-/** Banquina Gral Paz, Parque Sarmiento / mano Villa Martelli (GeoJSON lng,lat) */
-export const PANZA_MAP_CENTER: [number, number] = [-58.508, -34.551]
+/** Constituyentes × Maipú — último avistaje (GeoJSON lng,lat) */
+export const PANZA_MAP_CENTER: [number, number] = [-58.5152, -34.5633]
 
 export const PANZA_SOURCES = {
   facebook: 'https://www.facebook.com/share/p/1BgkXzFdgY/',
@@ -40,8 +40,23 @@ export const PANZA_SOURCES = {
   instagram: 'https://www.instagram.com/buscamos.a.panza/',
 } as const
 
-/** 23/7 noche — Eva Buscando Huellas / Perros PERDIDOS ZONA NORTE */
+/** 26/7 tarde — Constituyentes × Maipú */
 export const PANZA_LATEST_SIGHTING = {
+  idKey: 'constituyentes_maipu_2026_07_26',
+  sourceUrl: PANZA_SOURCES.facebook,
+  observedLocal: '2026-07-26T18:00:00-03:00',
+  point: [-58.5152, -34.5633] as [number, number],
+  direction: 'unknown' as const,
+  confidence: 'probable' as const,
+  locationText: 'Av. Constituyentes × Maipú, Villa Martelli / Villa Maipú',
+  mapPhoto: '/panza/panz.jpg',
+  rawText: `26/7 — última vez vista en Constituyentes × Maipú (Villa Martelli o alrededores).
+Caniche negro, collar violeta chapita PANZA. No se deja agarrar.
+Contactos: ${PANZA_CONTACT.displayPhone} / ${PANZA_CONTACT.secondaryPhone}.`,
+} as const
+
+/** 23/7 noche — Gral Paz (histórico) */
+export const PANZA_PREV_SIGHTING = {
   idKey: 'fb_gralpaz_2026_07_23',
   sourceUrl: PANZA_SOURCES.facebook,
   observedLocal: '2026-07-23T21:00:00-03:00',
@@ -51,12 +66,7 @@ export const PANZA_LATEST_SIGHTING = {
   locationText:
     'Banquina Av. Gral Paz cerca Parque Sarmiento, mano Villa Martelli (Pista Miguel Sánchez / Plazoleta El Ombú)',
   mapPhoto: '/panza/avistaje-gralpaz-2026-07-23.png',
-  rawText: `URGENTE 23/7 — la vieron caminando por la banquina cerca de Parque Sarmiento yendo para Villa Martelli.
-Cansada y desorientada. No se deja agarrar, está asustada y corre. Tiene chapita identificatoria.
-NO AGARRARLA: seguirla a distancia y llamar a la familia. Solo los dueños pueden retenerla.
-Contactos flyer: ${PANZA_CONTACT.displayPhone} / ${PANZA_CONTACT.secondaryPhone}.
-Grupos: Perros PERDIDOS ZONA NORTE · Eva Buscando Huellas (Martelli y Florida, Vicente López).
-Fuente: ${PANZA_SOURCES.facebook}`,
+  rawText: `URGENTE 23/7 — banquina Parque Sarmiento → Villa Martelli.`,
 } as const
 
 /** Mañana 24/7 — focos a pie (amanecer / atardecer) */
@@ -151,10 +161,23 @@ export const PANZA_WAZE_SIGHTING_URL =
 export const PANZA_GMAPS_SIGHTING_URL =
   `https://www.google.com/maps/search/?api=1&query=${PANZA_LATEST_SIGHTING.point[1]},${PANZA_LATEST_SIGHTING.point[0]}`
 
+/** Recorrido 30 carteles · Constituyentes × Maipú */
+export const PANZA_WAZE_SIGN_START_URL =
+  'https://waze.com/ul?ll=-34.5633,-58.5152&navigate=yes&zoom=17'
+
+export const PANZA_GMAPS_SIGN_TRAMO_1_URL =
+  'https://www.google.com/maps/dir/?api=1&origin=-34.5633,-58.5152&destination=-34.5496,-58.5007&waypoints=-34.5643,-58.5145%7C-34.5658,-58.5134%7C-34.5632,-58.5153%7C-34.5592,-58.5118%7C-34.5585,-58.5125%7C-34.5570,-58.5105%7C-34.5565,-58.5095%7C-34.5555,-58.5088&travelmode=walking'
+
+export const PANZA_GMAPS_SIGN_TRAMO_2_URL =
+  'https://www.google.com/maps/dir/?api=1&origin=-34.5488,-58.5000&destination=-34.5580,-58.5188&waypoints=-34.5499,-58.5013%7C-34.5510,-58.5035%7C-34.5434,-58.5006%7C-34.5458,-58.4995%7C-34.5490,-58.5197%7C-34.5532,-58.5158%7C-34.5545,-58.5165%7C-34.5569,-58.5197&travelmode=walking'
+
+export const PANZA_GMAPS_SIGN_TRAMO_3_URL =
+  'https://www.google.com/maps/dir/?api=1&origin=-34.5595,-58.5195&destination=-34.5633,-58.5152&waypoints=-34.5560,-58.5210%7C-34.5704,-58.5214%7C-34.5706,-58.5210%7C-34.5715,-58.5220%7C-34.5666,-58.5123%7C-34.5520,-58.5140%7C-34.5585,-58.5155%7C-34.5665,-58.5148&travelmode=walking'
+
 export const PANZA_FB_LEAD_TEXT = PANZA_LATEST_SIGHTING.rawText
 
 export const PANZA_IG_LEAD_TEXT = `Cuenta de difusión Instagram @buscamos.a.panza
 BUSCAMOS A PANZA. Se escapó el 15/7 al final del partido por Olivos, zona cementerio.
 Hembra, 4 años, collar violeta con chapita. Contacto paupocket / Rodrii Perez Schmidt.
-Último foco: Gral Paz / Parque Sarmiento → Villa Martelli (23/7).
+Último foco: Constituyentes × Maipú (26/7).
 Fuente: ${PANZA_SOURCES.instagram}`

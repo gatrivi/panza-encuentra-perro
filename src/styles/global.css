@@ -67,7 +67,7 @@ a {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  padding-bottom: calc(var(--nav-h) + var(--safe-bottom));
+  padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 52px);
 }
 
 .app-header {
@@ -716,4 +716,41 @@ a {
 
 .small {
   font-size: 0.82rem;
+}
+
+.field-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--nav-h) + var(--safe-bottom));
+  display: grid;
+  grid-template-columns: 1fr 1fr 0.7fr;
+  gap: 0.35rem;
+  padding: 0.4rem 0.5rem;
+  background: color-mix(in srgb, var(--bg-elevated) 95%, transparent);
+  border-top: 1px solid var(--border);
+  z-index: 25;
+}
+
+.field-bar-btn {
+  min-height: 40px;
+  padding: 0.35rem 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  line-height: 1.15;
+}
+
+.plan-details {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+}
+
+.plan-details summary {
+  font-weight: 700;
+  cursor: pointer;
 }

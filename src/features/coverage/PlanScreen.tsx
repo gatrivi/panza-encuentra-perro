@@ -2,9 +2,13 @@ import {
   PANZA_CONTACT,
   PANZA_GMAPS_BIKE_SARMIENTO_URL,
   PANZA_GMAPS_BIKE_URL,
+  PANZA_GMAPS_SIGN_TRAMO_1_URL,
+  PANZA_GMAPS_SIGN_TRAMO_2_URL,
+  PANZA_GMAPS_SIGN_TRAMO_3_URL,
   PANZA_GMAPS_SIGHTING_URL,
   PANZA_SEARCH_PLAN_TOMORROW,
   PANZA_WAZE_SARMIENTO_URL,
+  PANZA_WAZE_SIGN_START_URL,
   PANZA_WAZE_SIGHTING_URL,
   PANZA_WAZE_START_URL,
 } from '@/lib/panzaCase'
@@ -15,46 +19,41 @@ export function PlanScreen() {
   return (
     <div className="screen">
       <h1>{copy.plan.title}</h1>
-      <p className="plan-urgency">{copy.plan.tomorrowHeadline}</p>
-      <p className="muted">{copy.plan.tomorrowHint}</p>
 
-      <p className="plan-half-label">{copy.plan.halfMartelli}</p>
+      <p className="plan-urgency">{copy.plan.signsHeadline}</p>
+      <p className="muted">{copy.plan.signsHint}</p>
       <div className="plan-nav-actions">
         <a
-          className="btn primary plan-nav-btn"
-          href={PANZA_GMAPS_BIKE_URL}
+          className="btn btn-accent plan-nav-btn"
+          href={PANZA_WAZE_SIGN_START_URL}
           target="_blank"
           rel="noreferrer"
         >
-          {copy.plan.openGmapsBike}
+          {copy.plan.wazeSignStart}
         </a>
-        <a
-          className="btn plan-nav-btn"
-          href={PANZA_WAZE_START_URL}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {copy.plan.openWazeStart}
-        </a>
-      </div>
-
-      <p className="plan-half-label">{copy.plan.halfSarmiento}</p>
-      <div className="plan-nav-actions">
         <a
           className="btn primary plan-nav-btn"
-          href={PANZA_GMAPS_BIKE_SARMIENTO_URL}
+          href={PANZA_GMAPS_SIGN_TRAMO_1_URL}
           target="_blank"
           rel="noreferrer"
         >
-          {copy.plan.openGmapsSarmiento}
+          {copy.plan.signTramo1}
         </a>
         <a
-          className="btn plan-nav-btn"
-          href={PANZA_WAZE_SARMIENTO_URL}
+          className="btn primary plan-nav-btn"
+          href={PANZA_GMAPS_SIGN_TRAMO_2_URL}
           target="_blank"
           rel="noreferrer"
         >
-          {copy.plan.openWazeSarmiento}
+          {copy.plan.signTramo2}
+        </a>
+        <a
+          className="btn primary plan-nav-btn"
+          href={PANZA_GMAPS_SIGN_TRAMO_3_URL}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {copy.plan.signTramo3}
         </a>
       </div>
 
@@ -76,12 +75,54 @@ export function PlanScreen() {
           {copy.plan.openWazePin}
         </a>
       </div>
-      <img
-        className="plan-route-img"
-        src="/panza/recorrido-bici-gralpaz.png"
-        alt="Esquema del loop en bici Parque Sarmiento / Villa Martelli"
-      />
-      <p className="muted plan-bike-note">{copy.plan.bikeNote}</p>
+
+      <details className="plan-details">
+        <summary>Recorridos anteriores (Gral Paz / bici)</summary>
+        <p className="plan-half-label">{copy.plan.halfMartelli}</p>
+        <div className="plan-nav-actions">
+          <a
+            className="btn primary plan-nav-btn"
+            href={PANZA_GMAPS_BIKE_URL}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {copy.plan.openGmapsBike}
+          </a>
+          <a
+            className="btn plan-nav-btn"
+            href={PANZA_WAZE_START_URL}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {copy.plan.openWazeStart}
+          </a>
+        </div>
+        <p className="plan-half-label">{copy.plan.halfSarmiento}</p>
+        <div className="plan-nav-actions">
+          <a
+            className="btn primary plan-nav-btn"
+            href={PANZA_GMAPS_BIKE_SARMIENTO_URL}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {copy.plan.openGmapsSarmiento}
+          </a>
+          <a
+            className="btn plan-nav-btn"
+            href={PANZA_WAZE_SARMIENTO_URL}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {copy.plan.openWazeSarmiento}
+          </a>
+        </div>
+        <img
+          className="plan-route-img"
+          src="/panza/recorrido-bici-gralpaz.png"
+          alt="Esquema del loop en bici Parque Sarmiento / Villa Martelli"
+        />
+        <p className="muted plan-bike-note">{copy.plan.bikeNote}</p>
+      </details>
 
       <ol className="plan-list">
         {PANZA_SEARCH_PLAN_TOMORROW.map((z) => (

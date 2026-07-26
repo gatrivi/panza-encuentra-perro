@@ -97,7 +97,8 @@ export function App() {
             </PrivateGate>
           }
         >
-          <Route index element={<OsintScreen />} />
+          <Route index element={<MapScreen />} />
+          <Route path="intel" element={<OsintScreen />} />
           <Route path="mapa" element={<MapScreen />} />
           <Route path="bandeja" element={<InboxScreen />} />
           <Route path="plan" element={<PlanScreen />} />

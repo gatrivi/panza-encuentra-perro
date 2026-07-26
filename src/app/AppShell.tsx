@@ -27,11 +27,11 @@ export function AppShell() {
 
       <nav className="bottom-nav" aria-label="Principal">
         <NavLink to="/" end>
-          {copy.nav.intel}
+          {copy.nav.map}
         </NavLink>
-        <NavLink to="/mapa">{copy.nav.map}</NavLink>
         <NavLink to="/bandeja">{copy.nav.inbox}</NavLink>
         <NavLink to="/plan">{copy.nav.plan}</NavLink>
+        <NavLink to="/intel">{copy.nav.intel}</NavLink>
       </nav>
 
       <div className="fab-wrap">

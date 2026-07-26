@@ -1,6 +1,11 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/cases/useAuth'
 import { subscribeSightings } from '@/lib/firebase/repos'
+import {
+  PANZA_WAZE_SIGN_START_URL,
+  PANZA_WAZE_SIGHTING_URL,
+} from '@/lib/panzaCase'
 import type { Sighting } from '@/domain/schemas'
 import { t } from '@/i18n/es-AR'
 
@@ -44,6 +49,28 @@ export function MapScreen() {
       <Suspense fallback={<p style={{ padding: '1rem' }}>{copy.auth.loading}</p>}>
         <OperationalMap sightings={visible} />
       </Suspense>
+
+      <div className="field-bar" aria-label="Acciones en calle">
+        <a
+          className="btn btn-accent field-bar-btn"
+          href={PANZA_WAZE_SIGN_START_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {copy.map.wazeRoute}
+        </a>
+        <a
+          className="btn btn-primary field-bar-btn"
+          href={PANZA_WAZE_SIGHTING_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {copy.map.wazeLast}
+        </a>
+        <Link className="btn field-bar-btn" to="/plan">
+          {copy.map.signsPlan}
+        </Link>
+      </div>
     </div>
   )
 }

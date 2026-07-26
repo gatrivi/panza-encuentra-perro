@@ -35,9 +35,18 @@ export const esAR = {
     seenAt: 'Visto',
     reportedAt: 'Informado',
     confidence: 'Confianza',
+    wazeRoute: 'Waze · recorrido',
+    wazeLast: 'Waze · último punto',
+    signsPlan: 'Carteles',
   },
   plan: {
     title: 'Plan',
+    signsHeadline: 'AHORA · 30 carteles Constituyentes × Maipú',
+    signsHint: 'A pie. Tramo 1 → 2 → 3. ~3 min por cartel.',
+    signTramo1: 'Maps tramo 1',
+    signTramo2: 'Maps tramo 2',
+    signTramo3: 'Maps tramo 3',
+    wazeSignStart: 'Waze · inicio carteles',
     tomorrowHeadline: 'Mañana 24/7 — foco Gral Paz / Villa Martelli',
     tomorrowHint:
       'Avistaje 23/7: banquina Parque Sarmiento mano a Villa Martelli. Cansada, asustada, no se deja agarrar. Mejor amanecer y atardecer.',
@@ -109,7 +118,7 @@ export const esAR = {
     password: 'Contraseña',
     unknownUser: 'Usuario desconocido. Probá paula, rodrigo o gaston.',
     badPassword: 'Contraseña incorrecta.',
-    hint: 'Este dispositivo guarda la sesión. Si ya entraste, vas directo a Intel.',
+    hint: 'Este dispositivo guarda la sesión. Si ya entraste, vas directo al mapa.',
   },
   errors: {
     generic: 'Algo falló. Probá de nuevo.',
