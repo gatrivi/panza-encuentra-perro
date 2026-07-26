@@ -31,6 +31,7 @@ export function AppShell() {
         </NavLink>
         <NavLink to="/bandeja">{copy.nav.inbox}</NavLink>
         <NavLink to="/plan">{copy.nav.plan}</NavLink>
+        <NavLink to="/intel">{copy.nav.intel}</NavLink>
       </nav>
 
       <div className="fab-wrap">

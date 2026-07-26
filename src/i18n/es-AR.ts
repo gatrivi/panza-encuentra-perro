@@ -1,9 +1,10 @@
 export const esAR = {
   appName: 'Buscamos a Panza',
   nav: {
+    intel: 'Intel',
     map: 'Mapa',
     inbox: 'Bandeja',
-    plan: 'Plan',
+    plan: 'Carteles',
   },
   actions: {
     possibleSighting: 'Posible avistaje',
@@ -34,9 +35,26 @@ export const esAR = {
     seenAt: 'Visto',
     reportedAt: 'Informado',
     confidence: 'Confianza',
+    signIda: 'IDA',
+    signVuelta: 'VUELTA',
+    wazeLast: 'Último',
+    signsPlan: 'Lista',
   },
   plan: {
-    title: 'Plan',
+    title: 'Carteles',
+    signsHeadline: 'Carteles · IDA Tecnópolis + VUELTA',
+    signsHint: 'A pie. IDA por Constituyentes este → Tecno → Shell Gral Paz. VUELTA por Laprida / Güemes / Illia.',
+    signIda: '① IDA → Tecnópolis',
+    signIdaStreets: 'Maipú N · Constituyentes E · Tecno 1908/2220 · cuenco · Zufriategui · J.B. de la Salle · Shell Gral Paz',
+    signVuelta: '② VUELTA (calles distintas)',
+    signVueltaStreets: 'Colectora Gral Paz · Padilla · Laprida · Güemes · SM Ahorro · Illia · Maipú · cierre',
+    mapsSignIda: 'Maps · ida a pie',
+    mapsSignVuelta: 'Maps · vuelta a pie',
+    wazeIdaEnd: 'Waze · fin ida (Shell)',
+    wazeSignStart: 'Waze · inicio',
+    signTramo1: 'Maps tramo 1',
+    signTramo2: 'Maps tramo 2',
+    signTramo3: 'Maps tramo 3',
     tomorrowHeadline: 'Mañana 24/7 — foco Gral Paz / Villa Martelli',
     tomorrowHint:
       'Avistaje 23/7: banquina Parque Sarmiento mano a Villa Martelli. Cansada, asustada, no se deja agarrar. Mejor amanecer y atardecer.',
@@ -52,6 +70,26 @@ export const esAR = {
       'Dos loops. Martelli = Zufriategui/Tecnópolis. Sarmiento = bordes del parque, Balbín, Lugones/Miller. No calzada Gral Paz.',
     milestoneNote:
       'Cobertura, carteles y recorridos llegan en el próximo hito. Por ahora usá Mapa y Bandeja.',
+  },
+  osint: {
+    title: 'Centro de inteligencia',
+    subtitle:
+      'Motor OSINT basado en awesome-osint + OpenOSINT. Recolectá, analizá, actuá.',
+    phases: {
+      recon: '① Reconocimiento',
+      collect: '② Recolección',
+      analyze: '③ Análisis de corredor',
+      act: '④ Diseminación',
+    },
+    reconHint: 'Genera dorks, consultas de vigilancia y análisis de movimiento.',
+    runScan: 'Ejecutar escaneo completo',
+    running: 'Escaneando…',
+    pasteLabel: 'Texto para analizar',
+    photoLabel: 'Foto con EXIF (GPS local, no sube)',
+    dorksTitle: 'Google Dorks · un toque',
+    hitsTitle: 'Hallazgos del último escaneo',
+    toolkitTitle: 'Arsenal OSINT',
+    sourcesTitle: 'Fuentes monitoreadas',
   },
   public: {
     seeingNow: 'LA ESTOY VIENDO',

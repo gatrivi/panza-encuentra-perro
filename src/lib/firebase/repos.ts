@@ -179,10 +179,10 @@ async function ensureLatestPanzaIntel(caseId: string): Promise<void> {
       claimedDirection: PANZA_LATEST_SIGHTING.direction,
       claimedObservationAt: observedAt,
       parserSuggestions: {
-        dates: ['23/7', '15/7'],
-        locations: ['Parque Sarmiento', 'Villa Martelli', 'Gral Paz'],
+        dates: ['26/7', '23/7'],
+        locations: ['Constituyentes', 'Maipú', 'Villa Martelli', 'Tecnópolis'],
         phones: [PANZA_CONTACT.displayPhone, PANZA_CONTACT.secondaryPhone],
-        keywords: ['banquina', 'asustada', 'chapita'],
+        keywords: ['carteles', 'chapita', 'caniche'],
       },
       status: 'promoted',
       priority: 'high',

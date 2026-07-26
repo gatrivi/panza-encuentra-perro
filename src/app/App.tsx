@@ -6,6 +6,7 @@ import { AppShell } from '@/app/AppShell'
 import { MapScreen } from '@/features/map/MapScreen'
 import { InboxScreen } from '@/features/leads/InboxScreen'
 import { PlanScreen } from '@/features/coverage/PlanScreen'
+import { OsintScreen } from '@/features/osint/OsintScreen'
 import { PublicCasePage } from '@/features/public-report/PublicCasePage'
 import { PosterRedirect } from '@/features/public-report/PosterRedirect'
 import { t } from '@/i18n/es-AR'
@@ -27,7 +28,7 @@ function PrivateGate({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // Already on device → straight to map
+  // Already on device → straight to intel
   if (user && member) return children
 
   return (
@@ -97,6 +98,8 @@ export function App() {
           }
         >
           <Route index element={<MapScreen />} />
+          <Route path="intel" element={<OsintScreen />} />
+          <Route path="mapa" element={<MapScreen />} />
           <Route path="bandeja" element={<InboxScreen />} />
           <Route path="plan" element={<PlanScreen />} />
         </Route>
