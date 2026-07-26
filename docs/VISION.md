@@ -16,26 +16,17 @@ Herramienta para que **cualquier familia encuentre su propio perro perdido**:
 
 ## Firebase (OK)
 
-Proyecto **`pancita-busca-perro`** en consola Firebase — configuración correcta.
+Proyecto **`pancita-busca-perro`**. La config web ya está **embebida** en `src/lib/firebase/config.ts` (no hace falta volver a pegar el boilerplate).
 
-| Campo | Valor |
-|-------|--------|
-| Project ID | `pancita-busca-perro` |
-| Project number | `228835710484` |
-| Web app | `pancita-busca-perro` |
+`.env` es **opcional** — solo override local. Si está vacío, la app usa los defaults del archivo.
 
-Variables en `.env` (copiar de consola → Project settings → Your apps):
+Deploy hosting (desde tu máquina con `firebase login`):
 
-```
-VITE_FIREBASE_API_KEY=...
-VITE_FIREBASE_AUTH_DOMAIN=pancita-busca-perro.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=pancita-busca-perro
-VITE_FIREBASE_STORAGE_BUCKET=pancita-busca-perro.firebasestorage.app
-VITE_FIREBASE_MESSAGING_SENDER_ID=228835710484
-VITE_FIREBASE_APP_ID=1:228835710484:web:...
+```bash
+yarn build && firebase deploy --only hosting
 ```
 
-Deploy hosting: `yarn build && firebase deploy --only hosting`
+URL esperada: `https://pancita-busca-perro.web.app`
 
 ## Fase 2 (backlog IA / imágenes)
 
