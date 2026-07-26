@@ -7,7 +7,12 @@ Firestore rules abiertas (MVP familiar). Ceiling: URL pública puede escribir. U
 
 Fotos: `public/panza/*` · Seed: FB + IG `@buscamos.a.panza`
 
-## Último avistaje (23/7 noche)
+## Último avistaje (26/7 tarde)
+
+- **Dónde:** **Av. Constituyentes × Maipú**, Villa Martelli / Villa Maipú (y alrededores).
+- **Recorrido carteles 30 paradas / ~2 h:** `public/panza/RECORRIDO-CONSTITUYENTES.md`
+
+## Avistaje anterior (23/7 noche)
 
 - **Dónde:** banquina Av. Gral Paz, cerca Parque Sarmiento, **mano Villa Martelli** (Pista Miguel Sánchez / Plazoleta El Ombú).
 - **Estado:** cansada, desorientada, asustada, **no se deja agarrar**, corre. Chapita OK.
