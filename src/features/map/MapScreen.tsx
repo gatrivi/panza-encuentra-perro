@@ -4,6 +4,7 @@ import { useAuth } from '@/features/cases/useAuth'
 import { subscribeSightings } from '@/lib/firebase/repos'
 import {
   PANZA_GMAPS_SIGN_IDA_URL,
+  PANZA_GMAPS_SIGN_VUELTA_URL,
   PANZA_WAZE_SIGHTING_URL,
 } from '@/lib/panzaCase'
 import type { Sighting } from '@/domain/schemas'
@@ -57,10 +58,18 @@ export function MapScreen() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          {copy.map.wazeRoute}
+          {copy.map.signIda}
         </a>
         <a
           className="btn btn-primary field-bar-btn"
+          href={PANZA_GMAPS_SIGN_VUELTA_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {copy.map.signVuelta}
+        </a>
+        <a
+          className="btn field-bar-btn"
           href={PANZA_WAZE_SIGHTING_URL}
           target="_blank"
           rel="noopener noreferrer"

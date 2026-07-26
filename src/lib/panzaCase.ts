@@ -182,6 +182,68 @@ export const PANZA_GMAPS_SIGN_TRAMO_1_URL = PANZA_GMAPS_SIGN_IDA_URL
 export const PANZA_GMAPS_SIGN_TRAMO_2_URL = PANZA_GMAPS_SIGN_VUELTA_URL
 export const PANZA_GMAPS_SIGN_TRAMO_3_URL = PANZA_GMAPS_SIGN_VUELTA_URL
 
+export type SignStop = {
+  n: number
+  leg: 'ida' | 'vuelta'
+  label: string
+  street: string
+  signs: number
+  lat: number
+  lng: number
+}
+
+/** Paradas para carteles · ver Plan en app */
+export const PANZA_SIGN_STOPS: SignStop[] = [
+  { n: 1, leg: 'ida', label: 'Inicio · último avistaje', street: 'Constituyentes × Maipú', signs: 2, lat: -34.5633, lng: -58.5152 },
+  { n: 2, leg: 'ida', label: 'Maipú norte', street: 'Av. Maipú (2 cuadras al N)', signs: 1, lat: -34.5585, lng: -58.5155 },
+  { n: 3, leg: 'ida', label: 'La Barata', street: 'Constituyentes ~135', signs: 1, lat: -34.5569, lng: -58.5197 },
+  { n: 4, leg: 'ida', label: 'Bomberos', street: 'Constituyentes ~100', signs: 1, lat: -34.5580, lng: -58.5188 },
+  { n: 5, leg: 'ida', label: 'Estacionamiento Tecnópolis', street: 'Constituyentes 1908', signs: 1, lat: -34.5632, lng: -58.5153 },
+  { n: 6, leg: 'ida', label: 'Entrada Tecnópolis', street: 'Constituyentes 2220 · garita', signs: 1, lat: -34.5592, lng: -58.5118 },
+  { n: 7, leg: 'ida', label: 'Gral Paz × Constituyentes', street: 'Parada colectivos', signs: 1, lat: -34.5585, lng: -58.5125 },
+  { n: 8, leg: 'ida', label: 'Cuenco aliviador', street: 'Perímetro ex cuartel', signs: 1, lat: -34.5570, lng: -58.5105 },
+  { n: 9, leg: 'ida', label: 'Zufriategui', street: 'Sur, paralela Gral Paz', signs: 1, lat: -34.5555, lng: -58.5088 },
+  { n: 10, leg: 'ida', label: 'Tecnópolis sur peatonal', street: 'J. B. de la Salle 4491', signs: 1, lat: -34.5496, lng: -58.5007 },
+  { n: 11, leg: 'ida', label: 'Fin ida · Shell', street: 'Gral Paz 3802 / JBS 4601', signs: 1, lat: -34.5499, lng: -58.5013 },
+  { n: 12, leg: 'vuelta', label: 'Colectora Gral Paz', street: 'Subiendo hacia Const', signs: 1, lat: -34.5510, lng: -58.5035 },
+  { n: 13, leg: 'vuelta', label: 'Estación Padilla', street: 'Lavalle / Agüero', signs: 1, lat: -34.5434, lng: -58.5006 },
+  { n: 14, leg: 'vuelta', label: 'Parque Laprida', street: 'Laprida 4731 · galpones', signs: 2, lat: -34.5532, lng: -58.5158 },
+  { n: 15, leg: 'vuelta', label: 'Super Luna', street: 'Güemes 4907', signs: 1, lat: -34.5490, lng: -58.5197 },
+  { n: 16, leg: 'vuelta', label: 'SM Ahorro', street: 'Constituyentes 2632', signs: 1, lat: -34.5560, lng: -58.5210 },
+  { n: 17, leg: 'vuelta', label: 'Petrobras Illia', street: 'Illia 1101', signs: 1, lat: -34.5658, lng: -58.5134 },
+  { n: 18, leg: 'vuelta', label: 'Maipú sur', street: 'De vuelta al cruce', signs: 1, lat: -34.5665, lng: -58.5148 },
+  { n: 19, leg: 'vuelta', label: 'Cierre', street: 'Constituyentes × Maipú', signs: 1, lat: -34.5633, lng: -58.5152 },
+]
+
+export const PANZA_SIGN_STOPS_IDA = PANZA_SIGN_STOPS.filter((s) => s.leg === 'ida')
+export const PANZA_SIGN_STOPS_VUELTA = PANZA_SIGN_STOPS.filter((s) => s.leg === 'vuelta')
+
+export function signStopWazeUrl(stop: SignStop): string {
+  return wazeUrl({ lat: stop.lat, lng: stop.lng })
+}
+
+export function signStopMapsUrl(stop: SignStop): string {
+  return `https://www.google.com/maps/search/?api=1&query=${stop.lat},${stop.lng}`
+}
+
+const SIGNS_STORAGE_KEY = 'panza.signs.done'
+
+export function loadSignsDone(): Set<number> {
+  try {
+    const raw = localStorage.getItem(SIGNS_STORAGE_KEY)
+    return new Set(raw ? (JSON.parse(raw) as number[]) : [])
+  } catch {
+    return new Set()
+  }
+}
+
+export function saveSignDone(n: number, done: boolean): void {
+  const set = loadSignsDone()
+  if (done) set.add(n)
+  else set.delete(n)
+  localStorage.setItem(SIGNS_STORAGE_KEY, JSON.stringify([...set]))
+}
+
 export const PANZA_FB_LEAD_TEXT = PANZA_LATEST_SIGHTING.rawText
 
 export const PANZA_IG_LEAD_TEXT = `Cuenta de difusión Instagram @buscamos.a.panza
