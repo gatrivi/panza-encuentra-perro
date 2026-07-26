@@ -1,13 +1,20 @@
 # Buscamos a Panza — context
 
-**v0.1.3** · **No Firebase Auth.** Login = usuario (`paula`/`rodrigo`/`gaston`) + pass familiar en cliente.
-Sesión en `localStorage` → mismo dispositivo entra al mapa.
+**v0.2.0** · **OSINT-first.** Home = **Intel** (`src/features/osint/`). Core: [awesome-osint](https://github.com/jivoi/awesome-osint) + motor estilo [OpenOSINT](https://github.com/OpenOSINT/OpenOSINT). Ver `vendor/OSINT.md`.
+
+**No Firebase Auth.** Login = usuario (`paula`/`rodrigo`/`gaston`) + pass familiar en cliente.
+Sesión en `localStorage` → mismo dispositivo entra a Intel.
 
 Firestore rules abiertas (MVP familiar). Ceiling: URL pública puede escribir. Upgrade: Auth.
 
 Fotos: `public/panza/*` · Seed: FB + IG `@buscamos.a.panza`
 
-## Último avistaje (23/7 noche)
+## Último avistaje (26/7 tarde)
+
+- **Dónde:** **Av. Constituyentes × Maipú**, Villa Martelli / Villa Maipú.
+- **Recorrido carteles:** `public/panza/RECORRIDO-CONSTITUYENTES.md`
+
+## Avistaje anterior (23/7 noche)
 
 - **Dónde:** banquina Av. Gral Paz, cerca Parque Sarmiento, **mano Villa Martelli** (Pista Miguel Sánchez / Plazoleta El Ombú).
 - **Estado:** cansada, desorientada, asustada, **no se deja agarrar**, corre. Chapita OK.

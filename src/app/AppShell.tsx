@@ -27,8 +27,9 @@ export function AppShell() {
 
       <nav className="bottom-nav" aria-label="Principal">
         <NavLink to="/" end>
-          {copy.nav.map}
+          {copy.nav.intel}
         </NavLink>
+        <NavLink to="/mapa">{copy.nav.map}</NavLink>
         <NavLink to="/bandeja">{copy.nav.inbox}</NavLink>
         <NavLink to="/plan">{copy.nav.plan}</NavLink>
       </nav>

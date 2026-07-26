@@ -1,6 +1,7 @@
 export const esAR = {
   appName: 'Buscamos a Panza',
   nav: {
+    intel: 'Intel',
     map: 'Mapa',
     inbox: 'Bandeja',
     plan: 'Plan',
@@ -53,6 +54,26 @@ export const esAR = {
     milestoneNote:
       'Cobertura, carteles y recorridos llegan en el próximo hito. Por ahora usá Mapa y Bandeja.',
   },
+  osint: {
+    title: 'Centro de inteligencia',
+    subtitle:
+      'Motor OSINT basado en awesome-osint + OpenOSINT. Recolectá, analizá, actuá.',
+    phases: {
+      recon: '① Reconocimiento',
+      collect: '② Recolección',
+      analyze: '③ Análisis de corredor',
+      act: '④ Diseminación',
+    },
+    reconHint: 'Genera dorks, consultas de vigilancia y análisis de movimiento.',
+    runScan: 'Ejecutar escaneo completo',
+    running: 'Escaneando…',
+    pasteLabel: 'Texto para analizar',
+    photoLabel: 'Foto con EXIF (GPS local, no sube)',
+    dorksTitle: 'Google Dorks · un toque',
+    hitsTitle: 'Hallazgos del último escaneo',
+    toolkitTitle: 'Arsenal OSINT',
+    sourcesTitle: 'Fuentes monitoreadas',
+  },
   public: {
     seeingNow: 'LA ESTOY VIENDO',
     thinkISaw: 'CREO QUE LA VI',
@@ -88,7 +109,7 @@ export const esAR = {
     password: 'Contraseña',
     unknownUser: 'Usuario desconocido. Probá paula, rodrigo o gaston.',
     badPassword: 'Contraseña incorrecta.',
-    hint: 'Este dispositivo guarda la sesión. Si ya entraste, vas directo al mapa.',
+    hint: 'Este dispositivo guarda la sesión. Si ya entraste, vas directo a Intel.',
   },
   errors: {
     generic: 'Algo falló. Probá de nuevo.',
