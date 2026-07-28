@@ -12,6 +12,7 @@ export function MapScreen() {
   const { caseId } = useAuth()
   const [sightings, setSightings] = useState<Sighting[]>([])
   const [showRejected, setShowRejected] = useState(false)
+  const [showSigns, setShowSigns] = useState(true)
   const copy = t()
 
   useEffect(() => {
@@ -30,6 +31,14 @@ export function MapScreen() {
         <label className="muted" style={{ fontSize: '0.85rem' }}>
           <input
             type="checkbox"
+            checked={showSigns}
+            onChange={(e) => setShowSigns(e.target.checked)}
+          />{' '}
+          {copy.map.showSigns}
+        </label>
+        <label className="muted" style={{ fontSize: '0.85rem' }}>
+          <input
+            type="checkbox"
             checked={showRejected}
             onChange={(e) => setShowRejected(e.target.checked)}
           />{' '}
@@ -42,7 +51,7 @@ export function MapScreen() {
         </p>
       ) : null}
       <Suspense fallback={<p style={{ padding: '1rem' }}>{copy.auth.loading}</p>}>
-        <OperationalMap sightings={visible} />
+        <OperationalMap sightings={visible} showSigns={showSigns} />
       </Suspense>
     </div>
   )

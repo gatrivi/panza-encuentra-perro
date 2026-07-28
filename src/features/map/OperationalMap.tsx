@@ -1,7 +1,8 @@
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { useEffect } from 'react'
 import type { Sighting } from '@/domain/schemas'
+import { PANZA_SIGN_ROUTE, type SignStop } from '@/lib/panzaCase'
 import { t } from '@/i18n/es-AR'
 import 'leaflet/dist/leaflet.css'
 
@@ -40,28 +41,51 @@ function markerIcon(confidence: Sighting['confidence']) {
   })
 }
 
-function FitBounds({ sightings }: { sightings: Sighting[] }) {
+function signIcon(n: number) {
+  return L.divIcon({
+    className: 'sign-stop-marker',
+    html: `<span style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#1a3a2a;color:#fff;font:700 10px/1 sans-serif;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3)">${n}</span>`,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+  })
+}
+
+function FitBounds({
+  sightings,
+  signs,
+}: {
+  sightings: Sighting[]
+  signs: readonly SignStop[]
+}) {
   const map = useMap()
   useEffect(() => {
-    if (sightings.length === 0) {
-      map.setView([-34.512, -58.49], 14)
+    const pts: [number, number][] = [
+      ...sightings.map((s) => [s.point[1], s.point[0]] as [number, number]),
+      ...signs.map((s) => [s.lat, s.lng] as [number, number]),
+    ]
+    if (pts.length === 0) {
+      map.setView([-34.5633, -58.5152], 14)
       return
     }
-    const bounds = L.latLngBounds(
-      sightings.map((s) => [s.point[1], s.point[0]] as [number, number]),
-    )
-    map.fitBounds(bounds.pad(0.25))
-  }, [map, sightings])
+    map.fitBounds(L.latLngBounds(pts).pad(0.2))
+  }, [map, sightings, signs])
   return null
 }
 
-export function OperationalMap({ sightings }: { sightings: Sighting[] }) {
+export function OperationalMap({
+  sightings,
+  showSigns = true,
+}: {
+  sightings: Sighting[]
+  showSigns?: boolean
+}) {
   const copy = t()
+  const signs = showSigns ? PANZA_SIGN_ROUTE : []
 
   return (
     <div className="map-container">
       <MapContainer
-        center={[-34.512, -58.49]}
+        center={[-34.5633, -58.5152]}
         zoom={14}
         style={{ height: '100%', width: '100%' }}
         scrollWheelZoom
@@ -70,7 +94,23 @@ export function OperationalMap({ sightings }: { sightings: Sighting[] }) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <FitBounds sightings={sightings} />
+        <FitBounds sightings={sightings} signs={signs} />
+        {signs.length > 0 ? (
+          <Polyline
+            positions={signs.map((s) => [s.lat, s.lng] as [number, number])}
+            pathOptions={{ color: '#1a3a2a', weight: 2, opacity: 0.35 }}
+          />
+        ) : null}
+        {signs.map((s) => (
+          <Marker key={`sign-${s.n}`} position={[s.lat, s.lng]} icon={signIcon(s.n)}>
+            <Popup>
+              <strong>
+                Cartel #{s.n} · {s.label}
+              </strong>
+              <p style={{ margin: '0.25rem 0 0' }}>{s.why}</p>
+            </Popup>
+          </Marker>
+        ))}
         {sightings.map((s) => (
           <Marker
             key={s.id}
