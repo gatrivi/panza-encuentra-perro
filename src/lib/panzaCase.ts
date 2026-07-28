@@ -158,3 +158,57 @@ BUSCAMOS A PANZA. Se escapó el 15/7 al final del partido por Olivos, zona cemen
 Hembra, 4 años, collar violeta con chapita. Contacto paupocket / Rodrii Perez Schmidt.
 Último foco: Gral Paz / Parque Sarmiento → Villa Martelli (23/7).
 Fuente: ${PANZA_SOURCES.instagram}`
+
+/** Carteles · Constituyentes × Maipú · ~2 h · bici/auto */
+export type SignStop = {
+  n: number
+  label: string
+  why: string
+  lat: number
+  lng: number
+}
+
+export const PANZA_SIGN_EPICENTER = {
+  lat: -34.5633,
+  lng: -58.5152,
+  label: 'Constituyentes × Maipú',
+} as const
+
+/** 30 paradas en orden. Ver public/panza/RECORRIDO-CONSTITUYENTES.md */
+export const PANZA_SIGN_ROUTE: readonly SignStop[] = [
+  { n: 1, label: 'Constituyentes × Maipú', why: 'último avistaje (epicentro)', lat: -34.5633, lng: -58.5152 },
+  { n: 2, label: 'Shell Constituyentes 1806', why: 'nafta 24 h, olores, gente', lat: -34.5643, lng: -58.5145 },
+  { n: 3, label: 'Petrobras Illia 1101', why: 'nafta/GNC, cerca del epicentro', lat: -34.5658, lng: -58.5134 },
+  { n: 4, label: 'Estacionamiento Tecnópolis Const 1908', why: 'playa grande, refugio', lat: -34.5632, lng: -58.5153 },
+  { n: 5, label: 'Ingreso peatonal Tecnópolis Const 2220', why: 'alto tránsito, perímetro', lat: -34.5592, lng: -58.5118 },
+  { n: 6, label: 'Gral Paz × Constituyentes', why: 'colectivos, borde sur', lat: -34.5585, lng: -58.5125 },
+  { n: 7, label: 'Cuenco aliviador / ex cuartel', why: 'vegetación, agua, escondite', lat: -34.557, lng: -58.5105 },
+  { n: 8, label: 'Ex autocine / lote abierto sur Tecno', why: 'terreno bajo, matorral', lat: -34.5565, lng: -58.5095 },
+  { n: 9, label: 'Zufriategui × Constituyentes', why: 'corredor sur Villa Martelli', lat: -34.5555, lng: -58.5088 },
+  { n: 10, label: 'J. B. de la Salle 4491', why: 'entrada sur Tecno, peatonal', lat: -34.5496, lng: -58.5007 },
+  { n: 11, label: 'J. B. de la Salle 4601', why: 'estacionamiento sur', lat: -34.5488, lng: -58.5 },
+  { n: 12, label: 'Shell Gral Paz 3802', why: 'nafta 24 h, colectora', lat: -34.5499, lng: -58.5013 },
+  { n: 13, label: 'Colectora Gral Paz (Tecno–Padilla)', why: 'banquina, perros de tránsito', lat: -34.551, lng: -58.5035 },
+  { n: 14, label: 'Estación Padilla', why: 'vías, refugio bajo rampas', lat: -34.5434, lng: -58.5006 },
+  { n: 15, label: 'Av. Mitre × Laprida', why: 'borde industrial este', lat: -34.5458, lng: -58.4995 },
+  { n: 16, label: 'Super Luna Güemes 4907', why: 'super, olores de comida', lat: -34.549, lng: -58.5197 },
+  { n: 17, label: 'Parque Laprida (Laprida 4731)', why: 'galpones, playa estacionamiento', lat: -34.5532, lng: -58.5158 },
+  { n: 18, label: 'DIA Laprida 4076', why: 'super, tránsito vecinal', lat: -34.5545, lng: -58.5165 },
+  { n: 19, label: 'La Barata Constituyentes 135', why: 'super, corredor este', lat: -34.5569, lng: -58.5197 },
+  { n: 20, label: 'Bomberos Villa Martelli Const 100', why: 'referencia, gente local', lat: -34.558, lng: -58.5188 },
+  { n: 21, label: 'Constituyentes 2500 (depósitos)', why: 'naves, portones, escondites', lat: -34.5595, lng: -58.5195 },
+  { n: 22, label: 'SM Ahorro Constituyentes 2632', why: 'super Villa Maipú', lat: -34.556, lng: -58.521 },
+  { n: 23, label: 'MAS Supermercado Illia 2141', why: 'super, oeste', lat: -34.5704, lng: -58.5214 },
+  { n: 24, label: 'Shell Illia 2114', why: 'nafta', lat: -34.5706, lng: -58.521 },
+  { n: 25, label: 'El Puente Estrada 2768', why: 'super, zona oeste', lat: -34.5715, lng: -58.522 },
+  { n: 26, label: 'Constituyentes 5380 (oeste)', why: 'borde industrial GSM', lat: -34.5666, lng: -58.5123 },
+  { n: 27, label: 'Clínica Veterinaria Chile 328', why: 'avisar por si la traen', lat: -34.552, lng: -58.514 },
+  { n: 28, label: 'Av. Maipú norte del cruce', why: 'corredor norte, comercios', lat: -34.5585, lng: -58.5155 },
+  { n: 29, label: 'Av. Maipú sur del cruce', why: 'retorno al epicentro', lat: -34.5665, lng: -58.5148 },
+  { n: 30, label: 'Constituyentes × Maipú (cierre)', why: 'segundo cartel cara opuesta', lat: -34.5633, lng: -58.5152 },
+] as const
+
+/** Si solo hay ~45 min */
+export const PANZA_SIGN_QUICK45 = [1, 4, 5, 6, 7, 12, 17, 2, 22, 23] as const
+
+export const PANZA_WAZE_SIGN_START_URL = wazeUrl(PANZA_SIGN_EPICENTER)

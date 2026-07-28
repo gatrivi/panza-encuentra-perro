@@ -518,6 +518,155 @@ a {
   color: var(--brand);
 }
 
+.sign-route-map {
+  height: min(42dvh, 360px);
+  min-height: 220px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin: 0.75rem 0 1rem;
+}
+
+.plan-nav-hud {
+  margin-top: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.plan-nav-current {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.plan-nav-current p {
+  margin: 0.15rem 0 0;
+  font-size: 0.9rem;
+}
+
+.plan-nav-n {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.plan-nav-distance {
+  margin: 0.65rem 0 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.plan-nav-btns {
+  margin-top: 0.35rem;
+}
+
+.plan-nav-btns .btn {
+  flex: 1;
+  min-width: 0;
+}
+
+.plan-nav-toggles {
+  margin-top: 0.65rem;
+  gap: 1rem;
+}
+
+.plan-progress {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+}
+
+.plan-sign-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.plan-sign-item {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
+  cursor: pointer;
+}
+
+.plan-sign-item strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.plan-sign-item .muted {
+  display: block;
+  font-size: 0.8rem;
+}
+
+.plan-sign-n {
+  flex-shrink: 0;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.1rem;
+}
+
+.plan-sign-list li.done .plan-sign-item {
+  opacity: 0.55;
+}
+
+.plan-sign-list li.done .plan-sign-n {
+  background: var(--ok);
+}
+
+.plan-sign-list li.current .plan-sign-item {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent-soft) 22%, var(--bg-elevated));
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--brand-soft);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+
+.plan-legacy {
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--border);
+}
+
+.sign-stop-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
 .stack {
   display: flex;
   flex-direction: column;
