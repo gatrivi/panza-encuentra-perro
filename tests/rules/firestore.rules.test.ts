@@ -76,6 +76,8 @@ describe('firestore rules (open family MVP)', () => {
   })
 
   it('loads rules file', () => {
-    expect(readFileSync(resolve(root, 'firestore.rules'), 'utf8')).toContain('ponytail')
+    const rules = readFileSync(resolve(root, 'firestore.rules'), 'utf8')
+    expect(rules).toContain('ponytail')
+    expect(rules).toContain('avoidAreas create/merge')
   })
 })

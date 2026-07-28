@@ -1,7 +1,7 @@
 {
   "name": "operativo-pancite",
   "private": true,
-  "version": "0.1.4",
+  "version": "0.2.8",
   "type": "module",
   "packageManager": "yarn@1.22.19",
   "scripts": {
@@ -17,7 +17,11 @@
     "seed": "tsx seed/seed-demo.ts"
   },
   "dependencies": {
+    "@turf/boolean-intersects": "^7.3.5",
+    "@turf/helpers": "^7.3.5",
+    "@turf/union": "^7.3.5",
     "firebase": "^11.10.0",
+    "h3-js": "^4.5.0",
     "idb-keyval": "^6.2.2",
     "leaflet": "^1.9.4",
     "react": "^19.1.0",

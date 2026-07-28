@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { Link, Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/features/cases/AuthProvider'
 import { useAuth } from '@/features/cases/useAuth'
 import { AppShell } from '@/app/AppShell'
@@ -11,13 +10,8 @@ import { PosterRedirect } from '@/features/public-report/PosterRedirect'
 import { t } from '@/i18n/es-AR'
 
 function PrivateGate({ children }: { children: React.ReactNode }) {
-  const { user, member, loading, error, signInWithUsername } = useAuth()
+  const { user, member, loading, error, signOut } = useAuth()
   const copy = t()
-  const [username, setUsername] = useState(
-    () => localStorage.getItem('panza.username') ?? '',
-  )
-  const [password, setPassword] = useState('')
-  const [busy, setBusy] = useState(false)
 
   if (loading) {
     return (
@@ -27,57 +21,19 @@ function PrivateGate({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // Already on device → straight to map
-  if (user && member) return children
-
-  return (
-    <div className="login-card">
-      <h1>{copy.appName}</h1>
-      <p className="muted">{copy.auth.hint}</p>
-      {error ? <p role="alert">{error}</p> : null}
-      <form
-        className="stack"
-        style={{ marginTop: '1rem' }}
-        onSubmit={(e) => {
-          e.preventDefault()
-          setBusy(true)
-          void signInWithUsername(username, password).finally(() => setBusy(false))
-        }}
-      >
-        <div className="field">
-          <label htmlFor="login-user">{copy.auth.username}</label>
-          <input
-            id="login-user"
-            type="text"
-            autoComplete="username"
-            autoCapitalize="none"
-            required
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="paula"
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="login-password">{copy.auth.password}</label>
-          <input
-            id="login-password"
-            type="password"
-            autoComplete="current-password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-        <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
-          {copy.actions.signIn}
+  if (!user || !member) {
+    return (
+      <div className="login-card">
+        <h1>{copy.appName}</h1>
+        <p role="alert">{error ?? copy.errors.generic}</p>
+        <button type="button" className="btn btn-primary btn-block" onClick={() => void signOut()}>
+          Reintentar
         </button>
-        <Link to="/c/pancita" className="muted" style={{ textAlign: 'center' }}>
-          Página pública
-        </Link>
-      </form>
-    </div>
-  )
+      </div>
+    )
+  }
+
+  return children
 }
 
 export function App() {

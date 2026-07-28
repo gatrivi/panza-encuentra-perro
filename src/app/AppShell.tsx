@@ -1,27 +1,23 @@
-import { NavLink, Outlet } from 'react-router-dom'
 import { useState } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { t } from '@/i18n/es-AR'
-import { useAuth } from '@/features/cases/useAuth'
 import { ActionSheet } from '@/app/ActionSheet'
+import { OperatorSwitch } from '@/features/map/OperatorSwitch'
 
 export function AppShell() {
-  const { member, signOut } = useAuth()
   const [sheetOpen, setSheetOpen] = useState(false)
+  const { pathname } = useLocation()
+  const mapOnly = pathname === '/'
   const copy = t()
 
   return (
-    <div className="app-shell">
-      <header className="app-header">
-        <div className="brand">{copy.appName}</div>
-        <div className="row">
-          <span className="muted" style={{ fontSize: '0.85rem' }}>
-            {member?.displayName}
-          </span>
-          <button type="button" className="btn btn-ghost" onClick={() => void signOut()}>
-            {copy.actions.signOut}
-          </button>
-        </div>
-      </header>
+    <div className={`app-shell${mapOnly ? ' app-shell-map' : ''}`}>
+      {mapOnly ? null : (
+        <header className="app-header">
+          <div className="brand">{copy.appName}</div>
+          <OperatorSwitch />
+        </header>
+      )}
 
       <Outlet />
 

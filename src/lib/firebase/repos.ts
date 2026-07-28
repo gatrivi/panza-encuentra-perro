@@ -24,6 +24,7 @@ import {
   PANZA_INSTRUCTIONS,
   PANZA_LATEST_SIGHTING,
   PANZA_MAP_CENTER,
+  PANZA_OSINT_LEADS,
   PANZA_SOURCES,
 } from '../panzaCase'
 import type {
@@ -95,11 +96,44 @@ function candidateSlugs(): string[] {
     : [preferred, 'pancita', 'pancite', 'panza']
 }
 
-/** Bootstrap Panza case + public projection if missing. */
+const CASE_CACHE_KEY = 'panza.caseId'
+
+/** Bootstrap Panza case. 1 read rápido si ya existe pancita. */
 export async function ensurePanzaCase(): Promise<string> {
-  for (const caseSlug of candidateSlugs()) {
+  try {
+    const cached = localStorage.getItem(CASE_CACHE_KEY)
+    if (cached) {
+      // verify cheap — skip if we already know
+      return cached
+    }
+  } catch {
+    /* ignore */
+  }
+
+  // preferred slug first only
+  const preferred = candidateSlugs()[0]!
+  const preferredSnap = await getDoc(doc(db, 'publicCases', preferred))
+  if (preferredSnap.exists()) {
+    const id = preferredSnap.data().caseId as string
+    try {
+      localStorage.setItem(CASE_CACHE_KEY, id)
+    } catch {
+      /* ignore */
+    }
+    return id
+  }
+
+  for (const caseSlug of candidateSlugs().slice(1)) {
     const publicSnap = await getDoc(doc(db, 'publicCases', caseSlug))
-    if (publicSnap.exists()) return publicSnap.data().caseId as string
+    if (publicSnap.exists()) {
+      const id = publicSnap.data().caseId as string
+      try {
+        localStorage.setItem(CASE_CACHE_KEY, id)
+      } catch {
+        /* ignore */
+      }
+      return id
+    }
   }
 
   const caseId = PANZA_CASE_ID
@@ -132,10 +166,20 @@ export async function ensurePanzaCase(): Promise<string> {
   await setDoc(doc(db, 'publicCases', 'pancita'), publicPayload)
   await setDoc(doc(db, 'publicCases', 'pancite'), publicPayload)
   await setDoc(doc(db, 'publicCases', 'panza'), publicPayload)
+  try {
+    localStorage.setItem(CASE_CACHE_KEY, caseId)
+  } catch {
+    /* ignore */
+  }
   return caseId
 }
 
 async function seedSocialLeadsIfEmpty(caseId: string): Promise<void> {
+  // Flag: evita getDocs(all leads) + re-writes en cada refresh
+  const flagRef = doc(db, 'cases', caseId, 'meta', 'seed_osint_v1')
+  const flag = await getDoc(flagRef)
+  if (flag.exists()) return
+
   const existing = await getDocs(query(collection(db, 'cases', caseId, 'leads')))
   if (existing.empty) {
     await addDoc(collection(db, 'cases', caseId, 'leads'), {
@@ -157,23 +201,59 @@ async function seedSocialLeadsIfEmpty(caseId: string): Promise<void> {
   }
 
   await ensureLatestPanzaIntel(caseId)
+  await setDoc(flagRef, { doneAt: serverTimestamp() })
 }
 
-/** Upsert 23/7 Gral Paz lead + probable sighting; recenter map. Idempotent by idKey. */
+/** Upsert Pau FB timeline leads (Brave OSINT). Idempotent by idKey. */
+async function ensureOsintLeads(caseId: string): Promise<void> {
+  await Promise.all(
+    PANZA_OSINT_LEADS.map(async (lead) => {
+      const ref = doc(db, 'cases', caseId, 'leads', lead.idKey)
+      const snap = await getDoc(ref)
+      if (snap.exists()) return
+      await setDoc(ref, {
+        origin: lead.origin,
+        sourceUrl: lead.sourceUrl,
+        rawText: lead.rawText,
+        attachmentPaths: [],
+        capturedAt: serverTimestamp(),
+        reporter: { name: 'Pau Trivi' },
+        claimedLocationText: lead.locationText,
+        claimedPoint: lead.point,
+        claimedObservationAt: Timestamp.fromDate(new Date(lead.observedLocal)),
+        parserSuggestions: {
+          dates: [lead.observedLocal.slice(0, 10)],
+          locations: [...lead.locations],
+          phones: [PANZA_CONTACT.displayPhone, PANZA_CONTACT.secondaryPhone],
+          keywords: [...lead.keywords],
+        },
+        status: lead.status,
+        priority: lead.priority,
+      })
+    }),
+  )
+}
+
+/** Upsert 23/7 Gral Paz lead + probable sighting. No rewrite if already there. */
 async function ensureLatestPanzaIntel(caseId: string): Promise<void> {
+  await ensureOsintLeads(caseId)
+
   const leadRef = doc(db, 'cases', caseId, 'leads', PANZA_LATEST_SIGHTING.idKey)
   const sightingRef = doc(db, 'cases', caseId, 'sightings', PANZA_LATEST_SIGHTING.idKey)
   const observedAt = Timestamp.fromDate(new Date(PANZA_LATEST_SIGHTING.observedLocal))
 
-  const leadSnap = await getDoc(leadRef)
+  const [leadSnap, sightingSnap] = await Promise.all([getDoc(leadRef), getDoc(sightingRef)])
+  let wrote = false
+
   if (!leadSnap.exists()) {
+    wrote = true
     await setDoc(leadRef, {
       origin: 'facebook',
       sourceUrl: PANZA_LATEST_SIGHTING.sourceUrl,
       rawText: PANZA_LATEST_SIGHTING.rawText,
       attachmentPaths: [PANZA_LATEST_SIGHTING.mapPhoto],
       capturedAt: serverTimestamp(),
-      reporter: {},
+      reporter: { name: 'Pau Trivi' },
       claimedLocationText: PANZA_LATEST_SIGHTING.locationText,
       claimedPoint: PANZA_LATEST_SIGHTING.point,
       claimedDirection: PANZA_LATEST_SIGHTING.direction,
@@ -190,8 +270,8 @@ async function ensureLatestPanzaIntel(caseId: string): Promise<void> {
     })
   }
 
-  const sightingSnap = await getDoc(sightingRef)
   if (!sightingSnap.exists()) {
+    wrote = true
     await setDoc(sightingRef, {
       observedAt,
       reportedAt: serverTimestamp(),
@@ -208,10 +288,12 @@ async function ensureLatestPanzaIntel(caseId: string): Promise<void> {
       createdByUid: 'bootstrap',
       reviewedByUid: 'bootstrap',
       reviewedAt: serverTimestamp(),
-      // probable ≠ confirmed → no mueve zona oficial sola; recentramos a mano abajo
       affectsOfficialZone: false,
     })
   }
+
+  // ponytail: no updateDoc en cada refresh — solo si escribimos algo nuevo
+  if (!wrote) return
 
   await updateDoc(doc(db, 'cases', caseId), {
     mapCenter: PANZA_MAP_CENTER,
@@ -219,22 +301,23 @@ async function ensureLatestPanzaIntel(caseId: string): Promise<void> {
     updatedAt: serverTimestamp(),
   })
 
-  // keep public projection in sync (instructions only; no exact pin)
-  for (const slug of ['pancita', 'pancite', 'panza']) {
-    const pubRef = doc(db, 'publicCases', slug)
-    const pubSnap = await getDoc(pubRef)
-    if (pubSnap.exists()) {
-      await updateDoc(pubRef, {
-        publicInstructions: PANZA_INSTRUCTIONS,
-        updatedAt: serverTimestamp(),
-      })
-    }
-  }
+  await Promise.all(
+    ['pancita', 'pancite', 'panza'].map(async (slug) => {
+      const pubRef = doc(db, 'publicCases', slug)
+      const pubSnap = await getDoc(pubRef)
+      if (pubSnap.exists()) {
+        await updateDoc(pubRef, {
+          publicInstructions: PANZA_INSTRUCTIONS,
+          updatedAt: serverTimestamp(),
+        })
+      }
+    }),
+  )
 }
 
 type Operator = (typeof OPERATORS)[keyof typeof OPERATORS]
 
-/** Upsert member doc keyed by username; seed social leads once. */
+/** Upsert member; seed OSINT en background (no bloquea UI). */
 export async function ensureOperatorMember(
   caseId: string,
   op: Operator,
@@ -242,21 +325,38 @@ export async function ensureOperatorMember(
   const memberRef = doc(db, 'cases', caseId, 'members', op.username)
   const existing = await getDoc(memberRef)
   if (existing.exists()) {
-    await updateDoc(memberRef, { active: true, lastSeenAt: serverTimestamp() })
-  } else {
-    await setDoc(memberRef, {
-      role: op.role,
-      displayName: op.displayName,
-      email: `${op.username}@panza.local`,
+    // no await update lastSeen on critical path — fire and forget
+    void updateDoc(memberRef, { active: true, lastSeenAt: serverTimestamp() })
+    void seedSocialLeadsIfEmpty(caseId)
+    return {
+      uid: op.username,
+      role: (existing.data().role as Member['role']) ?? op.role,
+      displayName: (existing.data().displayName as string) ?? op.displayName,
+      email: (existing.data().email as string) ?? `${op.username}@panza.local`,
       active: true,
-      createdAt: serverTimestamp(),
-      lastSeenAt: serverTimestamp(),
-    })
+      createdAt: requireDate(existing.data().createdAt, 'createdAt'),
+      lastSeenAt: new Date(),
+    }
   }
-  await seedSocialLeadsIfEmpty(caseId)
-  const member = await getMember(caseId, op.username)
-  if (!member) throw new Error('member write failed')
-  return member
+
+  await setDoc(memberRef, {
+    role: op.role,
+    displayName: op.displayName,
+    email: `${op.username}@panza.local`,
+    active: true,
+    createdAt: serverTimestamp(),
+    lastSeenAt: serverTimestamp(),
+  })
+  void seedSocialLeadsIfEmpty(caseId)
+  return {
+    uid: op.username,
+    role: op.role,
+    displayName: op.displayName,
+    email: `${op.username}@panza.local`,
+    active: true,
+    createdAt: new Date(),
+    lastSeenAt: new Date(),
+  }
 }
 
 export async function submitPublicReport(input: {

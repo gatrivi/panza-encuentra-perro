@@ -35,6 +35,18 @@ export const esAR = {
     reportedAt: 'Informado',
     confidence: 'Confianza',
     showSigns: 'Carteles',
+    gpsOn: 'GPS activo · patrulla',
+    gpsWaiting: 'Esperando GPS…',
+    coverageTitle: 'Cobertura',
+    lastSeen: 'Última vista',
+    hexWalked: 'Hex',
+    signsCount: 'Carteles',
+    avoidCount: 'Riesgo',
+    suggestHint: 'Sugeridos (perímetro): ~{n} hex cerca de zonas a evitar',
+    placeSignDesktop: 'Colocar cartel',
+    placeModeOn: 'Click en el mapa…',
+    riskHint:
+      'Modo riesgo: caminás y marcás zonas a evitar. Al apagar, se guardan.',
   },
   plan: {
     title: 'Plan',
@@ -56,7 +68,7 @@ export const esAR = {
     hideLegacy: 'Ocultar plan Gral Paz',
     tomorrowHeadline: 'Mañana 24/7 — foco Gral Paz / Villa Martelli',
     tomorrowHint:
-      'Avistaje 23/7: banquina Parque Sarmiento mano a Villa Martelli. Cansada, asustada, no se deja agarrar. Mejor amanecer y atardecer.',
+      'Foco: banquina Parque Sarmiento mano a Villa Martelli. Cansada, asustada, no se deja agarrar. Mejor con luz de día.',
     halfMartelli: 'Mitad 1 · Villa Martelli (oeste)',
     halfSarmiento: 'Mitad 2 · Parque Sarmiento (CABA)',
     openGmapsBike: 'Maps · Martelli bici',
@@ -66,9 +78,9 @@ export const esAR = {
     openGmapsPin: 'Maps · pin avistaje',
     openWazePin: 'Waze · pin avistaje',
     bikeNote:
-      'Dos loops. Martelli = Zufriategui/Tecnópolis. Sarmiento = bordes del parque, Balbín, Lugones/Miller. No calzada Gral Paz.',
+      'Dos loops en el mapa (naranja Martelli / verde Sarmiento). No calzada Gral Paz.',
     milestoneNote:
-      'Cobertura, carteles y recorridos llegan en el próximo hito. Por ahora usá Mapa y Bandeja.',
+      'Cobertura hex, carteles y modo riesgo ya están en el Mapa.',
   },
   public: {
     seeingNow: 'LA ESTOY VIENDO',

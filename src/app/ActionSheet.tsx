@@ -36,7 +36,11 @@ export function ActionSheet({ onClose }: Props) {
           >
             {copy.actions.pastePost}
           </button>
-          <button type="button" className="btn btn-ghost btn-block" disabled>
+          <button
+            type="button"
+            className="btn btn-primary btn-block"
+            onClick={() => go('/?placeSign=1')}
+          >
             {copy.actions.placeSign}
           </button>
           <button type="button" className="btn btn-ghost btn-block" disabled>

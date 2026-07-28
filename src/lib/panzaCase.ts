@@ -29,16 +29,120 @@ export const PANZA_CONTACT = {
 }
 
 export const PANZA_INSTRUCTIONS =
-  'No la persigas ni la agarres. Solo la familia puede retenerla. Seguíla a distancia, avisá YA. Chapita PANZA. Último: 23/7 banquina Gral Paz → Villa Martelli (Parque Sarmiento).'
+  'No la persigas ni la agarres. Solo la familia (Pau / Rodri / Gastón) puede retenerla. Seguíla a distancia, avisá YA. Collar violeta + chapita PANZA. Último foco fuerte: 23/7 banquina Gral Paz → Villa Martelli (Parque Sarmiento). También Florida / Vicente López.'
 
 /** Banquina Gral Paz, Parque Sarmiento / mano Villa Martelli (GeoJSON lng,lat) */
 export const PANZA_MAP_CENTER: [number, number] = [-58.508, -34.551]
 
+/** Salida patrulla: Fray Justo Sarmiento × Pelliza (Olivos) */
+export { PANZA_HOME_BASE } from '@/lib/posterRoutes'
+
 export const PANZA_SOURCES = {
   facebook: 'https://www.facebook.com/share/p/1BgkXzFdgY/',
   facebookPrev: 'https://www.facebook.com/share/p/1JsbccK79Q/',
+  facebookZaguates: 'https://www.facebook.com/groups/1449678978426788/permalink/28023231790644812/',
+  facebookOwner: 'https://www.facebook.com/pau.trivi',
   instagram: 'https://www.instagram.com/buscamos.a.panza/',
 } as const
+
+/** Dueña + tags FB (Brave OSINT 27/7/2026) */
+export const PANZA_TEAM = {
+  owner: {
+    name: 'Pau Trivi (Poli)',
+    username: 'paula',
+    fb: PANZA_SOURCES.facebookOwner,
+    livesIn: 'Olivos, Buenos Aires',
+    contactHandles: ['paupocket'],
+  },
+  secondary: [
+    { name: 'Rodrii Perez Schmidt', username: 'rodrigo', role: 'coordinator' },
+    { name: 'G Alejandro Trivi', username: 'gaston', role: 'coordinator' },
+  ],
+} as const
+
+/**
+ * Timeline OSINT desde posts centrales de Pau (+ difusión grupos).
+ * No scraper: captura manual vía sesión Brave 27/7/2026.
+ */
+export const PANZA_OSINT_LEADS = [
+  {
+    idKey: 'fb_escape_olivos_2026_07_15',
+    origin: 'facebook' as const,
+    sourceUrl: PANZA_SOURCES.facebookOwner,
+    observedLocal: '2026-07-15T21:00:00-03:00',
+    point: [-58.5085, -34.507] as [number, number],
+    locationText: 'Olivos, zona cementerio (escape al final del partido)',
+    priority: 'high' as const,
+    status: 'needs_details' as const,
+    rawText: `Pau Trivi (central): BUSCAMOS A PANZA.
+Se escapó de casa el 15/7 al final del partido por Olivos, zona cementerio.
+Hembra, castrada, 4 años, mimosa, miedosa y rápida. Collar violeta + chapita cerámica con 2 teléfonos.
+Contacto: paupocket / Rodrii Perez Schmidt / números del flyer.
+Tags: Rodrii Perez Schmidt + G Alejandro Trivi.
+Fuente: ${PANZA_SOURCES.facebookOwner}`,
+    locations: ['Olivos', 'cementerio'],
+    keywords: ['escape', 'partido', 'collar violeta'],
+  },
+  {
+    idKey: 'fb_vicentelopez_sanmartin',
+    origin: 'facebook' as const,
+    sourceUrl: PANZA_SOURCES.facebookOwner,
+    observedLocal: '2026-07-18T12:00:00-03:00',
+    point: [-58.492, -34.532] as [number, number],
+    locationText: 'Vicente López (corría); posible San Martín',
+    priority: 'high' as const,
+    status: 'needs_details' as const,
+    rawText: `Pau Trivi: se la vio corriendo por Vicente López y tal vez por San Martín.
+Collar violeta, chapita grande, cola larga. Avisar aunque no se pueda retener.
+Tags: Rodrii Perez Schmidt. Fuente: ${PANZA_SOURCES.facebookOwner}`,
+    locations: ['Vicente López', 'San Martín'],
+    keywords: ['corriendo', 'chapita', 'cola larga'],
+  },
+  {
+    idKey: 'fb_carteles_norte',
+    origin: 'facebook' as const,
+    sourceUrl: PANZA_SOURCES.facebookOwner,
+    observedLocal: '2026-07-19T12:00:00-03:00',
+    point: [-58.49, -34.52] as [number, number],
+    locationText: 'Carteles: Olivos, Florida, La Lucila, Martínez, Munro',
+    priority: 'normal' as const,
+    status: 'needs_details' as const,
+    rawText: `Pau + tío en bici pegando carteles. Hashtags: #olivos #florida #lalucila #matinez #munro.
+Fuente: ${PANZA_SOURCES.facebookOwner}`,
+    locations: ['Olivos', 'Florida', 'La Lucila', 'Martínez', 'Munro'],
+    keywords: ['carteles', 'bici'],
+  },
+  {
+    idKey: 'fb_martelli_florida',
+    origin: 'facebook' as const,
+    sourceUrl: PANZA_SOURCES.facebookOwner,
+    observedLocal: '2026-07-22T18:00:00-03:00',
+    point: [-58.51, -34.545] as [number, number],
+    locationText: 'Villa Martelli y Florida — corriendo, asustada, no se deja agarrar',
+    priority: 'high' as const,
+    status: 'promoted' as const,
+    rawText: `Pau Trivi: dato de que corre por la calle asustada y no se deja agarrar.
+Ayer la vieron por Villa Martelli y por Florida. Pedir ojos para reubicar zona.
+Tags: Rodrii + G Alejandro. Fuente: ${PANZA_SOURCES.facebookOwner}`,
+    locations: ['Villa Martelli', 'Florida'],
+    keywords: ['asustada', 'no se deja'],
+  },
+  {
+    idKey: 'fb_sin_novedades_post_domingo',
+    origin: 'facebook' as const,
+    sourceUrl: PANZA_SOURCES.facebookZaguates,
+    observedLocal: '2026-07-21T12:00:00-03:00',
+    point: [-58.5, -34.53] as [number, number],
+    locationText: 'Vicente López ampliado — sin novedades desde domingo; posible retención',
+    priority: 'normal' as const,
+    status: 'needs_details' as const,
+    rawText: `Pau (ZAGUATES DIFUNDE): desde el domingo sin novedades.
+Puede haberse alejado mucho O retenida. Info anónima OK. Ofrecen recompensa.
+Tags: Rodrii + G Alejandro. Fuente: ${PANZA_SOURCES.facebookZaguates}`,
+    locations: ['Vicente López'],
+    keywords: ['recompensa', 'retenida', 'sin novedades'],
+  },
+] as const
 
 /** 23/7 noche — Eva Buscando Huellas / Perros PERDIDOS ZONA NORTE */
 export const PANZA_LATEST_SIGHTING = {
@@ -144,6 +248,20 @@ export const PANZA_GMAPS_BIKE_SARMIENTO_URL = gmapsBikeUrl(PANZA_BIKE_LOOP_SARMI
 export const PANZA_WAZE_START_URL = wazeUrl(PANZA_BIKE_LOOP_MARTELLI[0])
 export const PANZA_WAZE_SARMIENTO_URL = wazeUrl(PANZA_BIKE_LOOP_SARMIENTO[0])
 
+/** Waze desde casa (Fray Justo × Pelliza) → foco Martelli */
+export const PANZA_WAZE_HOME_URL = wazeUrl({
+  lat: -34.5154,
+  lng: -58.5077,
+})
+
+/** Maps ida completa: casa → Martelli loop (waypoints) */
+export const PANZA_GMAPS_FROM_HOME_URL =
+  `https://www.google.com/maps/dir/?api=1` +
+  `&origin=-34.5154,-58.5077` +
+  `&destination=-34.551,-58.508` +
+  `&waypoints=-34.532,-58.492|-34.545,-58.505` +
+  `&travelmode=bicycling`
+
 /** Solo el pin del avistaje (Waze / Maps) */
 export const PANZA_WAZE_SIGHTING_URL =
   `https://waze.com/ul?ll=${PANZA_LATEST_SIGHTING.point[1]},${PANZA_LATEST_SIGHTING.point[0]}&navigate=yes&zoom=18`
@@ -154,9 +272,9 @@ export const PANZA_GMAPS_SIGHTING_URL =
 export const PANZA_FB_LEAD_TEXT = PANZA_LATEST_SIGHTING.rawText
 
 export const PANZA_IG_LEAD_TEXT = `Cuenta de difusión Instagram @buscamos.a.panza
+Dueña: Pau Trivi (paupocket). Equipo: Rodrii Perez Schmidt + G Alejandro Trivi.
 BUSCAMOS A PANZA. Se escapó el 15/7 al final del partido por Olivos, zona cementerio.
-Hembra, 4 años, collar violeta con chapita. Contacto paupocket / Rodrii Perez Schmidt.
-Último foco: Gral Paz / Parque Sarmiento → Villa Martelli (23/7).
+Hembra, 4 años, collar violeta con chapita. Último foco: Gral Paz / Parque Sarmiento → Villa Martelli (23/7); también Florida.
 Fuente: ${PANZA_SOURCES.instagram}`
 
 /** Carteles · Constituyentes × Maipú · ~2 h · bici/auto */

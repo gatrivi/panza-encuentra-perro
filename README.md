@@ -42,11 +42,41 @@ yarn seed
 yarn dev
 ```
 
-- App: http://127.0.0.1:5173  
-- Public: http://127.0.0.1:5173/c/pancite  
+- App: http://127.0.0.1:8888  
+- Public: http://127.0.0.1:8888/c/pancita  
 - Emulator UI: http://127.0.0.1:4000  
 
 Login: email + contraseña en la UI (o Google). El **primer** usuario que entra a un caso vacío queda como owner; el resto necesita invitación.
+
+## CATTS TTS (PC casa / Tailscale)
+
+Client: `src/lib/catts.ts` — `cattsHealth`, `cattsLive`, `cattsSpeak`, `cattsAnnounce`.
+
+```bash
+# .env (from .env.example)
+VITE_CATTS_URL=http://100.87.252.18:59200
+VITE_CATTS_API_KEY=
+```
+
+```ts
+import { cattsAnnounce, cattsHealth } from './lib/catts'
+await cattsHealth()                    // ping
+await cattsAnnounce('Te estoy buscando', 'es')  // play wav
+```
+
+Stack on PC (`E:\zengatrivi-drive-e\catts`):
+
+```bash
+npm start              # API :59200
+npm run health
+npm run watch:slack    # Slack when API falls (needs CATTS_SLACK_WEBHOOK_URL)
+```
+
+| App | URL |
+|-----|-----|
+| CatReader | http://100.87.252.18:3000 |
+| Rosario | http://100.87.252.18:3001 |
+| CatTS API | http://100.87.252.18:59200 |
 
 ## Quality gates
 

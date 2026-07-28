@@ -11,6 +11,9 @@ interface ImportMetaEnv {
   readonly VITE_USE_EMULATORS?: string
   readonly VITE_CASE_SLUG?: string
   readonly VITE_PUBLIC_REPORT_URL?: string
+  /** CatTS home API (Tailscale). Default http://100.87.252.18:59200 */
+  readonly VITE_CATTS_URL?: string
+  readonly VITE_CATTS_API_KEY?: string
 }
 
 interface ImportMeta {

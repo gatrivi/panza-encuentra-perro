@@ -1,9 +1,31 @@
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet'
+import { MapContainer, Marker, Popup, useMap, CircleMarker, Polyline } from 'react-leaflet'
 import L from 'leaflet'
 import { useEffect } from 'react'
-import type { Sighting } from '@/domain/schemas'
+import type {
+  AvoidArea,
+  CoverageCell,
+  GeoPoint,
+  Lead,
+  Sighting,
+  Sign,
+} from '@/domain/schemas'
 import { PANZA_SIGN_ROUTE, type SignStop } from '@/lib/panzaCase'
 import { t } from '@/i18n/es-AR'
+import { CoverageLayer, MapLongPress } from './CoverageLayer'
+import { AvoidAreasLayer } from './AvoidAreasLayer'
+import { SignsLayer } from './SignsLayer'
+import { MyLocationMarker } from './MyLocationMarker'
+import { DesktopPlaceClick } from './DesktopPlaceClick'
+import { MapMobileChrome } from './MapMobileChrome'
+import { DayRouteLayer } from './DayRouteLayer'
+import { pointToCell } from '@/lib/geo/h3Coverage'
+import { calcLeadDecay, calcTipDecay } from '@/lib/geo/leadDecay'
+import { PANZA_LATEST_SIGHTING, PANZA_MAP_CENTER } from '@/lib/panzaCase'
+import {
+  buildPosterAwareRoute,
+  PANZA_HOME_BASE,
+  type PosterMode,
+} from '@/lib/posterRoutes'
 import 'leaflet/dist/leaflet.css'
 
 const confidenceColor: Record<Sighting['confidence'], string> = {
@@ -13,17 +35,34 @@ const confidenceColor: Record<Sighting['confidence'], string> = {
   rejected: '#9b2c2c',
 }
 
-function markerIcon(confidence: Sighting['confidence']) {
-  const color = confidenceColor[confidence]
+function markerIcon(s: Sighting) {
+  const decay = calcLeadDecay(s.observedAt)
+  // confidence shape + Sonnet age decay (unverified stays muted)
+  const base = confidenceColor[s.confidence]
+  const color =
+    s.confidence === 'unverified'
+      ? decay.color
+      : s.confidence === 'rejected'
+        ? base
+        : decay.opacity >= 0.8
+          ? base
+          : decay.color
+  const opacity =
+    s.confidence === 'unverified'
+      ? Math.min(decay.opacity, 0.55)
+      : s.confidence === 'rejected'
+        ? 0.4
+        : decay.opacity
+
   const shape =
-    confidence === 'confirmed'
+    s.confidence === 'confirmed'
       ? 'circle'
-      : confidence === 'probable'
+      : s.confidence === 'probable'
         ? 'diamond'
-        : confidence === 'rejected'
+        : s.confidence === 'rejected'
           ? 'x'
           : 'square'
-  const opacity = confidence === 'unverified' ? 0.55 : 1
+
   const html =
     shape === 'circle'
       ? `<span style="display:block;width:16px;height:16px;border-radius:50%;background:${color};opacity:${opacity};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)"></span>`
@@ -34,7 +73,7 @@ function markerIcon(confidence: Sighting['confidence']) {
           : `<span style="display:block;width:14px;height:14px;background:${color};opacity:${opacity};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)"></span>`
 
   return L.divIcon({
-    className: `marker-${confidence}`,
+    className: `marker-${s.confidence}`,
     html,
     iconSize: [20, 20],
     iconAnchor: [10, 10],
@@ -50,58 +89,136 @@ function signIcon(n: number) {
   })
 }
 
+/** Tip crudo (lead sin promover): visible grisado, no mueve zona oficial. */
+function tipIcon(lead: Lead) {
+  const when = lead.claimedObservationAt ?? lead.capturedAt
+  const { opacity, color } = calcTipDecay(when)
+  const html = `<span style="display:block;width:12px;height:12px;border-radius:50%;background:${color};opacity:${opacity};border:1.5px dashed #fff;box-shadow:0 1px 3px rgba(0,0,0,.3)"></span>`
+  return L.divIcon({
+    className: 'marker-tip',
+    html,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
+  })
+}
+
 function FitBounds({
   sightings,
-  signs,
+  tips,
+  posterMode,
+  signStops,
 }: {
   sightings: Sighting[]
-  signs: readonly SignStop[]
+  tips: Lead[]
+  posterMode: PosterMode
+  signStops: readonly SignStop[]
 }) {
   const map = useMap()
   useEffect(() => {
+    const routePts = buildPosterAwareRoute(posterMode).flatMap((leg) => leg.points)
     const pts: [number, number][] = [
+      [PANZA_HOME_BASE.lat, PANZA_HOME_BASE.lng],
       ...sightings.map((s) => [s.point[1], s.point[0]] as [number, number]),
-      ...signs.map((s) => [s.lat, s.lng] as [number, number]),
+      ...tips
+        .filter((l) => l.claimedPoint)
+        .map((l) => [l.claimedPoint![1], l.claimedPoint![0]] as [number, number]),
+      ...signStops.map((s) => [s.lat, s.lng] as [number, number]),
+      ...routePts,
     ]
-    if (pts.length === 0) {
-      map.setView([-34.5633, -58.5152], 14)
-      return
-    }
-    map.fitBounds(L.latLngBounds(pts).pad(0.2))
-  }, [map, sightings, signs])
+    map.fitBounds(L.latLngBounds(pts).pad(0.15))
+  }, [map, sightings, tips, posterMode, signStops])
   return null
+}
+
+export type OperationalMapProps = {
+  sightings: Sighting[]
+  /** Leads con punto, aún no promovidos — Sonnet: visibles grisados */
+  tipLeads?: Lead[]
+  coverage: CoverageCell[]
+  signs: Sign[]
+  avoidAreas: AvoidArea[]
+  myPoint: GeoPoint | null
+  riskSweepIds: string[]
+  suggestIds: string[]
+  placeMode: boolean
+  posterMode: PosterMode
+  showSignRoute?: boolean
+  onPlaceSign: (point: GeoPoint) => void
+  onLongPressHex: (cellId: string) => void
 }
 
 export function OperationalMap({
   sightings,
-  showSigns = true,
-}: {
-  sightings: Sighting[]
-  showSigns?: boolean
-}) {
+  tipLeads = [],
+  coverage,
+  signs,
+  avoidAreas,
+  myPoint,
+  riskSweepIds,
+  suggestIds,
+  placeMode,
+  posterMode,
+  showSignRoute = true,
+  onPlaceSign,
+  onLongPressHex,
+}: OperationalMapProps) {
   const copy = t()
-  const signs = showSigns ? PANZA_SIGN_ROUTE : []
+  const signStops = showSignRoute ? PANZA_SIGN_ROUTE : []
 
   return (
     <div className="map-container">
       <MapContainer
-        center={[-34.5633, -58.5152]}
-        zoom={14}
+        center={[PANZA_MAP_CENTER[1], PANZA_MAP_CENTER[0]]}
+        zoom={15}
         style={{ height: '100%', width: '100%' }}
         scrollWheelZoom
+        zoomControl={false}
+        touchZoom
+        doubleClickZoom
+        dragging
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        <MapMobileChrome myPoint={myPoint} />
+        <ZoomBottomLeft />
+        <FitBounds
+          sightings={sightings}
+          tips={tipLeads}
+          posterMode={posterMode}
+          signStops={signStops}
         />
-        <FitBounds sightings={sightings} signs={signs} />
-        {signs.length > 0 ? (
+        <DayRouteLayer mode={posterMode} />
+        {/* Foco fijo 23/7 si aún no hay datos en Firestore */}
+        {sightings.length === 0 && tipLeads.length === 0 ? (
+          <CircleMarker
+            center={[PANZA_LATEST_SIGHTING.point[1], PANZA_LATEST_SIGHTING.point[0]]}
+            radius={14}
+            pathOptions={{
+              color: '#c45c26',
+              fillColor: '#c45c26',
+              fillOpacity: 0.25,
+              weight: 2,
+            }}
+          >
+            <Popup>
+              <div className="sighting-popup">
+                <h3>Foco 23/7</h3>
+                <p>{PANZA_LATEST_SIGHTING.locationText}</p>
+              </div>
+            </Popup>
+          </CircleMarker>
+        ) : null}
+        <CoverageLayer
+          cells={coverage}
+          riskSweepIds={riskSweepIds}
+          suggestIds={suggestIds}
+          onLongPressCell={onLongPressHex}
+        />
+        {signStops.length > 0 ? (
           <Polyline
-            positions={signs.map((s) => [s.lat, s.lng] as [number, number])}
+            positions={signStops.map((s) => [s.lat, s.lng] as [number, number])}
             pathOptions={{ color: '#1a3a2a', weight: 2, opacity: 0.35 }}
           />
         ) : null}
-        {signs.map((s) => (
+        {signStops.map((s) => (
           <Marker key={`sign-${s.n}`} position={[s.lat, s.lng]} icon={signIcon(s.n)}>
             <Popup>
               <strong>
@@ -111,11 +228,45 @@ export function OperationalMap({
             </Popup>
           </Marker>
         ))}
+        <AvoidAreasLayer areas={avoidAreas} />
+        <SignsLayer signs={signs} />
+        <MyLocationMarker point={myPoint} />
+        <DesktopPlaceClick enabled={placeMode} onPlace={onPlaceSign} />
+        <MapLongPress
+          onLongPress={(lat, lng) => onLongPressHex(pointToCell([lng, lat]))}
+        />
+        {tipLeads.map((lead) =>
+          lead.claimedPoint ? (
+            <Marker
+              key={`tip-${lead.id}`}
+              position={[lead.claimedPoint[1], lead.claimedPoint[0]]}
+              icon={tipIcon(lead)}
+              opacity={0.9}
+            >
+              <Popup>
+                <div className="sighting-popup">
+                  <h3>Tip sin verificar · {lead.origin}</h3>
+                  {lead.claimedLocationText ? <p>{lead.claimedLocationText}</p> : null}
+                  {lead.rawText ? (
+                    <p>{lead.rawText.slice(0, 220)}{lead.rawText.length > 220 ? '…' : ''}</p>
+                  ) : null}
+                  {lead.sourceUrl ? (
+                    <p>
+                      <a href={lead.sourceUrl} target="_blank" rel="noreferrer">
+                        Fuente
+                      </a>
+                    </p>
+                  ) : null}
+                </div>
+              </Popup>
+            </Marker>
+          ) : null,
+        )}
         {sightings.map((s) => (
           <Marker
             key={s.id}
             position={[s.point[1], s.point[0]]}
-            icon={markerIcon(s.confidence)}
+            icon={markerIcon(s)}
           >
             <Popup>
               <div className="sighting-popup">
@@ -147,4 +298,16 @@ export function OperationalMap({
       </MapContainer>
     </div>
   )
+}
+
+function ZoomBottomLeft() {
+  const map = useMap()
+  useEffect(() => {
+    const z = L.control.zoom({ position: 'bottomleft' })
+    z.addTo(map)
+    return () => {
+      z.remove()
+    }
+  }, [map])
+  return null
 }

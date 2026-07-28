@@ -1,13 +1,29 @@
 import { initializeApp } from 'firebase/app'
-import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore'
+import {
+  connectFirestoreEmulator,
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from 'firebase/firestore'
 import { connectStorageEmulator, getStorage } from 'firebase/storage'
 import { firebaseWebConfig } from './config'
 
 export const app = initializeApp(firebaseWebConfig)
-export const db = getFirestore(app)
-export const storage = getStorage(app)
 
 const useEmulators = import.meta.env.VITE_USE_EMULATORS === 'true'
+
+// Sonnet: persistentLocalCache = cola offline + sync al reconectar (reemplaza sync propio).
+// Emulator: memory default — IndexedDB + emulator se pisan.
+export const db = useEmulators
+  ? getFirestore(app)
+  : initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    })
+
+export const storage = getStorage(app)
 
 let emulatorsConnected = false
 

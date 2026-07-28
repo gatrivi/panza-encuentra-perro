@@ -227,3 +227,80 @@ export function canManageMembers(role: MemberRole): boolean {
 export function canManageZones(role: MemberRole): boolean {
   return role === 'owner' || role === 'coordinator'
 }
+
+/** Field safety: any active member may paint/merge avoidAreas geometry. */
+export function canEditAvoidAreas(role: MemberRole): boolean {
+  return role === 'owner' || role === 'coordinator' || role === 'searcher'
+}
+
+/** Only coordinator+ may deactivate or rename others' avoid areas. */
+export function canDeactivateAvoidAreas(role: MemberRole): boolean {
+  return role === 'owner' || role === 'coordinator'
+}
+
+export const SignTierSchema = z.enum(['A', 'B', 'C', 'D'])
+export type SignTier = z.infer<typeof SignTierSchema>
+
+export const SignStatusSchema = z.enum(['active', 'needs_recheck', 'removed'])
+export type SignStatus = z.infer<typeof SignStatusSchema>
+
+export const SignSchema = z.object({
+  id: z.string(),
+  caseId: z.string(),
+  point: GeoPointSchema,
+  tier: SignTierSchema.default('C'),
+  status: SignStatusSchema.default('active'),
+  posterCode: z.string().optional(),
+  notes: z.string().optional(),
+  cellId: z.string().optional(),
+  createdByUid: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+export type Sign = z.infer<typeof SignSchema>
+
+export const CoverageStatusSchema = z.enum(['assigned', 'walked', 'signed', 'revisit'])
+export type CoverageStatus = z.infer<typeof CoverageStatusSchema>
+
+export const CoverageMethodSchema = z.enum([
+  'walk',
+  'drive',
+  'signs',
+  'interview',
+  'camera_check',
+])
+export type CoverageMethod = z.infer<typeof CoverageMethodSchema>
+
+export const CoverageCellSchema = z.object({
+  id: z.string(),
+  caseId: z.string(),
+  status: CoverageStatusSchema,
+  coverageMethod: CoverageMethodSchema.optional(),
+  assignedToUid: z.string().optional(),
+  assignedOutingId: z.string().optional(),
+  updatedAt: z.date(),
+  updatedByUid: z.string().optional(),
+})
+export type CoverageCell = z.infer<typeof CoverageCellSchema>
+
+export const GeoJsonPolygonSchema = z.object({
+  type: z.literal('Polygon'),
+  coordinates: z.array(z.array(GeoPointSchema).min(4)),
+})
+export type GeoJsonPolygon = z.infer<typeof GeoJsonPolygonSchema>
+
+export const AvoidAreaSchema = z.object({
+  id: z.string(),
+  caseId: z.string(),
+  name: z.string().min(1),
+  geometry: GeoJsonPolygonSchema,
+  reason: z.string().nullable().optional(),
+  active: z.boolean(),
+  createdByUid: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+export type AvoidArea = z.infer<typeof AvoidAreaSchema>
+
+/** Default H3 res ~walkable block (“manzana pequeña”). */
+export const DEFAULT_H3_RES = 10

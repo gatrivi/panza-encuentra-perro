@@ -3,6 +3,10 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // ponytail: no Firebase Auth — family MVP gate is client-side username login.
     // Ceiling: anyone with the app URL can write. Upgrade: enable Auth + tighten.
+    // Intended roles (when Auth lands):
+    // - avoidAreas create/merge geometry: any active member (searcher+)
+    // - avoidAreas deactivate: coordinator/owner only
+    // - zones / sighting confirm: coordinator/owner only
 
     match /publicCases/{slug} {
       allow read: if true;

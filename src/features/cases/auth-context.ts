@@ -11,6 +11,8 @@ export type AuthState = {
   loading: boolean
   error: string | null
   signInWithUsername: (username: string, password: string) => Promise<void>
+  /** Switch P / G / R without password (family device). */
+  switchOperator: (username: string) => Promise<void>
   signOut: () => Promise<void>
 }
 

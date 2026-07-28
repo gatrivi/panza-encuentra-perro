@@ -1,91 +1,94 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { connectEmulatorsIfNeeded } from '@/lib/firebase/app'
 import { ensureOperatorMember, ensurePanzaCase } from '@/lib/firebase/repos'
-import { checkFamilyLogin, resolveOperator } from '@/lib/operators'
+import { OPERATORS, resolveOperator, type OperatorUsername } from '@/lib/operators'
+import { PANZA_CASE_ID } from '@/lib/panzaCase'
 import type { Member } from '@/domain/schemas'
 import { t } from '@/i18n/es-AR'
 import { AuthContext, type SessionUser } from './auth-context'
 
-const SESSION_KEY = 'panza.session'
-const USERNAME_KEY = 'panza.username'
+const DEFAULT_USERNAME: OperatorUsername = 'gaston'
+const CASE_CACHE_KEY = 'panza.caseId'
+const OP_CACHE_KEY = 'panza.operator'
 
-type StoredSession = { username: string }
-
-function readStoredUsername(): string | null {
+function readCachedOperator(): OperatorUsername {
   try {
-    const raw = localStorage.getItem(SESSION_KEY)
-    if (raw) {
-      const parsed = JSON.parse(raw) as StoredSession
-      if (parsed?.username && resolveOperator(parsed.username)) return parsed.username
-    }
+    const v = localStorage.getItem(OP_CACHE_KEY)
+    const op = v ? resolveOperator(v) : null
+    if (op) return op.username as OperatorUsername
   } catch {
     /* ignore */
   }
-  const legacy = localStorage.getItem(USERNAME_KEY)
-  return legacy && resolveOperator(legacy) ? legacy : null
+  return DEFAULT_USERNAME
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<SessionUser | null>(null)
-  const [member, setMember] = useState<Member | null>(null)
-  const [caseId, setCaseId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+function stubMember(username: OperatorUsername): Member {
+  const op = OPERATORS[username]
+  return {
+    uid: op.username,
+    role: op.role,
+    displayName: op.displayName,
+    email: `${op.username}@panza.local`,
+    active: true,
+    createdAt: new Date(),
+    lastSeenAt: new Date(),
+  }
+}
 
-  const hydrate = useCallback(async (username: string) => {
-    const op = resolveOperator(username)
-    if (!op) throw new Error('unknown operator')
-    const id = await ensurePanzaCase()
-    const m = await ensureOperatorMember(id, op)
-    setUser({ uid: op.username })
-    setMember(m)
-    setCaseId(id)
-  }, [])
+function readCachedCaseId(): string {
+  try {
+    return localStorage.getItem(CASE_CACHE_KEY) || PANZA_CASE_ID
+  } catch {
+    return PANZA_CASE_ID
+  }
+}
+
+/** Boot instantáneo: UI ya; Firestore seed en background. */
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [caseId, setCaseId] = useState(() => readCachedCaseId())
+  const [opKey, setOpKey] = useState<OperatorUsername>(() => readCachedOperator())
+  const [user, setUser] = useState<SessionUser>(() => ({ uid: readCachedOperator() }))
+  const [member, setMember] = useState<Member>(() => stubMember(readCachedOperator()))
+  const [loading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     connectEmulatorsIfNeeded()
-    const username = readStoredUsername()
-    if (!username) {
-      setLoading(false)
-      return
-    }
-    void hydrate(username)
-      .catch((e) => {
-        console.error(e)
-        localStorage.removeItem(SESSION_KEY)
-        setError(t().errors.generic)
-      })
-      .finally(() => setLoading(false))
-  }, [hydrate])
-
-  const signInWithUsername = useCallback(
-    async (username: string, password: string) => {
-      setError(null)
-      const op = checkFamilyLogin(username, password)
-      if (!op) {
-        setError(resolveOperator(username) ? t().auth.badPassword : t().auth.unknownUser)
-        return
-      }
-      localStorage.setItem(USERNAME_KEY, op.username)
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ username: op.username } satisfies StoredSession))
-      setLoading(true)
+    let cancelled = false
+    void (async () => {
       try {
-        await hydrate(op.username)
+        const id = await ensurePanzaCase()
+        if (cancelled) return
+        localStorage.setItem(CASE_CACHE_KEY, id)
+        setCaseId(id)
+        const m = await ensureOperatorMember(id, OPERATORS[opKey])
+        if (!cancelled) setMember(m)
       } catch (e) {
         console.error(e)
-        setError(t().errors.generic)
-      } finally {
-        setLoading(false)
+        if (!cancelled) setError(t().errors.generic)
       }
-    },
-    [hydrate],
-  )
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [opKey])
 
-  const signOut = useCallback(async () => {
-    localStorage.removeItem(SESSION_KEY)
-    setUser(null)
-    setMember(null)
-    setCaseId(null)
+  const switchOperator = useCallback(async (username: string) => {
+    const op = resolveOperator(username)
+    if (!op) return
+    const key = op.username as OperatorUsername
+    try {
+      localStorage.setItem(OP_CACHE_KEY, key)
+    } catch {
+      /* ignore */
+    }
+    setOpKey(key)
+    setUser({ uid: key })
+    setMember(stubMember(key))
+  }, [])
+
+  const boot = useCallback(async () => {
+    /* no-op: always on */
   }, [])
 
   const value = useMemo(
@@ -95,10 +98,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       caseId,
       loading,
       error,
-      signInWithUsername,
-      signOut,
+      signInWithUsername: boot,
+      switchOperator,
+      signOut: boot,
     }),
-    [user, member, caseId, loading, error, signInWithUsername, signOut],
+    [user, member, caseId, loading, error, boot, switchOperator],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

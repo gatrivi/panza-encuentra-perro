@@ -63,6 +63,8 @@ The app succeeds when it reduces the time between a credible sighting and a coor
 - Reads the operational map.
 - Adds signs, coverage and outing progress.
 - Can paste social-media evidence into the inbox.
+- May create/update geometry of active private avoidance areas (field safety).
+- May not deactivate others’ avoidance areas or touch official zones.
 - Cannot change case-level policy or delete evidence.
 
 #### Coordinator
@@ -70,7 +72,8 @@ The app succeeds when it reduces the time between a credible sighting and a coor
 - Everything a searcher can do.
 - Reviews leads and sightings.
 - Confirms/rejects sightings.
-- Draws the official zone and private avoidance areas.
+- Draws the official zone.
+- May deactivate/edit any avoidance area.
 - Assigns coverage and outings.
 
 #### Owner
@@ -278,6 +281,9 @@ Cell size is a case setting. Begin around a walkable block-scale size and expose
 - `reason`: optional private note
 - `active`
 - `createdByUid`
+- `createdAt`, `updatedAt`
+
+Field capture (risk mode) paints H3 cells, then converts to a polygon on stop. If the swept geometry intersects an active area, merge via union and bump `updatedAt`; otherwise create a new area. Searchers may create/merge active geometry; only coordinator/owner may deactivate.
 
 Avoidance areas are never included in public payloads or analytics.
 
@@ -312,7 +318,7 @@ Clients must treat expired records as absent even before backend cleanup runs.
 
 - actor, action, object type/id, before/after summary, timestamp
 
-At minimum audit sighting verification, official-zone changes, member changes and evidence deletion/archive.
+At minimum audit sighting verification, official-zone changes, member changes, evidence deletion/archive, and avoidance-area create/merge/deactivate (`avoidArea.created`, `avoidArea.merged`, `avoidArea.deactivated`).
 
 ## 5. Paste/share intake
 
@@ -676,8 +682,10 @@ Hard stop: no OCR, coverage grid, routing, live tracking or autonomous browsing 
 
 ### Milestone 3 — Coverage and outings
 
-- H3 coverage overlay.
+- H3 coverage overlay with age fade.
 - Assign/claim/complete/revisit cells.
+- Place signs (FAB + stop-prompt when stationary >1 min); risk mode disables the poster prompt.
+- Avoidance areas: create/read via risk-mode H3→polygon capture; perimeter-based poster suggestions. Not openrouteservice yet.
 - Plan outing checklist.
 - Foreground track with explicit start/stop.
 - One-time location update.
@@ -697,7 +705,8 @@ Hard stop: no OCR, coverage grid, routing, live tracking or autonomous browsing 
 
 - Routing provider adapter.
 - openrouteservice integration through backend.
-- Avoid-area routing request.
+- Avoid-area routing request (send existing `avoidAreas` polygons as ORS avoid polygons).
+- OSM streets/POIs for poster placement hints (e.g. fuel stations).
 - Reorderable proposed route.
 - Clear safety/review language.
 - Graceful manual fallback when routing is unavailable.

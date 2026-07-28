@@ -1,9 +1,13 @@
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import {
   PANZA_CONTACT,
+  PANZA_GMAPS_FROM_HOME_URL,
+  PANZA_GMAPS_SIGHTING_URL,
   PANZA_SEARCH_PLAN_TOMORROW,
   PANZA_SIGN_QUICK45,
   PANZA_SIGN_ROUTE,
+  PANZA_WAZE_HOME_URL,
+  PANZA_WAZE_SIGHTING_URL,
   PANZA_WAZE_SIGN_START_URL,
   type SignStop,
 } from '@/lib/panzaCase'
@@ -13,6 +17,19 @@ import {
   formatDistanceM,
   haversineM,
 } from '@/lib/geo'
+import {
+  POSTER_MODES,
+  readPosterMode,
+  writePosterMode,
+  type PosterMode,
+} from '@/lib/posterRoutes'
+import {
+  campaignDayIndex,
+  SIGNS_CAMPAIGN,
+  signsProgress,
+} from '@/lib/signsCampaign'
+import { useAuth } from '@/features/cases/useAuth'
+import { subscribeSigns } from '@/lib/firebase/fieldRepos'
 import { t } from '@/i18n/es-AR'
 import { useLivePosition } from './useLivePosition'
 
@@ -100,12 +117,56 @@ export function PlanScreen() {
   }
 
   const doneCount = [...done].filter((n) => stops.some((s) => s.n === n)).length
+  const { caseId } = useAuth()
+  const [mode, setMode] = useState<PosterMode>(() => readPosterMode())
+  const [activeSigns, setActiveSigns] = useState(0)
+
+  useEffect(() => {
+    if (!caseId) return
+    return subscribeSigns(caseId, (signs) => {
+      setActiveSigns(signs.filter((s) => s.status === 'active').length)
+    })
+  }, [caseId])
+
+  const progress = signsProgress(activeSigns)
+  const day = campaignDayIndex()
 
   return (
     <div className="screen plan-screen">
       <h1>{copy.plan.title}</h1>
       <p className="plan-urgency">{copy.plan.signHeadline}</p>
       <p className="muted">{copy.plan.signHint}</p>
+      <p className="plan-campaign">
+        Día {day + 1}/{SIGNS_CAMPAIGN.plannedDays} · 1 viaje/día · carteles{' '}
+        <strong>
+          {progress.active}/{progress.target}
+        </strong>{' '}
+        ({progress.pct}%)
+        {progress.done ? ' · red completa' : ''}
+      </p>
+      <p className="muted">Salida: {SIGNS_CAMPAIGN.homeLabel}</p>
+
+      <p className="plan-half-label">Carteles en el recorrido</p>
+      <div className="poster-mode-row plan-poster-modes">
+        {POSTER_MODES.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            title={m.hint}
+            className={`poster-mode-chip${mode === m.id ? ' poster-mode-on' : ''}`}
+            aria-pressed={mode === m.id}
+            onClick={() => {
+              writePosterMode(m.id)
+              setMode(m.id)
+            }}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+      <p className="muted">{POSTER_MODES.find((m) => m.id === mode)?.hint}</p>
+
+      <p className="plan-urgency">{copy.plan.tomorrowHeadline}</p>
 
       <div className="plan-nav-hud">
         <div className="plan-nav-current">
@@ -217,14 +278,23 @@ export function PlanScreen() {
         })}
       </ol>
 
-      <a
-        className="btn plan-nav-btn"
-        href={PANZA_WAZE_SIGN_START_URL}
-        target="_blank"
-        rel="noreferrer"
-      >
-        {copy.plan.openWazeFallback}
-      </a>
+      <div className="plan-nav-actions">
+        <a className="btn plan-nav-btn" href={PANZA_GMAPS_SIGHTING_URL} target="_blank" rel="noreferrer">
+          {copy.plan.openGmapsPin}
+        </a>
+        <a className="btn plan-nav-btn" href={PANZA_WAZE_SIGHTING_URL} target="_blank" rel="noreferrer">
+          {copy.plan.openWazePin}
+        </a>
+        <a className="btn plan-nav-btn" href={PANZA_GMAPS_FROM_HOME_URL} target="_blank" rel="noreferrer">
+          Maps · ida casa→Martelli
+        </a>
+        <a className="btn plan-nav-btn" href={PANZA_WAZE_HOME_URL} target="_blank" rel="noreferrer">
+          Waze · salida casa
+        </a>
+        <a className="btn plan-nav-btn" href={PANZA_WAZE_SIGN_START_URL} target="_blank" rel="noreferrer">
+          {copy.plan.openWazeFallback}
+        </a>
+      </div>
 
       <p className="plan-call">
         Si la ves: no agarrar · seguir · llamar{' '}
