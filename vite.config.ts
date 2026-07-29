@@ -33,6 +33,8 @@ export default defineConfig({
         ],
       },
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
         // Case photos are ~5 MB: cache them only if a user actually opens them.
         globPatterns: ['**/*.{js,css,html,svg,ico}', 'pwa-*.png'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
