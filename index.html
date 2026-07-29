@@ -8,13 +8,15 @@
     <meta name="description" content="Operativo Pancita — mapa operativo compartido" />
     <link rel="dns-prefetch" href="//tile.openstreetmap.org" />
     <link rel="preconnect" href="https://tile.openstreetmap.org" crossorigin />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <title>Operativo Pancita</title>
   </head>
   <body>
     <div id="root">
       <div class="boot-splash" role="status">
         <span>Operativo Pancita</span>
-        <small>Abriendo mapa de campo…</small>
+        <strong>Roca × vías · 60 min</strong>
+        <small>Ruta lista · abriendo calles…</small>
       </div>
     </div>
     <style>
@@ -34,11 +36,22 @@
         font-size: 0.85rem;
         font-weight: 650;
       }
+      .boot-splash strong {
+        font-size: 1rem;
+      }
       #root:empty {
         min-height: 100dvh;
         background: #0a0e0c;
       }
     </style>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker
+          .getRegistrations()
+          .then((items) => items.forEach((item) => item.unregister()))
+          .catch(() => undefined)
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

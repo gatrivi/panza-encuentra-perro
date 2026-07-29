@@ -19,6 +19,8 @@ const SAT = {
 export function MapMobileChrome({ myPoint }: { myPoint: GeoPoint | null }) {
   const map = useMap()
   const [sat, setSat] = useState(false)
+  const [tilesEnabled, setTilesEnabled] = useState(false)
+  const [tilesReady, setTilesReady] = useState(false)
 
   useEffect(() => {
     const bump = () => map.invalidateSize()
@@ -33,20 +35,43 @@ export function MapMobileChrome({ myPoint }: { myPoint: GeoPoint | null }) {
     }
   }, [map])
 
+  useEffect(() => {
+    const enable = () => {
+      window.requestAnimationFrame(() => setTilesEnabled(true))
+    }
+    if (document.readyState === 'complete') enable()
+    else window.addEventListener('load', enable, { once: true })
+    return () => window.removeEventListener('load', enable)
+  }, [])
+
   return (
     <>
-      <TileLayer
-        key={sat ? 'sat' : 'osm'}
-        attribution={sat ? SAT.attr : OSM.attr}
-        url={sat ? SAT.url : OSM.url}
-        maxZoom={19}
-      />
+      {tilesEnabled ? (
+        <TileLayer
+          key={sat ? 'sat' : 'osm'}
+          attribution={sat ? SAT.attr : OSM.attr}
+          url={sat ? SAT.url : OSM.url}
+          maxZoom={19}
+          eventHandlers={{
+            loading: () => setTilesReady(false),
+            load: () => setTilesReady(true),
+          }}
+        />
+      ) : null}
+      {!tilesReady ? (
+        <div className="map-base-status" role="status">
+          Ruta lista · cargando calles
+        </div>
+      ) : null}
       <div className="map-mobile-controls" role="toolbar" aria-label="Controles del mapa">
         <button
           type="button"
           className={`map-ctl${sat ? ' map-ctl-on' : ''}`}
           aria-pressed={sat}
-          onClick={() => setSat((v) => !v)}
+          onClick={() => {
+            setTilesReady(false)
+            setSat((v) => !v)
+          }}
         >
           {sat ? 'Calles' : 'Satélite'}
         </button>

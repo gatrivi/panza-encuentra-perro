@@ -613,6 +613,21 @@ a {
   gap: 0.4rem;
 }
 
+.map-base-status {
+  position: absolute;
+  top: 12px;
+  left: 48px;
+  z-index: 1000;
+  max-width: calc(100% - 160px);
+  padding: 0.45rem 0.7rem;
+  border-radius: 10px;
+  background: rgba(12, 16, 14, 0.88);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  pointer-events: none;
+}
+
 .map-ctl {
   appearance: none;
   border: 1px solid var(--border);
