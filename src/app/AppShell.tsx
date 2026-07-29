@@ -21,24 +21,28 @@ export function AppShell() {
 
       <Outlet />
 
-      <nav className="bottom-nav" aria-label="Principal">
-        <NavLink to="/" end>
-          {copy.nav.map}
-        </NavLink>
-        <NavLink to="/bandeja">{copy.nav.inbox}</NavLink>
-        <NavLink to="/plan">{copy.nav.plan}</NavLink>
-      </nav>
+      {mapOnly ? null : (
+        <>
+          <nav className="bottom-nav" aria-label="Principal">
+            <NavLink to="/" end>
+              {copy.nav.map}
+            </NavLink>
+            <NavLink to="/bandeja">{copy.nav.inbox}</NavLink>
+            <NavLink to="/plan">{copy.nav.plan}</NavLink>
+          </nav>
 
-      <div className="fab-wrap">
-        <button
-          type="button"
-          className="btn btn-accent"
-          aria-label="Nueva acción"
-          onClick={() => setSheetOpen(true)}
-        >
-          +
-        </button>
-      </div>
+          <div className="fab-wrap">
+            <button
+              type="button"
+              className="btn btn-accent"
+              aria-label="Nueva acción"
+              onClick={() => setSheetOpen(true)}
+            >
+              +
+            </button>
+          </div>
+        </>
+      )}
 
       {sheetOpen ? <ActionSheet onClose={() => setSheetOpen(false)} /> : null}
     </div>

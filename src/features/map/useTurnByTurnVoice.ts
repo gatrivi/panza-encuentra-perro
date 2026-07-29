@@ -7,17 +7,27 @@ import {
   advanceIndex,
   cueForPosition,
   flattenRouteNodes,
+  previewForIndex,
+  type RoutePhase,
 } from '@/lib/turnByTurn'
 
 type Args = {
   enabled: boolean
   myPoint: GeoPoint | null
   posterMode: PosterMode
+  phase: RoutePhase
 }
 
-/** Live GPS → voice cues on default poster route. */
-export function useTurnByTurnVoice({ enabled, myPoint, posterMode }: Args) {
+/** Live GPS → voice cues; screen shows lastCue as secondary confirm. */
+export function useTurnByTurnVoice({
+  enabled,
+  myPoint,
+  posterMode,
+  phase,
+}: Args) {
   const [index, setIndex] = useState(0)
+  const [lastCue, setLastCue] = useState<string | null>(null)
+  const [preview, setPreview] = useState('Ruta al último avistaje')
   const lastKey = useRef<string | null>(null)
   const prev = useRef<GeoPoint | null>(null)
   const speaking = useRef(false)
@@ -25,12 +35,15 @@ export function useTurnByTurnVoice({ enabled, myPoint, posterMode }: Args) {
   useEffect(() => {
     setIndex(0)
     lastKey.current = null
-  }, [posterMode])
+    setLastCue(null)
+    const nodes = flattenRouteNodes(posterMode, phase)
+    setPreview(previewForIndex(nodes, 0))
+  }, [posterMode, phase])
 
   useEffect(() => {
     if (!enabled || !myPoint) return
     const me = { lat: myPoint[1], lng: myPoint[0] }
-    const nodes = flattenRouteNodes(posterMode)
+    const nodes = flattenRouteNodes(posterMode, phase)
     if (nodes.length === 0) return
 
     let heading: number | null = null
@@ -45,6 +58,7 @@ export function useTurnByTurnVoice({ enabled, myPoint, posterMode }: Args) {
 
     const nextI = advanceIndex(me, nodes, index)
     if (nextI !== index) setIndex(nextI)
+    setPreview(previewForIndex(nodes, nextI))
 
     const cue = cueForPosition({
       me,
@@ -54,9 +68,12 @@ export function useTurnByTurnVoice({ enabled, myPoint, posterMode }: Args) {
     })
     if (!cue || cue.key === lastKey.current || speaking.current) return
     lastKey.current = cue.key
+    setLastCue(cue.text)
     speaking.current = true
     void announceNav(cue.text).finally(() => {
       speaking.current = false
     })
-  }, [enabled, myPoint, posterMode, index])
+  }, [enabled, myPoint, posterMode, phase, index])
+
+  return { lastCue, preview, index }
 }

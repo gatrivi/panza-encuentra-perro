@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/features/cases/useAuth'
 import { subscribeLeads, subscribeSightings } from '@/lib/firebase/repos'
 import {
@@ -15,7 +15,6 @@ import type {
   Sighting,
   Sign,
 } from '@/domain/schemas'
-import { t } from '@/i18n/es-AR'
 import { RiskModeChip } from './RiskModeChip'
 import { StopPosterPrompt } from './StopPosterPrompt'
 import { usePatrolGps } from './usePatrolGps'
@@ -28,25 +27,22 @@ import {
 } from '@/lib/geo/h3Coverage'
 import { announceNav, VOICE_NAV } from '@/lib/voiceNav'
 import { FieldHud } from './FieldHud'
-import { PosterModeChips } from './PosterModeChips'
 import { OperatorSwitch } from './OperatorSwitch'
 import { OperationalMap } from './OperationalMap'
 import { useTurnByTurnVoice } from './useTurnByTurnVoice'
 import { gridDisk } from 'h3-js'
 import {
-  buildPosterAwareRoute,
   readPosterMode,
   writePosterMode,
   type PosterMode,
 } from '@/lib/posterRoutes'
+import type { RoutePhase } from '@/lib/turnByTurn'
 
-/** Default = solo mapa. Tools detrás de un toggle. */
+/** Field-first: voz guía, pantalla confirma, un dedo. */
 export function MapScreen() {
   const { caseId, member } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [sightings, setSightings] = useState<Sighting[]>([])
-  const [showRejected, setShowRejected] = useState(false)
-  const [showSigns, setShowSigns] = useState(true)
   const [leads, setLeads] = useState<Lead[]>([])
   const [coverage, setCoverage] = useState<CoverageCell[]>([])
   const [signs, setSigns] = useState<Sign[]>([])
@@ -54,17 +50,15 @@ export function MapScreen() {
   const [riskMode, setRiskMode] = useState(false)
   const [riskSweepIds, setRiskSweepIds] = useState<string[]>([])
   const [stopPromptPoint, setStopPromptPoint] = useState<GeoPoint | null>(null)
-  const [placeMode, setPlaceMode] = useState(false)
   const [voiceNavOn, setVoiceNavOn] = useState(true)
   const [toolsOpen, setToolsOpen] = useState(false)
-  const [posterMode, setPosterMode] = useState<PosterMode>(() => readPosterMode())
-  const copy = t()
+  const [phase, setPhase] = useState<RoutePhase>('out')
+  const [posterMode] = useState<PosterMode>(() => {
+    const m = readPosterMode()
+    if (m !== 'dest_return') writePosterMode('dest_return')
+    return 'dest_return'
+  })
   const actorUid = member?.uid ?? null
-
-  const setPoster = useCallback((m: PosterMode) => {
-    writePosterMode(m)
-    setPosterMode(m)
-  }, [])
 
   useEffect(() => {
     if (!caseId) return
@@ -105,10 +99,11 @@ export function MapScreen() {
     onStopPrompt: setStopPromptPoint,
   })
 
-  useTurnByTurnVoice({
+  const { lastCue, preview } = useTurnByTurnVoice({
     enabled: voiceNavOn && !riskMode,
     myPoint,
     posterMode,
+    phase,
   })
 
   useEffect(() => {
@@ -125,7 +120,6 @@ export function MapScreen() {
         point: p,
         actorUid,
       })
-      setPlaceMode(false)
       setStopPromptPoint(null)
       dismissStopPrompt()
     },
@@ -142,9 +136,7 @@ export function MapScreen() {
     })
   }, [searchParams, myPoint, placeSignAt, setSearchParams])
 
-  const visible = sightings.filter(
-    (s) => showRejected || s.confidence !== 'rejected',
-  )
+  const visible = sightings.filter((s) => s.confidence !== 'rejected')
 
   const tipLeads = useMemo(
     () =>
@@ -162,11 +154,6 @@ export function MapScreen() {
     const ok = sightings.filter((s) => s.confidence !== 'rejected')
     return ok[0] ?? null
   }, [sightings])
-
-  const posterStops = useMemo(
-    () => buildPosterAwareRoute(posterMode).flatMap((l) => l.posterStops),
-    [posterMode],
-  )
 
   const suggestIds = useMemo(() => {
     const activeAvoid = avoidAreas.filter((a) => a.active)
@@ -221,8 +208,18 @@ export function MapScreen() {
     }
   }, [actorUid, caseId, riskMode, takeRiskCells])
 
+  const goHome = useCallback(() => {
+    setPhase('back')
+    setVoiceNavOn(true)
+    void announceNav(VOICE_NAV.goingHome)
+  }, [])
+
+  const placeHere = useCallback(() => {
+    if (myPoint) void placeSignAt(myPoint)
+  }, [myPoint, placeSignAt])
+
   return (
-    <div className="map-screen map-only street-readable">
+    <div className="map-screen map-only street-readable field-ops">
       <div className="map-layout">
         <OperationalMap
           sightings={visible}
@@ -233,9 +230,9 @@ export function MapScreen() {
           myPoint={myPoint}
           riskSweepIds={riskSweepIds}
           suggestIds={suggestIds}
-          placeMode={placeMode}
+          placeMode={false}
           posterMode={posterMode}
-          showSignRoute={showSigns}
+          showSignRoute
           onPlaceSign={(p) => void placeSignAt(p)}
           onLongPressHex={(cellId) => {
             if (riskMode) addRiskCell(cellId)
@@ -243,82 +240,101 @@ export function MapScreen() {
         />
       </div>
 
-      <div className="map-float-top">
-        <OperatorSwitch />
-        <button
-          type="button"
-          className={`map-tools-toggle${toolsOpen ? ' map-tools-on' : ''}`}
-          aria-expanded={toolsOpen}
-          aria-label="Herramientas"
-          onClick={() => setToolsOpen((v) => !v)}
-        >
-          {toolsOpen ? '×' : '···'}
-        </button>
-      </div>
-
-      <p className="map-route-hint" role="status">
-        Ruta → último avistaje · {posterStops.length} paradas cartel
-        {posterStops[0] ? ` · 1ª: ${posterStops[0].label}` : ''}
-        {voiceNavOn ? ' · voz ON' : ' · voz OFF'}
-      </p>
+      <button
+        type="button"
+        className={`map-tools-toggle field-tools-btn${toolsOpen ? ' map-tools-on' : ''}`}
+        aria-expanded={toolsOpen}
+        aria-label="Más"
+        onClick={() => setToolsOpen((v) => !v)}
+      >
+        {toolsOpen ? '×' : '···'}
+      </button>
 
       {toolsOpen ? (
         <div className="map-float-panel">
-          <PosterModeChips mode={posterMode} onChange={setPoster} />
-          <div className="row">
-            <label className="muted">
-              <input
-                type="checkbox"
-                checked={showSigns}
-                onChange={(e) => setShowSigns(e.target.checked)}
-              />{' '}
-              {copy.map.showSigns}
-            </label>
-            <label className="muted">
-              <input
-                type="checkbox"
-                checked={showRejected}
-                onChange={(e) => setShowRejected(e.target.checked)}
-              />{' '}
-              Incluir rechazados
-            </label>
-          </div>
-          <div className="map-chrome-actions">
-            <FieldHud riskOn={riskMode} />
-            <RiskModeChip
-              active={riskMode}
-              onToggle={() => {
-                void (async () => {
-                  const turningOn = !riskMode
-                  await toggleRisk()
-                  void announceNav(turningOn ? VOICE_NAV.riskOn : VOICE_NAV.riskOff)
-                })()
-              }}
-              sweeping={riskSweepIds.length > 0}
-              cellCount={riskSweepIds.length}
-            />
+          <OperatorSwitch />
+          <FieldHud riskOn={riskMode} />
+          <RiskModeChip
+            active={riskMode}
+            onToggle={() => {
+              void (async () => {
+                const turningOn = !riskMode
+                await toggleRisk()
+                void announceNav(turningOn ? VOICE_NAV.riskOn : VOICE_NAV.riskOff)
+              })()
+            }}
+            sweeping={riskSweepIds.length > 0}
+            cellCount={riskSweepIds.length}
+          />
+          <button
+            type="button"
+            className={`btn btn-ghost map-voice-btn${voiceNavOn ? ' map-voice-on' : ''}`}
+            aria-pressed={voiceNavOn}
+            onClick={() => setVoiceNavOn((v) => !v)}
+          >
+            {voiceNavOn ? 'Voz ON' : 'Voz OFF'}
+          </button>
+          {phase === 'back' ? (
             <button
               type="button"
-              className={`btn btn-ghost map-voice-btn${voiceNavOn ? ' map-voice-on' : ''}`}
-              aria-pressed={voiceNavOn}
-              onClick={() => setVoiceNavOn((v) => !v)}
-              title="Navegación por voz"
+              className="btn btn-ghost"
+              onClick={() => setPhase('out')}
             >
-              {voiceNavOn ? 'Voz ON' : 'Voz OFF'}
-            </button>
-          </div>
-          {gpsError ? <p className="map-gps-hint map-gps-warn">{gpsError}</p> : null}
-          {placeMode ? (
-            <button
-              type="button"
-              className="btn btn-ghost place-mode-on"
-              onClick={() => setPlaceMode(false)}
-            >
-              {copy.map.placeModeOn}
+              Volver a ida
             </button>
           ) : null}
+          <Link className="btn btn-ghost" to="/plan">
+            Plan
+          </Link>
+          <Link className="btn btn-ghost" to="/bandeja">
+            Bandeja
+          </Link>
+          {gpsError ? <p className="map-gps-hint map-gps-warn">{gpsError}</p> : null}
         </div>
       ) : null}
+
+      <div className="field-dock" role="region" aria-label="Navegación">
+        <p className="field-cue" role="status">
+          {lastCue ?? preview}
+        </p>
+        <p className="field-phase">
+          {phase === 'out' ? 'Ida → avistaje' : 'Vuelta → casa + carteles'}
+          {voiceNavOn ? ' · VOZ' : ' · silencio'}
+        </p>
+        <div className="field-actions">
+          <button
+            type="button"
+            className="btn btn-accent field-btn"
+            disabled={!myPoint}
+            onClick={placeHere}
+          >
+            Cartel acá
+          </button>
+          {phase === 'out' ? (
+            <button
+              type="button"
+              className="btn btn-primary field-btn"
+              onClick={goHome}
+            >
+              Listo · vuelta
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-primary field-btn"
+              disabled={!myPoint}
+              onClick={() => {
+                if (myPoint) {
+                  void announceNav(VOICE_NAV.continue)
+                }
+              }}
+            >
+              Seguí
+            </button>
+          )}
+        </div>
+      </div>
+
       <StopPosterPrompt
         open={Boolean(stopPromptPoint) && !riskMode}
         onYes={() => {

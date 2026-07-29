@@ -451,6 +451,84 @@ a {
   pointer-events: none;
 }
 
+/* Field ops: sol / noche / una mano — dock dominante */
+.app-shell-map .bottom-nav,
+.app-shell-map .fab-wrap {
+  display: none;
+}
+
+.app-shell-map .map-screen,
+.map-screen.field-ops {
+  min-height: 100dvh;
+  height: 100dvh;
+}
+
+.field-tools-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1100;
+  width: 48px;
+  height: 48px;
+  font-size: 1.25rem;
+  background: #111;
+  color: #fff;
+  border-color: #333;
+}
+
+.field-dock {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1100;
+  padding: 0.75rem 0.75rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
+  background: rgba(10, 14, 12, 0.92);
+  color: #f5f7f4;
+  border-top: 3px solid var(--accent);
+}
+
+.field-cue {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 0 #000;
+}
+
+.field-phase {
+  margin: 0 0 0.65rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #c8d4c8;
+}
+
+.field-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+}
+
+.field-btn {
+  min-height: 56px;
+  border-radius: 14px;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.field-ops .map-mobile-controls {
+  bottom: calc(168px + env(safe-area-inset-bottom, 0px));
+}
+
+.field-ops .map-ctl {
+  min-height: 48px;
+  font-weight: 800;
+  background: rgba(12, 16, 14, 0.88);
+  color: #fff;
+  border-color: #444;
+}
+
 .plan-campaign {
   margin: 0.35rem 0 0.75rem;
   font-weight: 700;

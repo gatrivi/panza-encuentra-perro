@@ -32,4 +32,12 @@ describe('turnByTurn', () => {
     })
     expect(cue?.text).toMatch(/metros/)
   })
+
+  it('back phase keeps only inbound nodes', () => {
+    const out = flattenRouteNodes(POSTER_MODE_DEFAULT, 'out')
+    const back = flattenRouteNodes(POSTER_MODE_DEFAULT, 'back')
+    expect(back.length).toBeGreaterThan(0)
+    expect(back.length).toBeLessThan(out.length)
+    expect(back.some((n) => n.poster)).toBe(true)
+  })
 })

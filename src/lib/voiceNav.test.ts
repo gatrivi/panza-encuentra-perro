@@ -3,7 +3,7 @@ import { VOICE_NAV, voiceMeters } from './voiceNav'
 
 describe('voiceNav', () => {
   it('keeps a small phrase set', () => {
-    expect(Object.keys(VOICE_NAV).length).toBeLessThanOrEqual(14)
+    expect(Object.keys(VOICE_NAV).length).toBeLessThanOrEqual(15)
   })
 
   it('builds meter prompts', () => {

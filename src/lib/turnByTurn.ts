@@ -10,6 +10,8 @@ import {
 } from '@/lib/posterRoutes'
 import { VOICE_NAV, voiceMeters } from '@/lib/voiceNav'
 
+export type RoutePhase = 'out' | 'back'
+
 export type RouteNode = {
   lat: number
   lng: number
@@ -20,8 +22,13 @@ export type RouteNode = {
 const NEAR_M = 90
 const ARRIVE_M = 35
 
-export function flattenRouteNodes(mode: PosterMode): RouteNode[] {
-  const legs = buildPosterAwareRoute(mode)
+export function flattenRouteNodes(
+  mode: PosterMode,
+  phase: RoutePhase = 'out',
+): RouteNode[] {
+  const legs = buildPosterAwareRoute(mode).filter((leg) =>
+    phase === 'back' ? leg.id === 'inbound' : true,
+  )
   const out: RouteNode[] = []
   const seen = new Set<string>()
   for (const leg of legs) {
@@ -67,6 +74,19 @@ export type NavCue = {
   text: string
   /** Dedup key: node + phase */
   key: string
+}
+
+/** Preview line for the screen (voice is primary). */
+export function previewForIndex(
+  nodes: readonly RouteNode[],
+  index: number,
+): string {
+  if (nodes.length === 0) return 'Sin ruta'
+  const i = Math.min(index, nodes.length - 1)
+  const n = nodes[i]!
+  const left = nodes.length - i
+  if (n.poster) return `Próximo cartel · ${n.label} · ${left} pts`
+  return `Seguí · ${n.label} · ${left} pts`
 }
 
 /** One cue per GPS tick; caller dedups by key. */

@@ -17,6 +17,7 @@ export const VOICE_NAV = {
   riskOn: 'Modo riesgo. Vas a marcar zonas a evitar',
   riskOff: 'Modo riesgo apagado',
   posterAsk: '¿Colocaste un cartel?',
+  goingHome: 'Listo. Vuelta a casa con paradas de cartel',
 } as const
 
 export type VoiceNavKey = keyof typeof VOICE_NAV
