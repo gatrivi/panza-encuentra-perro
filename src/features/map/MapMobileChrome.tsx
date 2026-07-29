@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { TileLayer, useMap } from 'react-leaflet'
 import type { GeoPoint } from '@/domain/schemas'
+import { LocalStreetLayer } from './LocalStreetLayer'
 
 const OSM = {
   // One HTTP/2 connection. OSM explicitly requires this host (not a/b/c).
@@ -15,8 +16,14 @@ const SAT = {
   attr: 'Tiles &copy; Esri',
 }
 
-/** Fix Leaflet size + botones touch: satélite / mi ubicación. */
-export function MapMobileChrome({ myPoint }: { myPoint: GeoPoint | null }) {
+/** Fix Leaflet size + local streets + touch controls. */
+export function MapMobileChrome({
+  myPoint,
+  localArea = false,
+}: {
+  myPoint: GeoPoint | null
+  localArea?: boolean
+}) {
   const map = useMap()
   const [sat, setSat] = useState(false)
   const [tilesEnabled, setTilesEnabled] = useState(false)
@@ -46,7 +53,9 @@ export function MapMobileChrome({ myPoint }: { myPoint: GeoPoint | null }) {
 
   return (
     <>
-      {tilesEnabled ? (
+      {tilesEnabled && localArea && !sat ? (
+        <LocalStreetLayer onReady={() => setTilesReady(true)} />
+      ) : tilesEnabled ? (
         <TileLayer
           key={sat ? 'sat' : 'osm'}
           attribution={sat ? SAT.attr : OSM.attr}

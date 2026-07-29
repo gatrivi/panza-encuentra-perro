@@ -224,8 +224,12 @@ export function OperationalMap({
         touchZoom
         doubleClickZoom
         dragging
+        preferCanvas
       >
-        <MapMobileChrome myPoint={myPoint} />
+        <MapMobileChrome
+          myPoint={myPoint}
+          localArea={routePlan === 'roca-vias'}
+        />
         <ZoomBottomLeft />
         <FitBounds
           sightings={sightings}
