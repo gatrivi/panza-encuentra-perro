@@ -47,14 +47,20 @@ export function usePatrolGps({
 
   useEffect(() => {
     let cancelled = false
-    const timer = window.setTimeout(() => {
-      void import('@/lib/geo/h3Coverage').then((m) => {
-        if (!cancelled) h3Ref.current = m
-      })
-    }, 2_500)
+    let timer: number | null = null
+    const loadAfterMap = () => {
+      timer = window.setTimeout(() => {
+        void import('@/lib/geo/h3Coverage').then((m) => {
+          if (!cancelled) h3Ref.current = m
+        })
+      }, 3_000)
+    }
+    if (document.readyState === 'complete') loadAfterMap()
+    else window.addEventListener('load', loadAfterMap, { once: true })
     return () => {
       cancelled = true
-      window.clearTimeout(timer)
+      if (timer != null) window.clearTimeout(timer)
+      window.removeEventListener('load', loadAfterMap)
     }
   }, [])
 

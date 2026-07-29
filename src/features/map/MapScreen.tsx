@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/features/cases/useAuth'
 import type {
@@ -17,7 +24,6 @@ import { announceNav, VOICE_NAV } from '@/lib/voiceNav'
 import { FieldHud } from './FieldHud'
 import { OperatorSwitch } from './OperatorSwitch'
 import { useTurnByTurnVoice } from './useTurnByTurnVoice'
-import { OperationalMap } from './OperationalMap'
 import {
   countRoutePosters,
   FIELD_ROUTE_MAX_MINUTES,
@@ -31,6 +37,21 @@ import {
   type RoutePlanId,
 } from '@/lib/posterRoutes'
 import type { RoutePhase } from '@/lib/turnByTurn'
+
+const OperationalMap = lazy(() =>
+  import('./OperationalMap').then((module) => ({
+    default: module.OperationalMap,
+  })),
+)
+
+function FieldMapPreview() {
+  return (
+    <div className="map-container field-map-preview" role="status">
+      <strong>Roca × vías</strong>
+      <span>Ruta lista · preparando mapa local</span>
+    </div>
+  )
+}
 
 /** Field-first: voz guía, pantalla confirma, un dedo. */
 export function MapScreen() {
@@ -48,6 +69,9 @@ export function MapScreen() {
   const [toolsOpen, setToolsOpen] = useState(false)
   const [phase, setPhase] = useState<RoutePhase>('out')
   const [suggestIds, setSuggestIds] = useState<string[]>([])
+  const [mapReady, setMapReady] = useState(
+    () => document.readyState === 'complete',
+  )
   const routePlan: RoutePlanId =
     searchParams.get('route') === 'roca-vias'
       ? 'roca-vias'
@@ -67,30 +91,43 @@ export function MapScreen() {
   const actorUid = member?.uid ?? null
 
   useEffect(() => {
+    if (mapReady) return
+    const revealMap = () => setMapReady(true)
+    window.addEventListener('load', revealMap, { once: true })
+    return () => window.removeEventListener('load', revealMap)
+  }, [mapReady])
+
+  useEffect(() => {
     if (!caseId) return
     let cancelled = false
     const unsubs: Array<() => void> = []
-    const timer = window.setTimeout(() => {
-      void (async () => {
-        const [{ subscribeLeads, subscribeSightings }, field] =
-          await Promise.all([
-            import('@/lib/firebase/repos'),
-            import('@/lib/firebase/fieldRepos'),
-          ])
-        if (cancelled) return
-        unsubs.push(subscribeSightings(caseId, setSightings))
-        unsubs.push(field.subscribeCoverage(caseId, setCoverage))
-        unsubs.push(field.subscribeSigns(caseId, setSigns))
-        unsubs.push(field.subscribeAvoidAreas(caseId, setAvoidAreas))
-        unsubs.push(subscribeLeads(caseId, setLeads))
-        void flushFieldActions()
-      })()
-    }, 2_000)
+    let timer: number | null = null
+    const subscribeAfterMap = () => {
+      timer = window.setTimeout(() => {
+        void (async () => {
+          const [{ subscribeLeads, subscribeSightings }, field] =
+            await Promise.all([
+              import('@/lib/firebase/repos'),
+              import('@/lib/firebase/fieldRepos'),
+            ])
+          if (cancelled) return
+          unsubs.push(subscribeSightings(caseId, setSightings))
+          unsubs.push(field.subscribeCoverage(caseId, setCoverage))
+          unsubs.push(field.subscribeSigns(caseId, setSigns))
+          unsubs.push(field.subscribeAvoidAreas(caseId, setAvoidAreas))
+          unsubs.push(subscribeLeads(caseId, setLeads))
+          void flushFieldActions()
+        })()
+      }, 3_000)
+    }
+    if (document.readyState === 'complete') subscribeAfterMap()
+    else window.addEventListener('load', subscribeAfterMap, { once: true })
     const onOnline = () => void flushFieldActions()
     window.addEventListener('online', onOnline)
     return () => {
       cancelled = true
-      window.clearTimeout(timer)
+      if (timer != null) window.clearTimeout(timer)
+      window.removeEventListener('load', subscribeAfterMap)
       for (const u of unsubs) u()
       window.removeEventListener('online', onOnline)
     }
@@ -327,27 +364,33 @@ export function MapScreen() {
   return (
     <div className="map-screen map-only street-readable field-ops">
       <div className="map-layout">
-        <OperationalMap
-          sightings={visible}
-          tipLeads={tipLeads}
-          coverage={coverage}
-          signs={signs}
-          avoidAreas={avoidAreas}
-          myPoint={myPoint}
-          riskSweepIds={riskSweepIds}
-          suggestIds={suggestIds}
-          placeMode={false}
-          posterMode={posterMode}
-          routePlan={routePlan}
-          routeMinutes={routeMinutes}
-          skippedIds={skippedIds}
-          routeOrigin={routeOrigin}
-          showSignRoute
-          onPlaceSign={(p) => void placeSignAt(p)}
-          onLongPressHex={(cellId) => {
-            if (riskMode) addRiskCell(cellId)
-          }}
-        />
+        {mapReady ? (
+          <Suspense fallback={<FieldMapPreview />}>
+            <OperationalMap
+              sightings={visible}
+              tipLeads={tipLeads}
+              coverage={coverage}
+              signs={signs}
+              avoidAreas={avoidAreas}
+              myPoint={myPoint}
+              riskSweepIds={riskSweepIds}
+              suggestIds={suggestIds}
+              placeMode={false}
+              posterMode={posterMode}
+              routePlan={routePlan}
+              routeMinutes={routeMinutes}
+              skippedIds={skippedIds}
+              routeOrigin={routeOrigin}
+              showSignRoute
+              onPlaceSign={(p) => void placeSignAt(p)}
+              onLongPressHex={(cellId) => {
+                if (riskMode) addRiskCell(cellId)
+              }}
+            />
+          </Suspense>
+        ) : (
+          <FieldMapPreview />
+        )}
       </div>
 
       <button

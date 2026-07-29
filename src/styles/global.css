@@ -399,6 +399,27 @@ a {
   z-index: 0;
 }
 
+.field-map-preview {
+  display: grid;
+  place-content: center;
+  gap: 0.35rem;
+  min-height: 100%;
+  padding-bottom: 12rem;
+  text-align: center;
+  background-color: #e5e2d9;
+  background-image:
+    linear-gradient(rgba(26, 58, 42, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26, 58, 42, 0.08) 1px, transparent 1px);
+  background-size: 28px 28px;
+  color: var(--brand);
+}
+
+.field-map-preview span {
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+  font-weight: 750;
+}
+
 .map-only .map-layout {
   flex: 1;
   min-height: 0;
