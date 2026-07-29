@@ -6,33 +6,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#1a3a2a" />
     <meta name="description" content="Operativo Pancita — mapa operativo compartido" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Source+Sans+3:wght@400;600;700&display=swap"
-      rel="stylesheet"
-      media="print"
-      onload="this.media='all'"
-    />
-    <noscript>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Source+Sans+3:wght@400;600;700&display=swap"
-        rel="stylesheet"
-      />
-    </noscript>
+    <link rel="dns-prefetch" href="//tile.openstreetmap.org" />
+    <link rel="preconnect" href="https://tile.openstreetmap.org" crossorigin />
     <title>Operativo Pancita</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot-splash" role="status">
+        <span>Operativo Pancita</span>
+        <small>Abriendo mapa de campo…</small>
+      </div>
+    </div>
     <style>
       .boot-splash {
         min-height: 100dvh;
         margin: 0;
         display: grid;
         place-items: center;
+        align-content: center;
+        gap: 0.35rem;
         background: #0a0e0c;
         color: #f5f7f4;
         font: 800 1.25rem/1.2 system-ui, sans-serif;
+      }
+      .boot-splash small {
+        color: #b9c8be;
+        font-size: 0.85rem;
+        font-weight: 650;
       }
       #root:empty {
         min-height: 100dvh;

@@ -3,8 +3,10 @@ import { TileLayer, useMap } from 'react-leaflet'
 import type { GeoPoint } from '@/domain/schemas'
 
 const OSM = {
-  url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-  attr: '&copy; OpenStreetMap',
+  // One HTTP/2 connection. OSM explicitly requires this host (not a/b/c).
+  url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  attr:
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 }
 
 /** Esri World Imagery — sin API key (atribución requerida). */

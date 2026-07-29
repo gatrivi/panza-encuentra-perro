@@ -13,11 +13,31 @@ createRoot(document.getElementById('root')!).render(
 )
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  const register = () => {
-    window.setTimeout(() => {
-      void navigator.serviceWorker.register('/sw.js').catch(() => undefined)
-    }, 8_000)
+  const wasControlled = Boolean(navigator.serviceWorker.controller)
+  let reloading = false
+
+  if (wasControlled) {
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloading) return
+      reloading = true
+      window.location.reload()
+    })
   }
-  if (document.readyState === 'complete') register()
-  else window.addEventListener('load', register, { once: true })
+
+  const register = () => {
+    void navigator.serviceWorker
+      .register('/sw.js', { updateViaCache: 'none' })
+      .then((registration) => registration.update())
+      .catch(() => undefined)
+  }
+
+  if (wasControlled) {
+    // Returning field devices get the current route without a hard refresh.
+    window.setTimeout(register, 1_000)
+  } else {
+    // First visit: keep service-worker work out of the critical map path.
+    const registerAfterLoad = () => window.setTimeout(register, 8_000)
+    if (document.readyState === 'complete') registerAfterLoad()
+    else window.addEventListener('load', registerAfterLoad, { once: true })
+  }
 }
