@@ -1,7 +1,12 @@
 import { CircleMarker, Marker, Polyline, Popup, Tooltip } from 'react-leaflet'
 import L from 'leaflet'
-import type { PosterMode } from '@/lib/posterRoutes'
-import { buildPosterAwareRoute, PANZA_HOME_BASE } from '@/lib/posterRoutes'
+import {
+  buildPosterAwareRoute,
+  getRouteStart,
+  type PosterMode,
+  type RouteOrigin,
+  type RoutePlanId,
+} from '@/lib/posterRoutes'
 
 const posterIcon = L.divIcon({
   className: 'poster-stop-icon',
@@ -10,24 +15,48 @@ const posterIcon = L.divIcon({
   iconAnchor: [6, 6],
 })
 
-/** Recorrido del día desde casa + paradas cartel según modo. */
-export function DayRouteLayer({ mode }: { mode: PosterMode }) {
-  const legs = buildPosterAwareRoute(mode)
+type Props = {
+  mode: PosterMode
+  plan: RoutePlanId
+  minutes: number
+  skippedIds: readonly string[]
+  origin: RouteOrigin | null
+}
+
+/** Recorrido del día + paradas, adaptado al tiempo y decisiones de campo. */
+export function DayRouteLayer({
+  mode,
+  plan,
+  minutes,
+  skippedIds,
+  origin,
+}: Props) {
+  const legs = buildPosterAwareRoute(mode, {
+    plan,
+    minutes,
+    skippedIds,
+    origin,
+  })
+  const routeStart = origin ?? getRouteStart(plan)
+  const startLabel =
+    origin && plan === 'roca-vias'
+      ? 'Tu ubicación al recalcular'
+      : getRouteStart(plan).label
 
   return (
     <>
       <CircleMarker
-        center={[PANZA_HOME_BASE.lat, PANZA_HOME_BASE.lng]}
+        center={[routeStart.lat, routeStart.lng]}
         radius={10}
         pathOptions={{ color: '#1a3a2a', fillColor: '#2d5a42', fillOpacity: 0.9, weight: 2 }}
       >
         <Popup>
           <strong>Salida</strong>
-          <p>{PANZA_HOME_BASE.label}</p>
+          <p>{startLabel}</p>
         </Popup>
       </CircleMarker>
 
-      {legs.map((leg) => (
+      {legs.filter((leg) => leg.points.length > 1).map((leg) => (
         <Polyline
           key={leg.id}
           positions={leg.points}
@@ -48,7 +77,7 @@ export function DayRouteLayer({ mode }: { mode: PosterMode }) {
       {legs.flatMap((leg) =>
         leg.posterStops.map((s) => (
           <Marker
-            key={`${leg.id}-${s.label}`}
+            key={`${leg.id}-${s.id}`}
             position={[s.lat, s.lng]}
             icon={posterIcon}
           >
@@ -57,6 +86,7 @@ export function DayRouteLayer({ mode }: { mode: PosterMode }) {
               <p>
                 {leg.label}: {s.label}
               </p>
+              {s.why ? <p>{s.why}</p> : null}
             </Popup>
           </Marker>
         )),

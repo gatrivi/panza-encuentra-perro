@@ -514,10 +514,41 @@ a {
   color: #c8d4c8;
 }
 
+.field-time-controls {
+  display: grid;
+  grid-template-columns: 56px 1fr 56px;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.65rem;
+}
+
+.field-time-controls strong {
+  text-align: center;
+  font-size: 1rem;
+}
+
+.field-time-controls button {
+  min-height: 40px;
+  border: 1px solid #59635b;
+  border-radius: 10px;
+  background: #202722;
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+}
+
+.field-time-controls button:disabled {
+  opacity: 0.4;
+}
+
 .field-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.55rem;
+}
+
+.field-actions-adaptive {
+  grid-template-columns: 1.15fr 0.75fr 1fr;
 }
 
 .field-btn {
@@ -527,8 +558,23 @@ a {
   font-weight: 800;
 }
 
+.field-skip-btn {
+  color: #fff;
+  border-color: #69716b;
+}
+
+.field-route-summary {
+  margin: 0;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  background: rgba(20, 28, 22, 0.88);
+  color: #f5f2ea;
+  font-size: 0.85rem;
+  font-weight: 750;
+}
+
 .field-ops .map-mobile-controls {
-  bottom: calc(168px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(220px + env(safe-area-inset-bottom, 0px));
 }
 
 .field-ops .map-ctl {

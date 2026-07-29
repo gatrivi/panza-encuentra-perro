@@ -1,7 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { GeoPoint } from '@/domain/schemas'
 import { bearingDeg } from '@/lib/geo'
-import type { PosterMode } from '@/lib/posterRoutes'
+import type {
+  PosterMode,
+  RouteOrigin,
+  RoutePlanId,
+} from '@/lib/posterRoutes'
 import { announceNav } from '@/lib/voiceNav'
 import {
   advanceIndex,
@@ -16,6 +20,10 @@ type Args = {
   myPoint: GeoPoint | null
   posterMode: PosterMode
   phase: RoutePhase
+  routePlan: RoutePlanId
+  routeMinutes: number
+  skippedIds: readonly string[]
+  origin: RouteOrigin | null
 }
 
 /** Live GPS → voice cues; screen shows lastCue as secondary confirm. */
@@ -24,6 +32,10 @@ export function useTurnByTurnVoice({
   myPoint,
   posterMode,
   phase,
+  routePlan,
+  routeMinutes,
+  skippedIds,
+  origin,
 }: Args) {
   const [index, setIndex] = useState(0)
   const [lastCue, setLastCue] = useState<string | null>(null)
@@ -31,19 +43,34 @@ export function useTurnByTurnVoice({
   const lastKey = useRef<string | null>(null)
   const prev = useRef<GeoPoint | null>(null)
   const speaking = useRef(false)
+  const nodes = useMemo(
+    () =>
+      flattenRouteNodes(posterMode, phase, {
+        plan: routePlan,
+        minutes: routeMinutes,
+        skippedIds,
+        origin,
+      }),
+    [
+      posterMode,
+      phase,
+      routePlan,
+      routeMinutes,
+      skippedIds,
+      origin,
+    ],
+  )
 
   useEffect(() => {
     setIndex(0)
     lastKey.current = null
     setLastCue(null)
-    const nodes = flattenRouteNodes(posterMode, phase)
     setPreview(previewForIndex(nodes, 0))
-  }, [posterMode, phase])
+  }, [nodes])
 
   useEffect(() => {
     if (!enabled || !myPoint) return
     const me = { lat: myPoint[1], lng: myPoint[0] }
-    const nodes = flattenRouteNodes(posterMode, phase)
     if (nodes.length === 0) return
 
     let heading: number | null = null
@@ -73,7 +100,10 @@ export function useTurnByTurnVoice({
     void announceNav(cue.text).finally(() => {
       speaking.current = false
     })
-  }, [enabled, myPoint, posterMode, phase, index])
+  }, [enabled, myPoint, nodes, index])
 
-  return { lastCue, preview, index }
+  const currentPoster =
+    nodes.slice(index).find((node) => node.poster) ?? null
+
+  return { lastCue, preview, index, currentPoster }
 }

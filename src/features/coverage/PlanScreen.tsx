@@ -153,12 +153,12 @@ export function PlanScreen() {
       <h1>{copy.plan.title}</h1>
       <p className="plan-urgency">
         {campaign === 'roca_via'
-          ? 'Carteles · Roca × vía BN (Florida / Padilla)'
+          ? 'Carteles · Roca × vías (Florida / Martelli)'
           : copy.plan.signHeadline}
       </p>
       <p className="muted">
         {campaign === 'roca_via'
-          ? '14 paradas · Roca, estaciones, Mitre, Shell Gral Paz. Quick = 7 pts.'
+          ? '13 puntos de alto impacto en 60 min. Quick adapta el circuito a 45 min.'
           : copy.plan.signHint}
       </p>
       <div className="poster-mode-row plan-poster-modes" role="group" aria-label="Campaña">

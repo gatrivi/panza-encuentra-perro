@@ -1,5 +1,10 @@
 /** Shared Panza case payload — client bootstrap + seed. */
 
+import {
+  ROCA_VIAS_EPICENTER,
+  ROCA_VIAS_STOPS,
+} from '@/lib/posterRoutes'
+
 export const PANZA_CASE_ID = 'case_panza'
 export const PANZA_SLUG = 'pancita'
 
@@ -338,113 +343,46 @@ export const PANZA_WAZE_SIGN_START_URL = wazeUrl(PANZA_SIGN_EPICENTER)
  * Ver public/panza/RECORRIDO-ROCA-VIA.md
  */
 export const PANZA_ROCA_VIA_EPICENTER = {
-  lat: -34.53074,
-  lng: -58.49038,
-  label: 'Roca × España',
+  lat: ROCA_VIAS_EPICENTER.lat,
+  lng: ROCA_VIAS_EPICENTER.lng,
+  label: ROCA_VIAS_EPICENTER.label,
 } as const
+
+const PANZA_ROCA_VIA_60_STOPS = ROCA_VIAS_STOPS.filter(
+  (stop) => stop.minMinutes <= 60,
+)
 
 export const PANZA_ROCA_VIA_ROUTE: readonly SignStop[] = [
   {
     n: 1,
-    label: 'Roca × España',
-    why: 'corredor Roca, parada colectivo, ojos Florida',
-    lat: -34.53074,
-    lng: -58.49038,
+    label: ROCA_VIAS_EPICENTER.label,
+    why: ROCA_VIAS_EPICENTER.why,
+    lat: ROCA_VIAS_EPICENTER.lat,
+    lng: ROCA_VIAS_EPICENTER.lng,
   },
+  ...PANZA_ROCA_VIA_60_STOPS.map((stop, index) => ({
+    n: index + 2,
+    label: stop.label,
+    why: stop.why,
+    lat: stop.lat,
+    lng: stop.lng,
+  })),
   {
-    n: 2,
-    label: 'Est. Florida (Belgrano Norte)',
-    why: 'vía + andén + gente todo el día',
-    lat: -34.5352,
-    lng: -58.4898,
+    n: PANZA_ROCA_VIA_60_STOPS.length + 2,
+    label: `${ROCA_VIAS_EPICENTER.label} · cierre`,
+    why: 'cerrar el circuito en el último avistamiento',
+    lat: ROCA_VIAS_EPICENTER.lat,
+    lng: ROCA_VIAS_EPICENTER.lng,
   },
-  {
-    n: 3,
-    label: 'San Martín × cerca estación Florida',
-    why: 'comercios, tránsito peatonal',
-    lat: -34.5348,
-    lng: -58.4915,
-  },
-  {
-    n: 4,
-    label: 'Maipú × Florida (Mitre)',
-    why: 'avenida, comercios, visibilidad',
-    lat: -34.532,
-    lng: -58.492,
-  },
-  {
-    n: 5,
-    label: 'Roca entre Maipú y Mitre',
-    why: 'calle Roca, portones / baldíos',
-    lat: -34.5345,
-    lng: -58.4985,
-  },
-  {
-    n: 6,
-    label: 'Mitre × Roca',
-    why: 'cruce alto tránsito Florida Oeste',
-    lat: -34.5387,
-    lng: -58.50743,
-  },
-  {
-    n: 7,
-    label: 'Vía BN · tramo Florida→Padilla',
-    why: 'costado vía, refugio bajo puentes',
-    lat: -34.5405,
-    lng: -58.5035,
-  },
-  {
-    n: 8,
-    label: 'Estación Padilla',
-    why: 'vía, rampas, refugio, gente',
-    lat: -34.5434,
-    lng: -58.5006,
-  },
-  {
-    n: 9,
-    label: 'Mitre × Laprida',
-    why: 'borde industrial este',
-    lat: -34.5458,
-    lng: -58.4995,
-  },
-  {
-    n: 10,
-    label: 'Shell Gral Paz 3802',
-    why: 'nafta 24 h, colectora, olores',
-    lat: -34.5499,
-    lng: -58.5013,
-  },
-  {
-    n: 11,
-    label: 'Colectora Gral Paz (Padilla–Tecno)',
-    why: 'banquina, perros de tránsito',
-    lat: -34.551,
-    lng: -58.5035,
-  },
-  {
-    n: 12,
-    label: 'Lavalle × cerca Padilla',
-    why: 'acceso estación, vecinos',
-    lat: -34.5438,
-    lng: -58.5025,
-  },
-  {
-    n: 13,
-    label: 'Mitre × Pringles (Florida Oeste)',
-    why: 'corredor comercial paralelo vía',
-    lat: -34.5375,
-    lng: -58.501,
-  },
-  {
-    n: 14,
-    label: 'Roca × España (cierre)',
-    why: 'segundo cartel cara opuesta',
-    lat: -34.53074,
-    lng: -58.49038,
-  },
-] as const
+]
 
-export const PANZA_ROCA_VIA_QUICK = [1, 2, 6, 8, 10, 4, 14] as const
+export const PANZA_ROCA_VIA_QUICK: readonly number[] = [
+  1,
+  ...PANZA_ROCA_VIA_60_STOPS.flatMap((stop, index) =>
+    stop.minMinutes <= 45 ? [index + 2] : [],
+  ),
+  PANZA_ROCA_VIA_60_STOPS.length + 2,
+]
 
 /** Campaña activa del día — Plan / mapa usan esto. */
 export type SignCampaignId = 'constituyentes' | 'roca_via'

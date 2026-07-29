@@ -23,8 +23,11 @@ import { calcLeadDecay, calcTipDecay } from '@/lib/geo/leadDecay'
 import { PANZA_LATEST_SIGHTING, PANZA_MAP_CENTER } from '@/lib/panzaCase'
 import {
   buildPosterAwareRoute,
-  PANZA_HOME_BASE,
+  getRouteStart,
+  ROCA_VIAS_EPICENTER,
   type PosterMode,
+  type RouteOrigin,
+  type RoutePlanId,
 } from '@/lib/posterRoutes'
 import 'leaflet/dist/leaflet.css'
 
@@ -107,17 +110,31 @@ function FitBounds({
   tips,
   posterMode,
   signStops,
+  routePlan,
+  routeMinutes,
+  skippedIds,
+  routeOrigin,
 }: {
   sightings: Sighting[]
   tips: Lead[]
   posterMode: PosterMode
   signStops: readonly SignStop[]
+  routePlan: RoutePlanId
+  routeMinutes: number
+  skippedIds: readonly string[]
+  routeOrigin: RouteOrigin | null
 }) {
   const map = useMap()
   useEffect(() => {
-    const routePts = buildPosterAwareRoute(posterMode).flatMap((leg) => leg.points)
+    const routePts = buildPosterAwareRoute(posterMode, {
+      plan: routePlan,
+      minutes: routeMinutes,
+      skippedIds,
+      origin: routeOrigin,
+    }).flatMap((leg) => leg.points)
+    const routeStart = routeOrigin ?? getRouteStart(routePlan)
     const pts: [number, number][] = [
-      [PANZA_HOME_BASE.lat, PANZA_HOME_BASE.lng],
+      [routeStart.lat, routeStart.lng],
       ...sightings.map((s) => [s.point[1], s.point[0]] as [number, number]),
       ...tips
         .filter((l) => l.claimedPoint)
@@ -126,7 +143,17 @@ function FitBounds({
       ...routePts,
     ]
     map.fitBounds(L.latLngBounds(pts).pad(0.15))
-  }, [map, sightings, tips, posterMode, signStops])
+  }, [
+    map,
+    sightings,
+    tips,
+    posterMode,
+    signStops,
+    routePlan,
+    routeMinutes,
+    skippedIds,
+    routeOrigin,
+  ])
   return null
 }
 
@@ -142,6 +169,10 @@ export type OperationalMapProps = {
   suggestIds: string[]
   placeMode: boolean
   posterMode: PosterMode
+  routePlan: RoutePlanId
+  routeMinutes: number
+  skippedIds: readonly string[]
+  routeOrigin: RouteOrigin | null
   showSignRoute?: boolean
   onPlaceSign: (point: GeoPoint) => void
   onLongPressHex: (cellId: string) => void
@@ -158,12 +189,17 @@ export function OperationalMap({
   suggestIds,
   placeMode,
   posterMode,
+  routePlan,
+  routeMinutes,
+  skippedIds,
+  routeOrigin,
   showSignRoute = true,
   onPlaceSign,
   onLongPressHex,
 }: OperationalMapProps) {
   const copy = t()
-  const signStops = showSignRoute ? PANZA_SIGN_ROUTE : []
+  const signStops =
+    showSignRoute && routePlan !== 'roca-vias' ? PANZA_SIGN_ROUTE : []
 
   return (
     <div className="map-container">
@@ -184,10 +220,38 @@ export function OperationalMap({
           tips={tipLeads}
           posterMode={posterMode}
           signStops={signStops}
+          routePlan={routePlan}
+          routeMinutes={routeMinutes}
+          skippedIds={skippedIds}
+          routeOrigin={routeOrigin}
         />
-        <DayRouteLayer mode={posterMode} />
-        {/* Foco fijo 23/7 si aún no hay datos en Firestore */}
-        {sightings.length === 0 && tipLeads.length === 0 ? (
+        <DayRouteLayer
+          mode={posterMode}
+          plan={routePlan}
+          minutes={routeMinutes}
+          skippedIds={skippedIds}
+          origin={routeOrigin}
+        />
+        {routePlan === 'roca-vias' ? (
+          <CircleMarker
+            center={[ROCA_VIAS_EPICENTER.lat, ROCA_VIAS_EPICENTER.lng]}
+            radius={14}
+            pathOptions={{
+              color: '#c45c26',
+              fillColor: '#c45c26',
+              fillOpacity: 0.3,
+              weight: 3,
+            }}
+          >
+            <Popup>
+              <div className="sighting-popup">
+                <h3>Último avistamiento confirmado</h3>
+                <p>{ROCA_VIAS_EPICENTER.label}</p>
+                <p>{ROCA_VIAS_EPICENTER.why}</p>
+              </div>
+            </Popup>
+          </CircleMarker>
+        ) : sightings.length === 0 && tipLeads.length === 0 ? (
           <CircleMarker
             center={[PANZA_LATEST_SIGHTING.point[1], PANZA_LATEST_SIGHTING.point[0]]}
             radius={14}

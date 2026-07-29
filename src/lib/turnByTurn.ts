@@ -7,12 +7,14 @@ import { bearingDeg, haversineM } from '@/lib/geo'
 import {
   buildPosterAwareRoute,
   type PosterMode,
+  type RouteOptions,
 } from '@/lib/posterRoutes'
 import { VOICE_NAV, voiceMeters } from '@/lib/voiceNav'
 
 export type RoutePhase = 'out' | 'back'
 
 export type RouteNode = {
+  id: string
   lat: number
   lng: number
   label: string
@@ -25,21 +27,35 @@ const ARRIVE_M = 35
 export function flattenRouteNodes(
   mode: PosterMode,
   phase: RoutePhase = 'out',
+  options: RouteOptions = {},
 ): RouteNode[] {
-  const legs = buildPosterAwareRoute(mode).filter((leg) =>
-    phase === 'back' ? leg.id === 'inbound' : true,
+  const legs = buildPosterAwareRoute(mode, options).filter((leg) =>
+    phase === 'back' ? leg.id === 'inbound' : leg.id !== 'inbound',
   )
   const out: RouteNode[] = []
-  const seen = new Set<string>()
   for (const leg of legs) {
-    for (const [lat, lng] of leg.points) {
+    for (const [pointIndex, [lat, lng]] of leg.points.entries()) {
       const k = `${lat.toFixed(4)},${lng.toFixed(4)}`
-      if (seen.has(k)) continue
-      seen.add(k)
+      const previous = out.at(-1)
+      const previousKey = previous
+        ? `${previous.lat.toFixed(4)},${previous.lng.toFixed(4)}`
+        : null
       const hit = leg.posterStops.find(
         (p) => Math.abs(p.lat - lat) < 1e-4 && Math.abs(p.lng - lng) < 1e-4,
       )
+      if (previousKey === k) {
+        if (previous && hit && !previous.poster) {
+          out[out.length - 1] = {
+            ...previous,
+            id: hit.id,
+            label: hit.label,
+            poster: true,
+          }
+        }
+        continue
+      }
       out.push({
+        id: hit?.id ?? `${leg.id}-${pointIndex}`,
         lat,
         lng,
         label: hit?.label ?? leg.label,

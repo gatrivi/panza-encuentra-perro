@@ -1,37 +1,38 @@
-# Recorrido carteles — Calle Roca × vía Belgrano Norte · 14 paradas
+# Recorrido de carteles — Roca × vías · Florida / Villa Martelli
 
-**Día:** ronda Florida / Florida Oeste / borde Martelli (Roca + vía BN).  
-**Epicentro:** **Roca × España** (`-34.53074,-58.49038`).  
-**Prioridad:** estación, andenes, cruces Mitre/Roca, nafta Gral Paz, banquina.  
-**Cloud itinerary:** merge coords/labels encima de `PANZA_ROCA_VIA_ROUTE` en `src/lib/panzaCase.ts`.
+**Epicentro confirmado:** Roca × vías (`-34.53944,-58.508577`), con cruce hacia
+Villa Martelli.
+
+**Circuito base:** 60 minutos en auto, 13 paradas de alto impacto.
+
+**Adaptación en campo:** `−15`, `+15`, `Saltar` y `Reponer paradas`; cada cambio
+recalcula desde la ubicación actual y queda guardado en la URL.
 
 **Si la ves:** no agarrar · seguir a distancia · **1156194761** / **1130400210**
 
----
+## Ruta base de 60 minutos
 
-## Ruta (orden)
+| # | Parada | Por qué |
+|---|--------|---------|
+| 1 | Estación Florida + plazas de la vía | pasajeros y permanencia |
+| 2 | Luna Market · Yrigoyen | supermercado y tránsito barrial |
+| 3 | Plaza La Paz | paseadores y vecinos |
+| 4 | CAPS Bermúdez | referencia vecinal |
+| 5 | Roca · corredor comercial/industrial | portones, repartidores y trabajadores |
+| 6 | Maternidad Santa Rosa + guardia | circulación prolongada |
+| 7 | Veterinaria · Melo | contacto con dueños de animales |
+| 8 | Plaza de los Intendentes | verde y cruce de recorridos |
+| 9 | El Arca · pet shop | red de mascotas de Martelli |
+| 10 | Nuevo Sol · pet shop | comerciantes atentos a animales |
+| 11 | Plaza León Vienni + destacamento | plaza, policía y centro de Martelli |
+| 12 | Plaza de las Américas / Padilla | estación, plaza y peatones |
+| 13 | Shell · Mitre 901 | atención 24 h, cámaras y tránsito |
 
-| # | Parada | Por qué | Coords |
-|---|--------|---------|--------|
-| 1 | **Roca × España** | corredor Roca, colectivo | `-34.53074,-58.49038` |
-| 2 | Est. Florida (BN) | vía + andén | `-34.5352,-58.4898` |
-| 3 | San Martín × cerca Est. Florida | comercios | `-34.5348,-58.4915` |
-| 4 | Maipú × Florida (Mitre) | avenida | `-34.532,-58.492` |
-| 5 | Roca entre Maipú y Mitre | portones / baldíos | `-34.5345,-58.4985` |
-| 6 | **Mitre × Roca** | alto tránsito FO | `-34.5387,-58.50743` |
-| 7 | Vía BN Florida→Padilla | costado vía | `-34.5405,-58.5035` |
-| 8 | **Estación Padilla** | vía, rampas | `-34.5434,-58.5006` |
-| 9 | Mitre × Laprida | industrial este | `-34.5458,-58.4995` |
-| 10 | Shell Gral Paz 3802 | nafta 24 h | `-34.5499,-58.5013` |
-| 11 | Colectora Gral Paz | banquina | `-34.551,-58.5035` |
-| 12 | Lavalle × Padilla | acceso estación | `-34.5438,-58.5025` |
-| 13 | Mitre × Pringles | paralelo vía | `-34.5375,-58.501` |
-| 14 | Roca × España (cierre) | cara opuesta | `-34.53074,-58.49038` |
+El orden se rota hacia la parada más cercana cuando hay GPS. Los presupuestos
+de 15, 30 y 45 minutos conservan primero los puntos de mayor rendimiento; al
+sumar tiempo se incorporan veterinarias, comercios, plazas, estaciones de
+servicio y referencias barriales adicionales, hasta 120 minutos.
 
-**Quick (~45 min):** 1, 2, 6, 8, 10, 4, 14.
+## Enlace operativo
 
-## Pin inicio
-
-https://www.google.com/maps/search/?api=1&query=-34.53074,-58.49038
-
-Waze: https://waze.com/ul?ll=-34.53074,-58.49038&navigate=yes&zoom=17
+https://pancita.gatrivi.com/?route=roca-vias&minutes=60

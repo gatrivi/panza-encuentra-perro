@@ -18,9 +18,16 @@ import { FieldHud } from './FieldHud'
 import { OperatorSwitch } from './OperatorSwitch'
 import { useTurnByTurnVoice } from './useTurnByTurnVoice'
 import {
+  countRoutePosters,
+  FIELD_ROUTE_MAX_MINUTES,
+  FIELD_ROUTE_MIN_MINUTES,
+  FIELD_ROUTE_STEP_MINUTES,
+  normalizeRouteMinutes,
   readPosterMode,
   writePosterMode,
   type PosterMode,
+  type RouteOrigin,
+  type RoutePlanId,
 } from '@/lib/posterRoutes'
 import type { RoutePhase } from '@/lib/turnByTurn'
 
@@ -44,6 +51,17 @@ export function MapScreen() {
   const [toolsOpen, setToolsOpen] = useState(false)
   const [phase, setPhase] = useState<RoutePhase>('out')
   const [suggestIds, setSuggestIds] = useState<string[]>([])
+  const routePlan: RoutePlanId =
+    searchParams.get('route') === 'roca-vias'
+      ? 'roca-vias'
+      : 'home-martelli'
+  const routeMinutes = normalizeRouteMinutes(searchParams.get('minutes'))
+  const skippedParam = searchParams.get('skip') ?? ''
+  const skippedIds = useMemo(
+    () => skippedParam.split(',').filter(Boolean),
+    [skippedParam],
+  )
+  const [routeOrigin, setRouteOrigin] = useState<RouteOrigin | null>(null)
   const [posterMode] = useState<PosterMode>(() => {
     const m = readPosterMode()
     if (m !== 'dest_return') writePosterMode('dest_return')
@@ -96,12 +114,21 @@ export function MapScreen() {
     onStopPrompt: setStopPromptPoint,
   })
 
-  const { lastCue, preview } = useTurnByTurnVoice({
+  const { lastCue, preview, currentPoster } = useTurnByTurnVoice({
     enabled: voiceNavOn && !riskMode,
     myPoint,
     posterMode,
     phase,
+    routePlan,
+    routeMinutes,
+    skippedIds,
+    origin: routeOrigin,
   })
+
+  useEffect(() => {
+    if (routePlan !== 'roca-vias' || !myPoint || routeOrigin) return
+    setRouteOrigin({ lat: myPoint[1], lng: myPoint[0] })
+  }, [routePlan, myPoint, routeOrigin])
 
   useEffect(() => {
     if (!stopPromptPoint || riskMode || !voiceNavOn) return
@@ -219,11 +246,78 @@ export function MapScreen() {
     }
   }, [actorUid, caseId, riskMode, takeRiskCells])
 
+  const routePosterCount = useMemo(
+    () =>
+      countRoutePosters(posterMode, {
+        plan: routePlan,
+        minutes: routeMinutes,
+        skippedIds,
+        origin: routeOrigin,
+      }),
+    [
+      posterMode,
+      routePlan,
+      routeMinutes,
+      skippedIds,
+      routeOrigin,
+    ],
+  )
+
+  const updateFieldRoute = useCallback(
+    (minutes: number, nextSkipped: readonly string[]) => {
+      const next = new URLSearchParams(searchParams)
+      next.set('route', 'roca-vias')
+      next.set('minutes', String(normalizeRouteMinutes(minutes)))
+      if (nextSkipped.length > 0) {
+        next.set('skip', nextSkipped.join(','))
+      } else {
+        next.delete('skip')
+      }
+      setSearchParams(next, { replace: true })
+      if (myPoint) {
+        setRouteOrigin({ lat: myPoint[1], lng: myPoint[0] })
+      }
+      setPhase('out')
+    },
+    [searchParams, setSearchParams, myPoint],
+  )
+
+  const changeRouteMinutes = useCallback(
+    (delta: number) => {
+      updateFieldRoute(routeMinutes + delta, skippedIds)
+      void announceNav(
+        `Ruta ajustada a ${normalizeRouteMinutes(routeMinutes + delta)} minutos`,
+      )
+    },
+    [routeMinutes, skippedIds, updateFieldRoute],
+  )
+
+  const skipCurrentStop = useCallback(() => {
+    if (!currentPoster || routePlan !== 'roca-vias') return
+    const nextSkipped = [...new Set([...skippedIds, currentPoster.id])]
+    updateFieldRoute(routeMinutes, nextSkipped)
+    void announceNav(`Omitido ${currentPoster.label}. Recalculando`)
+  }, [
+    currentPoster,
+    routePlan,
+    skippedIds,
+    routeMinutes,
+    updateFieldRoute,
+  ])
+
+  const restoreStops = useCallback(() => {
+    updateFieldRoute(routeMinutes, [])
+    void announceNav('Paradas repuestas. Recalculando')
+  }, [routeMinutes, updateFieldRoute])
+
   const goHome = useCallback(() => {
+    if (routePlan === 'roca-vias' && myPoint) {
+      setRouteOrigin({ lat: myPoint[1], lng: myPoint[0] })
+    }
     setPhase('back')
     setVoiceNavOn(true)
     void announceNav(VOICE_NAV.goingHome)
-  }, [])
+  }, [routePlan, myPoint])
 
   const placeHere = useCallback(() => {
     if (myPoint) void placeSignAt(myPoint)
@@ -244,6 +338,10 @@ export function MapScreen() {
             suggestIds={suggestIds}
             placeMode={false}
             posterMode={posterMode}
+            routePlan={routePlan}
+            routeMinutes={routeMinutes}
+            skippedIds={skippedIds}
+            routeOrigin={routeOrigin}
             showSignRoute
             onPlaceSign={(p) => void placeSignAt(p)}
             onLongPressHex={(cellId) => {
@@ -279,6 +377,25 @@ export function MapScreen() {
             sweeping={riskSweepIds.length > 0}
             cellCount={riskSweepIds.length}
           />
+          {routePlan === 'roca-vias' ? (
+            <>
+              <p className="field-route-summary">
+                Roca × vías · {routeMinutes} min · {routePosterCount} paradas
+                {skippedIds.length > 0
+                  ? ` · ${skippedIds.length} omitidas`
+                  : ''}
+              </p>
+              {skippedIds.length > 0 ? (
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={restoreStops}
+                >
+                  Reponer paradas
+                </button>
+              ) : null}
+            </>
+          ) : null}
           <button
             type="button"
             className={`btn btn-ghost map-voice-btn${voiceNavOn ? ' map-voice-on' : ''}`}
@@ -291,9 +408,14 @@ export function MapScreen() {
             <button
               type="button"
               className="btn btn-ghost"
-              onClick={() => setPhase('out')}
+              onClick={() => {
+                if (myPoint) {
+                  setRouteOrigin({ lat: myPoint[1], lng: myPoint[0] })
+                }
+                setPhase('out')
+              }}
             >
-              Volver a ida
+              Volver a ruta
             </button>
           ) : null}
           <Link className="btn btn-ghost" to="/plan">
@@ -311,10 +433,45 @@ export function MapScreen() {
           {lastCue ?? preview}
         </p>
         <p className="field-phase">
-          {phase === 'out' ? 'Ida → avistaje' : 'Vuelta → casa + carteles'}
+          {routePlan === 'roca-vias'
+            ? phase === 'out'
+              ? `Roca × vías · ${routePosterCount} paradas`
+              : 'Cierre → último avistamiento'
+            : phase === 'out'
+              ? 'Ida → avistaje'
+              : 'Vuelta → casa + carteles'}
           {voiceNavOn ? ' · VOZ' : ' · silencio'}
         </p>
-        <div className="field-actions">
+        {routePlan === 'roca-vias' && phase === 'out' ? (
+          <div className="field-time-controls" aria-label="Tiempo de recorrido">
+            <button
+              type="button"
+              disabled={routeMinutes <= FIELD_ROUTE_MIN_MINUTES}
+              onClick={() =>
+                changeRouteMinutes(-FIELD_ROUTE_STEP_MINUTES)
+              }
+            >
+              −15
+            </button>
+            <strong>{routeMinutes} min</strong>
+            <button
+              type="button"
+              disabled={routeMinutes >= FIELD_ROUTE_MAX_MINUTES}
+              onClick={() =>
+                changeRouteMinutes(FIELD_ROUTE_STEP_MINUTES)
+              }
+            >
+              +15
+            </button>
+          </div>
+        ) : null}
+        <div
+          className={`field-actions${
+            routePlan === 'roca-vias' && phase === 'out'
+              ? ' field-actions-adaptive'
+              : ''
+          }`}
+        >
           <button
             type="button"
             className="btn btn-accent field-btn"
@@ -323,13 +480,23 @@ export function MapScreen() {
           >
             Cartel acá
           </button>
+          {routePlan === 'roca-vias' && phase === 'out' ? (
+            <button
+              type="button"
+              className="btn btn-ghost field-btn field-skip-btn"
+              disabled={!currentPoster}
+              onClick={skipCurrentStop}
+            >
+              Saltar
+            </button>
+          ) : null}
           {phase === 'out' ? (
             <button
               type="button"
               className="btn btn-primary field-btn"
               onClick={goHome}
             >
-              Listo · vuelta
+              {routePlan === 'roca-vias' ? 'Cerrar ruta' : 'Listo · vuelta'}
             </button>
           ) : (
             <button
