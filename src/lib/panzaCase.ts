@@ -330,3 +330,133 @@ export const PANZA_SIGN_ROUTE: readonly SignStop[] = [
 export const PANZA_SIGN_QUICK45 = [1, 4, 5, 6, 7, 12, 17, 2, 22, 23] as const
 
 export const PANZA_WAZE_SIGN_START_URL = wazeUrl(PANZA_SIGN_EPICENTER)
+
+/**
+ * Mañana 29–30/7 · Calle Roca × vía Belgrano Norte (Florida / Florida Oeste / Martelli).
+ * Prioridad: tránsito peatonal, estación, Mitre, supers/naftas, permanencia en andenes.
+ * Cloud itinerary puede reemplazar coords — merge encima de esto.
+ * Ver public/panza/RECORRIDO-ROCA-VIA.md
+ */
+export const PANZA_ROCA_VIA_EPICENTER = {
+  lat: -34.53074,
+  lng: -58.49038,
+  label: 'Roca × España',
+} as const
+
+export const PANZA_ROCA_VIA_ROUTE: readonly SignStop[] = [
+  {
+    n: 1,
+    label: 'Roca × España',
+    why: 'corredor Roca, parada colectivo, ojos Florida',
+    lat: -34.53074,
+    lng: -58.49038,
+  },
+  {
+    n: 2,
+    label: 'Est. Florida (Belgrano Norte)',
+    why: 'vía + andén + gente todo el día',
+    lat: -34.5352,
+    lng: -58.4898,
+  },
+  {
+    n: 3,
+    label: 'San Martín × cerca estación Florida',
+    why: 'comercios, tránsito peatonal',
+    lat: -34.5348,
+    lng: -58.4915,
+  },
+  {
+    n: 4,
+    label: 'Maipú × Florida (Mitre)',
+    why: 'avenida, comercios, visibilidad',
+    lat: -34.532,
+    lng: -58.492,
+  },
+  {
+    n: 5,
+    label: 'Roca entre Maipú y Mitre',
+    why: 'calle Roca, portones / baldíos',
+    lat: -34.5345,
+    lng: -58.4985,
+  },
+  {
+    n: 6,
+    label: 'Mitre × Roca',
+    why: 'cruce alto tránsito Florida Oeste',
+    lat: -34.5387,
+    lng: -58.50743,
+  },
+  {
+    n: 7,
+    label: 'Vía BN · tramo Florida→Padilla',
+    why: 'costado vía, refugio bajo puentes',
+    lat: -34.5405,
+    lng: -58.5035,
+  },
+  {
+    n: 8,
+    label: 'Estación Padilla',
+    why: 'vía, rampas, refugio, gente',
+    lat: -34.5434,
+    lng: -58.5006,
+  },
+  {
+    n: 9,
+    label: 'Mitre × Laprida',
+    why: 'borde industrial este',
+    lat: -34.5458,
+    lng: -58.4995,
+  },
+  {
+    n: 10,
+    label: 'Shell Gral Paz 3802',
+    why: 'nafta 24 h, colectora, olores',
+    lat: -34.5499,
+    lng: -58.5013,
+  },
+  {
+    n: 11,
+    label: 'Colectora Gral Paz (Padilla–Tecno)',
+    why: 'banquina, perros de tránsito',
+    lat: -34.551,
+    lng: -58.5035,
+  },
+  {
+    n: 12,
+    label: 'Lavalle × cerca Padilla',
+    why: 'acceso estación, vecinos',
+    lat: -34.5438,
+    lng: -58.5025,
+  },
+  {
+    n: 13,
+    label: 'Mitre × Pringles (Florida Oeste)',
+    why: 'corredor comercial paralelo vía',
+    lat: -34.5375,
+    lng: -58.501,
+  },
+  {
+    n: 14,
+    label: 'Roca × España (cierre)',
+    why: 'segundo cartel cara opuesta',
+    lat: -34.53074,
+    lng: -58.49038,
+  },
+] as const
+
+export const PANZA_ROCA_VIA_QUICK = [1, 2, 6, 8, 10, 4, 14] as const
+
+/** Campaña activa del día — Plan / mapa usan esto. */
+export type SignCampaignId = 'constituyentes' | 'roca_via'
+
+export const SIGN_CAMPAIGN_DEFAULT: SignCampaignId = 'roca_via'
+
+export function signRouteForCampaign(id: SignCampaignId): readonly SignStop[] {
+  return id === 'roca_via' ? PANZA_ROCA_VIA_ROUTE : PANZA_SIGN_ROUTE
+}
+
+export function signQuickForCampaign(id: SignCampaignId): readonly number[] {
+  return id === 'roca_via' ? PANZA_ROCA_VIA_QUICK : PANZA_SIGN_QUICK45
+}
+
+export const PANZA_WAZE_ROCA_VIA_URL = wazeUrl(PANZA_ROCA_VIA_EPICENTER)

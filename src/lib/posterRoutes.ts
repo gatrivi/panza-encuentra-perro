@@ -38,27 +38,28 @@ export const PANZA_HOME_BASE = {
 
 type Stop = { label: string; lat: number; lng: number; poster?: boolean }
 
-/** Ida casa → foco Gral Paz / Martelli (vía Florida / norte) */
+/** Ida casa → Roca × vía (Florida / FO) */
 const OUTBOUND: Stop[] = [
   { label: 'Salida · Fray Justo × Pelliza', lat: -34.5154, lng: -58.5077 },
   { label: 'Florida · Maipú / Mitre', lat: -34.532, lng: -58.492 },
-  { label: 'Acercamiento Gral Paz', lat: -34.545, lng: -58.505 },
-  { label: 'Foco banquina / Martelli', lat: -34.551, lng: -58.508 },
+  { label: 'Roca × España', lat: -34.53074, lng: -58.49038 },
+  { label: 'Est. Florida BN', lat: -34.5352, lng: -58.4898 },
 ]
 
-/** Zona destino — peinar + carteles */
+/** Zona destino — Roca × vía BN (ronda Florida / FO / Padilla) */
 const DEST: Stop[] = [
-  { label: 'Pin 23/7 banquina', lat: -34.551, lng: -58.508 },
-  { label: 'Plazoleta El Ombú', lat: -34.5492, lng: -58.5068 },
-  { label: 'Zufriategui Norte', lat: -34.5528, lng: -58.5128 },
-  { label: 'Zufriategui × Perú/Chile', lat: -34.5552, lng: -58.5142 },
-  { label: 'Shell / paralelo', lat: -34.5578, lng: -58.5162 },
+  { label: 'Roca × España', lat: -34.53074, lng: -58.49038 },
+  { label: 'Est. Florida BN', lat: -34.5352, lng: -58.4898 },
+  { label: 'Mitre × Roca', lat: -34.5387, lng: -58.50743 },
+  { label: 'Vía BN → Padilla', lat: -34.5405, lng: -58.5035 },
+  { label: 'Estación Padilla', lat: -34.5434, lng: -58.5006 },
+  { label: 'Shell Gral Paz 3802', lat: -34.5499, lng: -58.5013 },
 ]
 
-/** Vuelta distinta (más cuadras para carteles) → casa */
+/** Vuelta distinta (carteles) → casa vía Mitre / Florida */
 const INBOUND: Stop[] = [
-  { label: 'Salida dest · Zufriategui', lat: -34.5538, lng: -58.5158 },
-  { label: 'Munro / borde', lat: -34.54, lng: -58.52 },
+  { label: 'Salida · Mitre × Roca', lat: -34.5387, lng: -58.50743 },
+  { label: 'Maipú × Florida', lat: -34.532, lng: -58.492 },
   { label: 'Olivos · Ugarte', lat: -34.525, lng: -58.512 },
   { label: 'Casa · Fray Justo × Pelliza', lat: -34.5154, lng: -58.5077 },
 ]

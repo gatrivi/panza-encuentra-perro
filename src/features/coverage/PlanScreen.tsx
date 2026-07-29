@@ -4,11 +4,14 @@ import {
   PANZA_GMAPS_FROM_HOME_URL,
   PANZA_GMAPS_SIGHTING_URL,
   PANZA_SEARCH_PLAN_TOMORROW,
-  PANZA_SIGN_QUICK45,
-  PANZA_SIGN_ROUTE,
   PANZA_WAZE_HOME_URL,
+  PANZA_WAZE_ROCA_VIA_URL,
   PANZA_WAZE_SIGHTING_URL,
   PANZA_WAZE_SIGN_START_URL,
+  SIGN_CAMPAIGN_DEFAULT,
+  signQuickForCampaign,
+  signRouteForCampaign,
+  type SignCampaignId,
   type SignStop,
 } from '@/lib/panzaCase'
 import {
@@ -39,6 +42,17 @@ const SignRouteMap = lazy(() =>
 
 const DONE_KEY = 'panza.signRoute.done'
 const CUR_KEY = 'panza.signRoute.current'
+const CAMPAIGN_KEY = 'panza.signCampaign'
+
+function readCampaign(): SignCampaignId {
+  try {
+    const v = localStorage.getItem(CAMPAIGN_KEY)
+    if (v === 'constituyentes' || v === 'roca_via') return v
+  } catch {
+    /* ignore */
+  }
+  return SIGN_CAMPAIGN_DEFAULT
+}
 
 function loadDone(): Set<number> {
   try {
@@ -55,18 +69,21 @@ function saveDone(done: Set<number>) {
   localStorage.setItem(DONE_KEY, JSON.stringify([...done]))
 }
 
-function firstOpen(done: Set<number>): number {
-  const hit = PANZA_SIGN_ROUTE.find((s) => !done.has(s.n))
-  return hit?.n ?? PANZA_SIGN_ROUTE[0]!.n
+function firstOpen(done: Set<number>, route: readonly SignStop[]): number {
+  const hit = route.find((s) => !done.has(s.n))
+  return hit?.n ?? route[0]!.n
 }
 
 export function PlanScreen() {
   const copy = t()
+  const [campaign, setCampaign] = useState<SignCampaignId>(() => readCampaign())
+  const route = useMemo(() => signRouteForCampaign(campaign), [campaign])
+  const quickIds = useMemo(() => signQuickForCampaign(campaign), [campaign])
   const [done, setDone] = useState<Set<number>>(() => loadDone())
   const [currentN, setCurrentN] = useState<number>(() => {
     const saved = Number(localStorage.getItem(CUR_KEY))
     if (Number.isFinite(saved) && saved >= 1) return saved
-    return firstOpen(loadDone())
+    return firstOpen(loadDone(), signRouteForCampaign(readCampaign()))
   })
   const [navOn, setNavOn] = useState(true)
   const [follow, setFollow] = useState(true)
@@ -75,13 +92,13 @@ export function PlanScreen() {
   const { pos, error: gpsError } = useLivePosition(navOn)
 
   const stops = useMemo(() => {
-    if (!quickOnly) return PANZA_SIGN_ROUTE
-    const want = new Set<number>(PANZA_SIGN_QUICK45)
-    return PANZA_SIGN_ROUTE.filter((s) => want.has(s.n))
-  }, [quickOnly])
+    if (!quickOnly) return route
+    const want = new Set<number>(quickIds)
+    return route.filter((s) => want.has(s.n))
+  }, [quickOnly, route, quickIds])
 
   const current: SignStop =
-    stops.find((s) => s.n === currentN) ?? stops[0] ?? PANZA_SIGN_ROUTE[0]!
+    stops.find((s) => s.n === currentN) ?? stops[0] ?? route[0]!
 
   const navHint = useMemo(() => {
     if (!pos) return null
@@ -134,8 +151,44 @@ export function PlanScreen() {
   return (
     <div className="screen plan-screen">
       <h1>{copy.plan.title}</h1>
-      <p className="plan-urgency">{copy.plan.signHeadline}</p>
-      <p className="muted">{copy.plan.signHint}</p>
+      <p className="plan-urgency">
+        {campaign === 'roca_via'
+          ? 'Carteles · Roca × vía BN (Florida / Padilla)'
+          : copy.plan.signHeadline}
+      </p>
+      <p className="muted">
+        {campaign === 'roca_via'
+          ? '14 paradas · Roca, estaciones, Mitre, Shell Gral Paz. Quick = 7 pts.'
+          : copy.plan.signHint}
+      </p>
+      <div className="poster-mode-row plan-poster-modes" role="group" aria-label="Campaña">
+        <button
+          type="button"
+          className={`poster-mode-chip${campaign === 'roca_via' ? ' poster-mode-on' : ''}`}
+          aria-pressed={campaign === 'roca_via'}
+          onClick={() => {
+            setCampaign('roca_via')
+            localStorage.setItem(CAMPAIGN_KEY, 'roca_via')
+            const r = signRouteForCampaign('roca_via')
+            persistCurrent(firstOpen(done, r))
+          }}
+        >
+          Roca × vía
+        </button>
+        <button
+          type="button"
+          className={`poster-mode-chip${campaign === 'constituyentes' ? ' poster-mode-on' : ''}`}
+          aria-pressed={campaign === 'constituyentes'}
+          onClick={() => {
+            setCampaign('constituyentes')
+            localStorage.setItem(CAMPAIGN_KEY, 'constituyentes')
+            const r = signRouteForCampaign('constituyentes')
+            persistCurrent(firstOpen(done, r))
+          }}
+        >
+          Constituyentes
+        </button>
+      </div>
       <p className="plan-campaign">
         Día {day + 1}/{SIGNS_CAMPAIGN.plannedDays} · 1 viaje/día · carteles{' '}
         <strong>
@@ -221,10 +274,8 @@ export function PlanScreen() {
               onChange={(e) => {
                 setQuickOnly(e.target.checked)
                 const list = e.target.checked
-                  ? PANZA_SIGN_ROUTE.filter((s) =>
-                      (PANZA_SIGN_QUICK45 as readonly number[]).includes(s.n),
-                    )
-                  : PANZA_SIGN_ROUTE
+                  ? route.filter((s) => (quickIds as readonly number[]).includes(s.n))
+                  : route
                 const open = list.find((s) => !done.has(s.n)) ?? list[0]
                 if (open) persistCurrent(open.n)
               }}
@@ -291,8 +342,12 @@ export function PlanScreen() {
         <a className="btn plan-nav-btn" href={PANZA_WAZE_HOME_URL} target="_blank" rel="noreferrer">
           Waze · salida casa
         </a>
-        <a className="btn plan-nav-btn" href={PANZA_WAZE_SIGN_START_URL} target="_blank" rel="noreferrer">
-          {copy.plan.openWazeFallback}
+        <a
+          className="btn plan-nav-btn"
+          href={campaign === 'roca_via' ? PANZA_WAZE_ROCA_VIA_URL : PANZA_WAZE_SIGN_START_URL}
+          target="_blank"
+          rel="noreferrer"
+        >          {copy.plan.openWazeFallback}
         </a>
       </div>
 
