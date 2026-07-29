@@ -100,8 +100,17 @@ function featureFor(element, tolerance) {
   const tags = element.tags ?? {}
   const kind = tags.railway ? 'rail' : 'road'
   const roadClass = tags.highway ?? tags.railway ?? 'unknown'
+  const margin = 0.001
+  const localGeometry = element.geometry.filter(
+    (point) =>
+      point.lat >= bounds.south - margin &&
+      point.lat <= bounds.north + margin &&
+      point.lon >= bounds.west - margin &&
+      point.lon <= bounds.east + margin,
+  )
+  if (localGeometry.length < 2) return null
   const coordinates = simplify(
-    element.geometry.map((point) => [point.lon, point.lat]),
+    localGeometry.map((point) => [point.lon, point.lat]),
     tolerance,
   ).map(([lng, lat]) => [round(lng), round(lat)])
 

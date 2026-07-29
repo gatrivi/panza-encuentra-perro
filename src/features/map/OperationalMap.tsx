@@ -143,10 +143,12 @@ function FitBounds({
       origin: routeOrigin,
     }).flatMap((leg) => leg.points)
     const routeStart = routeOrigin ?? getRouteStart(routePlan)
+    const fitSightings = routePlan === 'roca-vias' ? [] : sightings
+    const fitTips = routePlan === 'roca-vias' ? [] : tips
     const pts: [number, number][] = [
       [routeStart.lat, routeStart.lng],
-      ...sightings.map((s) => [s.point[1], s.point[0]] as [number, number]),
-      ...tips
+      ...fitSightings.map((s) => [s.point[1], s.point[0]] as [number, number]),
+      ...fitTips
         .filter((l) => l.claimedPoint)
         .map((l) => [l.claimedPoint![1], l.claimedPoint![0]] as [number, number]),
       ...signStops.map((s) => [s.lat, s.lng] as [number, number]),
