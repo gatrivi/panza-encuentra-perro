@@ -1,60 +1,21 @@
-import { useEffect, useState } from 'react'
-import { GeoJSON, ImageOverlay, useMap, useMapEvents } from 'react-leaflet'
-import type { FeatureCollection, GeoJsonProperties, Geometry } from 'geojson'
-import type { PathOptions } from 'leaflet'
+import { useEffect, useMemo, useRef } from 'react'
+import { ImageOverlay, useMap } from 'react-leaflet'
 import { ROCA_VIAS_FIELD_BOUNDS } from '@/lib/posterRoutes'
+import {
+  getLocalRasterTiles,
+  LOCAL_RASTER_TILE_COUNT,
+} from '@/lib/localMap'
 
 const BOUNDS: [[number, number], [number, number]] = [
   [ROCA_VIAS_FIELD_BOUNDS.south, ROCA_VIAS_FIELD_BOUNDS.west],
   [ROCA_VIAS_FIELD_BOUNDS.north, ROCA_VIAS_FIELD_BOUNDS.east],
 ]
 
-type DetailLevel = 'overview' | 'streets' | 'detail'
-
-function levelForZoom(zoom: number): DetailLevel {
-  if (zoom >= 17) return 'detail'
-  if (zoom >= 15) return 'streets'
-  return 'overview'
-}
-
-function roadStyle(feature?: {
-  properties: GeoJsonProperties
-}): PathOptions {
-  const properties = feature?.properties ?? {}
-  if (properties.kind === 'rail') {
-    return {
-      color: '#414943',
-      weight: 2.5,
-      opacity: 0.9,
-      dashArray: '6 5',
-    }
-  }
-  const roadClass = String(properties.class ?? '')
-  const main =
-    roadClass.startsWith('motorway') ||
-    roadClass.startsWith('trunk') ||
-    roadClass.startsWith('primary') ||
-    roadClass.startsWith('secondary')
-  return {
-    color: main ? '#d6cdbd' : '#f7f4ed',
-    weight: main ? 3.2 : 1.4,
-    opacity: main ? 0.95 : 0.75,
-  }
-}
-
-/** Fixed Florida–Martelli street extract: preview first, vector detail on zoom. */
+/** Immediate preview, then five local raster strips in parallel. */
 export function LocalStreetLayer({ onReady }: { onReady: () => void }) {
   const map = useMap()
-  const [level, setLevel] = useState<DetailLevel>(() =>
-    levelForZoom(map.getZoom()),
-  )
-  const [data, setData] = useState<
-    FeatureCollection<Geometry, GeoJsonProperties> | null
-  >(null)
-
-  useMapEvents({
-    zoomend: () => setLevel(levelForZoom(map.getZoom())),
-  })
+  const settledTiles = useRef(new Set<number>())
+  const tiles = useMemo(() => getLocalRasterTiles(), [])
 
   useEffect(() => {
     const attribution =
@@ -65,37 +26,32 @@ export function LocalStreetLayer({ onReady }: { onReady: () => void }) {
     }
   }, [map])
 
-  useEffect(() => {
-    const controller = new AbortController()
-    void fetch(`/map/florida-martelli-${level}.geojson`, {
-      signal: controller.signal,
-      cache: 'force-cache',
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error(`map ${response.status}`)
-        return response.json()
-      })
-      .then((next) => setData(next))
-      .catch(() => undefined)
-    return () => controller.abort()
-  }, [level])
+  const markSettled = (id: number) => {
+    settledTiles.current.add(id)
+    if (settledTiles.current.size === LOCAL_RASTER_TILE_COUNT) onReady()
+  }
 
   return (
     <>
       <ImageOverlay
         url="/map/florida-martelli-preview.svg"
         bounds={BOUNDS}
-        opacity={data ? 0.72 : 1}
-        eventHandlers={{ load: onReady }}
+        opacity={1}
+        zIndex={1}
       />
-      {data ? (
-        <GeoJSON
-          key={level}
-          data={data}
-          style={roadStyle}
-          interactive={false}
+      {tiles.map((tile) => (
+        <ImageOverlay
+          key={tile.id}
+          url={tile.url}
+          bounds={tile.bounds}
+          opacity={1}
+          zIndex={2}
+          eventHandlers={{
+            load: () => markSettled(tile.id),
+            error: () => markSettled(tile.id),
+          }}
         />
-      ) : null}
+      ))}
     </>
   )
 }

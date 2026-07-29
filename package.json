@@ -1,7 +1,7 @@
 {
   "name": "operativo-pancite",
   "private": true,
-  "version": "0.3.13",
+  "version": "0.3.14",
   "type": "module",
   "packageManager": "yarn@1.22.19",
   "scripts": {
@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "test:rules": "firebase emulators:exec --only firestore \"vitest run --config vitest.rules.config.ts\"",
     "emulators": "firebase emulators:start --import=./seed/emulator-data --export-on-exit=./seed/emulator-data",
-    "seed": "tsx seed/seed-demo.ts"
+    "seed": "tsx seed/seed-demo.ts",
+    "map:raster": "node scripts/build-raster-map.mjs"
   },
   "dependencies": {
     "@turf/boolean-intersects": "^7.3.5",
