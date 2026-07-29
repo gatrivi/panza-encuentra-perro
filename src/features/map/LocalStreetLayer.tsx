@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import { GeoJSON, ImageOverlay, useMap, useMapEvents } from 'react-leaflet'
 import type { FeatureCollection, GeoJsonProperties, Geometry } from 'geojson'
 import type { PathOptions } from 'leaflet'
+import { ROCA_VIAS_FIELD_BOUNDS } from '@/lib/posterRoutes'
 
 const BOUNDS: [[number, number], [number, number]] = [
-  [-34.557, -58.534],
-  [-34.528, -58.496],
+  [ROCA_VIAS_FIELD_BOUNDS.south, ROCA_VIAS_FIELD_BOUNDS.west],
+  [ROCA_VIAS_FIELD_BOUNDS.north, ROCA_VIAS_FIELD_BOUNDS.east],
 ]
 
 type DetailLevel = 'overview' | 'streets' | 'detail'

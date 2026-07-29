@@ -2,6 +2,7 @@ import { CircleMarker, Marker, Polyline, Popup, Tooltip } from 'react-leaflet'
 import L from 'leaflet'
 import {
   buildPosterAwareRoute,
+  getRocaViasFieldOrigin,
   getRouteStart,
   type PosterMode,
   type RouteOrigin,
@@ -31,15 +32,17 @@ export function DayRouteLayer({
   skippedIds,
   origin,
 }: Props) {
+  const effectiveOrigin =
+    plan === 'roca-vias' ? getRocaViasFieldOrigin(origin) : origin
   const legs = buildPosterAwareRoute(mode, {
     plan,
     minutes,
     skippedIds,
-    origin,
+    origin: effectiveOrigin,
   })
-  const routeStart = origin ?? getRouteStart(plan)
+  const routeStart = effectiveOrigin ?? getRouteStart(plan)
   const startLabel =
-    origin && plan === 'roca-vias'
+    effectiveOrigin && plan === 'roca-vias'
       ? 'Tu ubicación al recalcular'
       : getRouteStart(plan).label
 

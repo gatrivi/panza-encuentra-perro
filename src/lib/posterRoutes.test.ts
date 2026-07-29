@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildPosterAwareRoute,
+  getRocaViasFieldOrigin,
   getRocaViasStops,
   normalizeRouteMinutes,
+  PANZA_HOME_BASE,
   POSTER_MODE_DEFAULT,
+  ROCA_VIAS_EPICENTER,
 } from './posterRoutes'
 
 describe('posterRoutes', () => {
@@ -50,5 +53,27 @@ describe('posterRoutes', () => {
     expect(normalizeRouteMinutes('52')).toBe(45)
     expect(normalizeRouteMinutes(999)).toBe(120)
     expect(normalizeRouteMinutes('nope')).toBe(60)
+  })
+
+  it('keeps remote GPS positions out of the operational route', () => {
+    expect(getRocaViasFieldOrigin(PANZA_HOME_BASE)).toBeNull()
+    expect(getRocaViasFieldOrigin(ROCA_VIAS_EPICENTER)).toEqual(
+      ROCA_VIAS_EPICENTER,
+    )
+
+    const route = buildPosterAwareRoute(POSTER_MODE_DEFAULT, {
+      plan: 'roca-vias',
+      minutes: 60,
+      origin: PANZA_HOME_BASE,
+    })
+    const points = route.flatMap((leg) => leg.points)
+    expect(points).not.toContainEqual([
+      PANZA_HOME_BASE.lat,
+      PANZA_HOME_BASE.lng,
+    ])
+    expect(points[0]).toEqual([
+      ROCA_VIAS_EPICENTER.lat,
+      ROCA_VIAS_EPICENTER.lng,
+    ])
   })
 })

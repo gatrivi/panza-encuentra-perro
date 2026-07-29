@@ -55,6 +55,31 @@ export type RouteOrigin = {
   lng: number
 }
 
+/** Same fixed area bundled in public/map for the current field operation. */
+export const ROCA_VIAS_FIELD_BOUNDS = {
+  south: -34.557,
+  west: -58.534,
+  north: -34.528,
+  east: -58.496,
+} as const
+
+/**
+ * A remote GPS position is only a reference, never part of the field loop.
+ * This prevents home / transit positions from shrinking the operational map.
+ */
+export function getRocaViasFieldOrigin(
+  origin: RouteOrigin | null | undefined,
+): RouteOrigin | null {
+  if (!origin) return null
+  const { south, west, north, east } = ROCA_VIAS_FIELD_BOUNDS
+  return origin.lat >= south &&
+    origin.lat <= north &&
+    origin.lng >= west &&
+    origin.lng <= east
+    ? origin
+    : null
+}
+
 type Stop = {
   id?: string
   label: string
@@ -399,15 +424,16 @@ function buildRocaViasRoute(
   mode: PosterMode,
   options: RouteOptions,
 ): RouteLeg[] {
-  const start = options.origin ?? ROCA_VIAS_EPICENTER
+  const fieldOrigin = getRocaViasFieldOrigin(options.origin)
+  const start = fieldOrigin ?? ROCA_VIAS_EPICENTER
   const selected = getRocaViasStops(
     options.minutes,
     options.skippedIds,
   )
-  const stops = rotateToNearest(selected, options.origin)
+  const stops = rotateToNearest(selected, fieldOrigin)
   const first = stops[0] ?? ROCA_VIAS_EPICENTER
   const last = stops.at(-1) ?? ROCA_VIAS_EPICENTER
-  const returnStart = options.origin ?? last
+  const returnStart = fieldOrigin ?? last
   const posterStops: PosterStop[] = stops.map((stop) => ({
     id: stop.id,
     lat: stop.lat,
@@ -419,7 +445,7 @@ function buildRocaViasRoute(
   return [
     {
       id: 'outbound',
-      label: 'Desde tu ubicación',
+      label: fieldOrigin ? 'Desde tu ubicación' : 'Inicio en Roca × vías',
       color: '#8a8a8a',
       dashArray: '4 8',
       points: [

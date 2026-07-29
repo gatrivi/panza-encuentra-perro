@@ -598,6 +598,7 @@ a {
 }
 
 .field-ops .map-mobile-controls {
+  right: 66px;
   bottom: calc(220px + env(safe-area-inset-bottom, 0px));
 }
 

@@ -20,9 +20,11 @@ const SAT = {
 export function MapMobileChrome({
   myPoint,
   localArea = false,
+  routePoints = [],
 }: {
   myPoint: GeoPoint | null
   localArea?: boolean
+  routePoints?: readonly [number, number][]
 }) {
   const map = useMap()
   const [sat, setSat] = useState(false)
@@ -84,6 +86,23 @@ export function MapMobileChrome({
         >
           {sat ? 'Calles' : 'Satélite'}
         </button>
+        {localArea ? (
+          <button
+            type="button"
+            className="map-ctl"
+            onClick={() => {
+              if (routePoints.length === 0) return
+              map.fitBounds([...routePoints], {
+                animate: false,
+                maxZoom: 16,
+                paddingTopLeft: [24, 24],
+                paddingBottomRight: [24, 220],
+              })
+            }}
+          >
+            Ver ruta
+          </button>
+        ) : null}
         <button
           type="button"
           className="map-ctl"

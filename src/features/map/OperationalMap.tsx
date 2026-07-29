@@ -8,7 +8,7 @@ import {
   useMapEvents,
 } from 'react-leaflet'
 import L from 'leaflet'
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useMemo } from 'react'
 import type {
   AvoidArea,
   CoverageCell,
@@ -29,6 +29,7 @@ import { calcLeadDecay, calcTipDecay } from '@/lib/geo/leadDecay'
 import { PANZA_LATEST_SIGHTING, PANZA_MAP_CENTER } from '@/lib/panzaCase'
 import {
   buildPosterAwareRoute,
+  getRocaViasFieldOrigin,
   getRouteStart,
   ROCA_VIAS_EPICENTER,
   type PosterMode,
@@ -136,13 +137,17 @@ function FitBounds({
 }) {
   const map = useMap()
   useEffect(() => {
+    const effectiveOrigin =
+      routePlan === 'roca-vias'
+        ? getRocaViasFieldOrigin(routeOrigin)
+        : routeOrigin
     const routePts = buildPosterAwareRoute(posterMode, {
       plan: routePlan,
       minutes: routeMinutes,
       skippedIds,
-      origin: routeOrigin,
+      origin: effectiveOrigin,
     }).flatMap((leg) => leg.points)
-    const routeStart = routeOrigin ?? getRouteStart(routePlan)
+    const routeStart = effectiveOrigin ?? getRouteStart(routePlan)
     const fitSightings = routePlan === 'roca-vias' ? [] : sightings
     const fitTips = routePlan === 'roca-vias' ? [] : tips
     const pts: [number, number][] = [
@@ -154,7 +159,12 @@ function FitBounds({
       ...signStops.map((s) => [s.lat, s.lng] as [number, number]),
       ...routePts,
     ]
-    map.fitBounds(L.latLngBounds(pts).pad(0.15))
+    map.fitBounds(L.latLngBounds(pts).pad(0.12), {
+      animate: false,
+      maxZoom: 16,
+      paddingTopLeft: [24, 24],
+      paddingBottomRight: [24, routePlan === 'roca-vias' ? 220 : 24],
+    })
   }, [
     map,
     sightings,
@@ -214,6 +224,16 @@ export function OperationalMap({
     showSignRoute && routePlan !== 'roca-vias' ? PANZA_SIGN_ROUTE : []
   const hasCoverage =
     coverage.length > 0 || riskSweepIds.length > 0 || suggestIds.length > 0
+  const routePoints = useMemo(() => {
+    if (routePlan !== 'roca-vias') return []
+    const effectiveOrigin = getRocaViasFieldOrigin(routeOrigin)
+    return buildPosterAwareRoute(posterMode, {
+      plan: routePlan,
+      minutes: routeMinutes,
+      skippedIds,
+      origin: effectiveOrigin,
+    }).flatMap((leg) => leg.points)
+  }, [posterMode, routePlan, routeMinutes, skippedIds, routeOrigin])
 
   return (
     <div className="map-container">
@@ -231,6 +251,7 @@ export function OperationalMap({
         <MapMobileChrome
           myPoint={myPoint}
           localArea={routePlan === 'roca-vias'}
+          routePoints={routePoints}
         />
         <ZoomBottomLeft />
         <FitBounds
