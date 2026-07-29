@@ -26,14 +26,15 @@ import {
   sugerirCarteles,
   type HexState,
 } from '@/lib/geo/h3Coverage'
-import { cattsHealth } from '@/lib/catts'
 import { announceNav, VOICE_NAV } from '@/lib/voiceNav'
 import { FieldHud } from './FieldHud'
 import { PosterModeChips } from './PosterModeChips'
 import { OperatorSwitch } from './OperatorSwitch'
 import { OperationalMap } from './OperationalMap'
+import { useTurnByTurnVoice } from './useTurnByTurnVoice'
 import { gridDisk } from 'h3-js'
 import {
+  buildPosterAwareRoute,
   readPosterMode,
   writePosterMode,
   type PosterMode,
@@ -54,7 +55,7 @@ export function MapScreen() {
   const [riskSweepIds, setRiskSweepIds] = useState<string[]>([])
   const [stopPromptPoint, setStopPromptPoint] = useState<GeoPoint | null>(null)
   const [placeMode, setPlaceMode] = useState(false)
-  const [voiceBusy, setVoiceBusy] = useState(false)
+  const [voiceNavOn, setVoiceNavOn] = useState(true)
   const [toolsOpen, setToolsOpen] = useState(false)
   const [posterMode, setPosterMode] = useState<PosterMode>(() => readPosterMode())
   const copy = t()
@@ -104,6 +105,17 @@ export function MapScreen() {
     onStopPrompt: setStopPromptPoint,
   })
 
+  useTurnByTurnVoice({
+    enabled: voiceNavOn && !riskMode,
+    myPoint,
+    posterMode,
+  })
+
+  useEffect(() => {
+    if (!stopPromptPoint || riskMode || !voiceNavOn) return
+    void announceNav(VOICE_NAV.posterAsk)
+  }, [stopPromptPoint, riskMode, voiceNavOn])
+
   const placeSignAt = useCallback(
     async (p: GeoPoint) => {
       if (!caseId || !actorUid) return
@@ -150,6 +162,11 @@ export function MapScreen() {
     const ok = sightings.filter((s) => s.confidence !== 'rejected')
     return ok[0] ?? null
   }, [sightings])
+
+  const posterStops = useMemo(
+    () => buildPosterAwareRoute(posterMode).flatMap((l) => l.posterStops),
+    [posterMode],
+  )
 
   const suggestIds = useMemo(() => {
     const activeAvoid = avoidAreas.filter((a) => a.active)
@@ -204,22 +221,6 @@ export function MapScreen() {
     }
   }, [actorUid, caseId, riskMode, takeRiskCells])
 
-  const testVoice = useCallback(async () => {
-    setVoiceBusy(true)
-    try {
-      const via = await announceNav(VOICE_NAV.searching)
-      if (via === 'offline') {
-        const h = await cattsHealth()
-        void h
-      }
-    } catch (e) {
-      console.error(e)
-      window.alert(e instanceof Error ? e.message : 'Voz falló')
-    } finally {
-      setVoiceBusy(false)
-    }
-  }, [])
-
   return (
     <div className="map-screen map-only street-readable">
       <div className="map-layout">
@@ -254,6 +255,12 @@ export function MapScreen() {
           {toolsOpen ? '×' : '···'}
         </button>
       </div>
+
+      <p className="map-route-hint" role="status">
+        Ruta → último avistaje · {posterStops.length} paradas cartel
+        {posterStops[0] ? ` · 1ª: ${posterStops[0].label}` : ''}
+        {voiceNavOn ? ' · voz ON' : ' · voz OFF'}
+      </p>
 
       {toolsOpen ? (
         <div className="map-float-panel">
@@ -292,12 +299,12 @@ export function MapScreen() {
             />
             <button
               type="button"
-              className="btn btn-ghost map-voice-btn"
-              disabled={voiceBusy}
-              onClick={() => void testVoice()}
-              title="Voz"
+              className={`btn btn-ghost map-voice-btn${voiceNavOn ? ' map-voice-on' : ''}`}
+              aria-pressed={voiceNavOn}
+              onClick={() => setVoiceNavOn((v) => !v)}
+              title="Navegación por voz"
             >
-              {voiceBusy ? '…' : 'Voz'}
+              {voiceNavOn ? 'Voz ON' : 'Voz OFF'}
             </button>
           </div>
           {gpsError ? <p className="map-gps-hint map-gps-warn">{gpsError}</p> : null}
