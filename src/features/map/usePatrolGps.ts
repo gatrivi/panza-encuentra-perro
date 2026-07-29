@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { GeoPoint } from '@/domain/schemas'
-import { cellsAlongPath, pointToCell } from '@/lib/geo/h3Coverage'
 import { runOrEnqueue } from '@/lib/offline/fieldQueue'
 
 const STOP_MS = 60_000
@@ -16,6 +15,8 @@ const PATROL_WATCH: PositionOptions = {
   maximumAge: 10_000,
   timeout: 20_000,
 }
+
+type H3Api = typeof import('@/lib/geo/h3Coverage')
 
 type Args = {
   caseId: string | null
@@ -42,6 +43,17 @@ export function usePatrolGps({
   const riskCells = useRef(new Set<string>())
   const walkedBuffer = useRef(new Set<string>())
   const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const h3Ref = useRef<H3Api | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    void import('@/lib/geo/h3Coverage').then((m) => {
+      if (!cancelled) h3Ref.current = m
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const flushWalked = useCallback(() => {
     if (!caseId || !actorUid || walkedBuffer.current.size === 0) return
@@ -68,11 +80,12 @@ export function usePatrolGps({
           ? haversineQuick(lastPoint.current, next) > 8
           : false
 
-      if (riskMode) {
+      const h3 = h3Ref.current
+      if (riskMode && h3) {
         promptedStop.current = false
         stopSince.current = null
         const path = lastPoint.current ? [lastPoint.current, next] : [next]
-        const cells = cellsAlongPath(path)
+        const cells = h3.cellsAlongPath(path)
         for (const c of cells) riskCells.current.add(c)
         onRiskCells([...riskCells.current])
       } else if (!moving) {
@@ -89,13 +102,14 @@ export function usePatrolGps({
         promptedStop.current = false
       }
 
-      // always paint walked coverage when moving / any fix
-      const walkCells = lastPoint.current
-        ? cellsAlongPath([lastPoint.current, next])
-        : [pointToCell(next)]
-      for (const c of walkCells) walkedBuffer.current.add(c)
-      if (flushTimer.current) clearTimeout(flushTimer.current)
-      flushTimer.current = setTimeout(() => flushWalked(), 4_000)
+      if (h3) {
+        const walkCells = lastPoint.current
+          ? h3.cellsAlongPath([lastPoint.current, next])
+          : [h3.pointToCell(next)]
+        for (const c of walkCells) walkedBuffer.current.add(c)
+        if (flushTimer.current) clearTimeout(flushTimer.current)
+        flushTimer.current = setTimeout(() => flushWalked(), 4_000)
+      }
 
       lastPoint.current = next
     },

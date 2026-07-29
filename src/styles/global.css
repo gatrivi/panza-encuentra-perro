@@ -358,6 +358,16 @@ a {
   margin: 0 auto;
 }
 
+.boot-splash {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: #0a0e0c;
+  color: #f5f7f4;
+  font-weight: 800;
+  font-size: 1.25rem;
+}
+
 .map-screen {
   padding: 0;
   width: 100%;

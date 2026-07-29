@@ -1,12 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/features/cases/useAuth'
-import { subscribeLeads, subscribeSightings } from '@/lib/firebase/repos'
-import {
-  subscribeAvoidAreas,
-  subscribeCoverage,
-  subscribeSigns,
-} from '@/lib/firebase/fieldRepos'
 import type {
   AvoidArea,
   CoverageCell,
@@ -19,24 +13,20 @@ import { RiskModeChip } from './RiskModeChip'
 import { StopPosterPrompt } from './StopPosterPrompt'
 import { usePatrolGps } from './usePatrolGps'
 import { runOrEnqueue, flushFieldActions } from '@/lib/offline/fieldQueue'
-import {
-  buildTocaRiesgoCache,
-  pointToCell,
-  sugerirCarteles,
-  type HexState,
-} from '@/lib/geo/h3Coverage'
 import { announceNav, VOICE_NAV } from '@/lib/voiceNav'
 import { FieldHud } from './FieldHud'
 import { OperatorSwitch } from './OperatorSwitch'
-import { OperationalMap } from './OperationalMap'
 import { useTurnByTurnVoice } from './useTurnByTurnVoice'
-import { gridDisk } from 'h3-js'
 import {
   readPosterMode,
   writePosterMode,
   type PosterMode,
 } from '@/lib/posterRoutes'
 import type { RoutePhase } from '@/lib/turnByTurn'
+
+const OperationalMap = lazy(() =>
+  import('./OperationalMap').then((m) => ({ default: m.OperationalMap })),
+)
 
 /** Field-first: voz guía, pantalla confirma, un dedo. */
 export function MapScreen() {
@@ -53,6 +43,7 @@ export function MapScreen() {
   const [voiceNavOn, setVoiceNavOn] = useState(true)
   const [toolsOpen, setToolsOpen] = useState(false)
   const [phase, setPhase] = useState<RoutePhase>('out')
+  const [suggestIds, setSuggestIds] = useState<string[]>([])
   const [posterMode] = useState<PosterMode>(() => {
     const m = readPosterMode()
     if (m !== 'dest_return') writePosterMode('dest_return')
@@ -62,20 +53,26 @@ export function MapScreen() {
 
   useEffect(() => {
     if (!caseId) return
-    const u1 = subscribeSightings(caseId, setSightings)
-    const u2 = subscribeCoverage(caseId, setCoverage)
-    const u3 = subscribeSigns(caseId, setSigns)
-    const u4 = subscribeAvoidAreas(caseId, setAvoidAreas)
-    const u5 = subscribeLeads(caseId, setLeads)
-    void flushFieldActions()
+    let cancelled = false
+    const unsubs: Array<() => void> = []
+    void (async () => {
+      const [{ subscribeLeads, subscribeSightings }, field] = await Promise.all([
+        import('@/lib/firebase/repos'),
+        import('@/lib/firebase/fieldRepos'),
+      ])
+      if (cancelled) return
+      unsubs.push(subscribeSightings(caseId, setSightings))
+      unsubs.push(field.subscribeCoverage(caseId, setCoverage))
+      unsubs.push(field.subscribeSigns(caseId, setSigns))
+      unsubs.push(field.subscribeAvoidAreas(caseId, setAvoidAreas))
+      unsubs.push(subscribeLeads(caseId, setLeads))
+      void flushFieldActions()
+    })()
     const onOnline = () => void flushFieldActions()
     window.addEventListener('online', onOnline)
     return () => {
-      u1()
-      u2()
-      u3()
-      u4()
-      u5()
+      cancelled = true
+      for (const u of unsubs) u()
       window.removeEventListener('online', onOnline)
     }
   }, [caseId])
@@ -155,38 +152,52 @@ export function MapScreen() {
     return ok[0] ?? null
   }, [sightings])
 
-  const suggestIds = useMemo(() => {
+  // h3/turf are heavy — defer suggest hexes off the first paint path
+  useEffect(() => {
     const activeAvoid = avoidAreas.filter((a) => a.active)
-    if (activeAvoid.length === 0 && coverage.length === 0) return []
-
-    const hexes = new Map<string, HexState>()
-    for (const c of coverage) {
-      hexes.set(c.id, {
-        status: c.status,
-        updatedAt: c.updatedAt,
-        posterAt: c.status === 'signed',
-      })
+    if (activeAvoid.length === 0 && coverage.length === 0) {
+      setSuggestIds([])
+      return
     }
-    for (const s of signs) {
-      if (s.cellId && s.status === 'active') {
-        const prev = hexes.get(s.cellId)
-        hexes.set(s.cellId, {
-          status: prev?.status ?? 'signed',
-          updatedAt: prev?.updatedAt ?? s.updatedAt,
-          posterAt: true,
+    let cancelled = false
+    void (async () => {
+      const [{ buildTocaRiesgoCache, pointToCell, sugerirCarteles }, { gridDisk }] =
+        await Promise.all([import('@/lib/geo/h3Coverage'), import('h3-js')])
+      if (cancelled) return
+      const hexes = new Map<
+        string,
+        { status: CoverageCell['status']; updatedAt: Date; posterAt: boolean }
+      >()
+      for (const c of coverage) {
+        hexes.set(c.id, {
+          status: c.status,
+          updatedAt: c.updatedAt,
+          posterAt: c.status === 'signed',
         })
       }
-    }
-
-    const pool = new Set<string>([...hexes.keys()])
-    if (lastSeen) {
-      for (const id of gridDisk(pointToCell(lastSeen.point), 3)) {
-        pool.add(id)
+      for (const s of signs) {
+        if (s.cellId && s.status === 'active') {
+          const prev = hexes.get(s.cellId)
+          hexes.set(s.cellId, {
+            status: prev?.status ?? 'signed',
+            updatedAt: prev?.updatedAt ?? s.updatedAt,
+            posterAt: true,
+          })
+        }
       }
+      const pool = new Set<string>([...hexes.keys()])
+      if (lastSeen) {
+        for (const id of gridDisk(pointToCell(lastSeen.point), 3)) pool.add(id)
+      }
+      const hexIds = [...pool]
+      const touching = buildTocaRiesgoCache(activeAvoid, hexIds)
+      if (!cancelled) {
+        setSuggestIds(sugerirCarteles(hexIds, touching, hexes).slice(0, 40))
+      }
+    })()
+    return () => {
+      cancelled = true
     }
-    const hexIds = [...pool]
-    const touching = buildTocaRiesgoCache(activeAvoid, hexIds)
-    return sugerirCarteles(hexIds, touching, hexes).slice(0, 40)
   }, [avoidAreas, coverage, signs, lastSeen])
 
   const toggleRisk = useCallback(async () => {
@@ -221,23 +232,25 @@ export function MapScreen() {
   return (
     <div className="map-screen map-only street-readable field-ops">
       <div className="map-layout">
-        <OperationalMap
-          sightings={visible}
-          tipLeads={tipLeads}
-          coverage={coverage}
-          signs={signs}
-          avoidAreas={avoidAreas}
-          myPoint={myPoint}
-          riskSweepIds={riskSweepIds}
-          suggestIds={suggestIds}
-          placeMode={false}
-          posterMode={posterMode}
-          showSignRoute
-          onPlaceSign={(p) => void placeSignAt(p)}
-          onLongPressHex={(cellId) => {
-            if (riskMode) addRiskCell(cellId)
-          }}
-        />
+        <Suspense fallback={<div className="boot-splash">Cargando mapa…</div>}>
+          <OperationalMap
+            sightings={visible}
+            tipLeads={tipLeads}
+            coverage={coverage}
+            signs={signs}
+            avoidAreas={avoidAreas}
+            myPoint={myPoint}
+            riskSweepIds={riskSweepIds}
+            suggestIds={suggestIds}
+            placeMode={false}
+            posterMode={posterMode}
+            showSignRoute
+            onPlaceSign={(p) => void placeSignAt(p)}
+            onLongPressHex={(cellId) => {
+              if (riskMode) addRiskCell(cellId)
+            }}
+          />
+        </Suspense>
       </div>
 
       <button
@@ -324,9 +337,7 @@ export function MapScreen() {
               className="btn btn-primary field-btn"
               disabled={!myPoint}
               onClick={() => {
-                if (myPoint) {
-                  void announceNav(VOICE_NAV.continue)
-                }
+                if (myPoint) void announceNav(VOICE_NAV.continue)
               }}
             >
               Seguí

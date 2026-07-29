@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { connectEmulatorsIfNeeded } from '@/lib/firebase/app'
-import { ensureOperatorMember, ensurePanzaCase } from '@/lib/firebase/repos'
 import { OPERATORS, resolveOperator, type OperatorUsername } from '@/lib/operators'
 import { PANZA_CASE_ID } from '@/lib/panzaCase'
 import type { Member } from '@/domain/schemas'
@@ -43,7 +41,7 @@ function readCachedCaseId(): string {
   }
 }
 
-/** Boot instantáneo: UI ya; Firestore seed en background. */
+/** Boot instantáneo: UI ya; Firebase en dynamic import. */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [caseId, setCaseId] = useState(() => readCachedCaseId())
   const [opKey, setOpKey] = useState<OperatorUsername>(() => readCachedOperator())
@@ -53,10 +51,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    connectEmulatorsIfNeeded()
     let cancelled = false
     void (async () => {
       try {
+        const { connectEmulatorsIfNeeded } = await import('@/lib/firebase/app')
+        const { ensureOperatorMember, ensurePanzaCase } = await import(
+          '@/lib/firebase/repos'
+        )
+        connectEmulatorsIfNeeded()
         const id = await ensurePanzaCase()
         if (cancelled) return
         localStorage.setItem(CASE_CACHE_KEY, id)

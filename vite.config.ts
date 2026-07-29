@@ -31,11 +31,32 @@ export default defineConfig({
           },
         ],
       },
+      workbox: {
+        // Don't block first paint on huge precache of map vendors
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,webp}'],
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+      },
     }),
   ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/firebase')) return 'firebase'
+          if (id.includes('node_modules/leaflet') || id.includes('react-leaflet'))
+            return 'leaflet'
+          if (id.includes('node_modules/h3-js')) return 'h3'
+          if (id.includes('node_modules/@turf')) return 'turf'
+          if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/'))
+            return 'react'
+          return undefined
+        },
+      },
     },
   },
   server: {

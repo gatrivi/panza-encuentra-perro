@@ -4,11 +4,6 @@
  */
 import { get, set, del, keys } from 'idb-keyval'
 import type { GeoPoint } from '@/domain/schemas'
-import {
-  commitRiskSweep,
-  createSign,
-  paintCoverageCells,
-} from '@/lib/firebase/fieldRepos'
 
 export type FieldAction =
   | {
@@ -53,7 +48,10 @@ export async function enqueueFieldAction(
   const full = {
     ...action,
     id,
-    createdAt: 'createdAt' in action && action.createdAt ? action.createdAt : new Date().toISOString(),
+    createdAt:
+      'createdAt' in action && action.createdAt
+        ? action.createdAt
+        : new Date().toISOString(),
   } as FieldAction
   await set(PREFIX + id, full)
   return id
@@ -75,6 +73,9 @@ export async function removeFieldAction(id: string): Promise<void> {
 }
 
 async function applyAction(action: FieldAction): Promise<void> {
+  const { commitRiskSweep, createSign, paintCoverageCells } = await import(
+    '@/lib/firebase/fieldRepos'
+  )
   if (action.kind === 'coverage_paint') {
     await paintCoverageCells({
       caseId: action.caseId,
