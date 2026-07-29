@@ -385,7 +385,10 @@ a {
 }
 
 .app-shell-map {
-  padding-top: 0;
+  height: 100dvh;
+  min-height: 100dvh;
+  padding: 0;
+  overflow: hidden;
 }
 
 .map-container {
@@ -845,7 +848,8 @@ a {
   .map-container {
     flex: 1;
     min-height: 0;
-    height: 100%;
+    height: auto;
+    align-self: stretch;
   }
 
   .map-side-panel {
