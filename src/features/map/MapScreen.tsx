@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/features/cases/useAuth'
 import type {
@@ -17,6 +17,7 @@ import { announceNav, VOICE_NAV } from '@/lib/voiceNav'
 import { FieldHud } from './FieldHud'
 import { OperatorSwitch } from './OperatorSwitch'
 import { useTurnByTurnVoice } from './useTurnByTurnVoice'
+import { OperationalMap } from './OperationalMap'
 import {
   countRoutePosters,
   FIELD_ROUTE_MAX_MINUTES,
@@ -30,10 +31,6 @@ import {
   type RoutePlanId,
 } from '@/lib/posterRoutes'
 import type { RoutePhase } from '@/lib/turnByTurn'
-
-const OperationalMap = lazy(() =>
-  import('./OperationalMap').then((m) => ({ default: m.OperationalMap })),
-)
 
 /** Field-first: voz guía, pantalla confirma, un dedo. */
 export function MapScreen() {
@@ -73,23 +70,27 @@ export function MapScreen() {
     if (!caseId) return
     let cancelled = false
     const unsubs: Array<() => void> = []
-    void (async () => {
-      const [{ subscribeLeads, subscribeSightings }, field] = await Promise.all([
-        import('@/lib/firebase/repos'),
-        import('@/lib/firebase/fieldRepos'),
-      ])
-      if (cancelled) return
-      unsubs.push(subscribeSightings(caseId, setSightings))
-      unsubs.push(field.subscribeCoverage(caseId, setCoverage))
-      unsubs.push(field.subscribeSigns(caseId, setSigns))
-      unsubs.push(field.subscribeAvoidAreas(caseId, setAvoidAreas))
-      unsubs.push(subscribeLeads(caseId, setLeads))
-      void flushFieldActions()
-    })()
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        const [{ subscribeLeads, subscribeSightings }, field] =
+          await Promise.all([
+            import('@/lib/firebase/repos'),
+            import('@/lib/firebase/fieldRepos'),
+          ])
+        if (cancelled) return
+        unsubs.push(subscribeSightings(caseId, setSightings))
+        unsubs.push(field.subscribeCoverage(caseId, setCoverage))
+        unsubs.push(field.subscribeSigns(caseId, setSigns))
+        unsubs.push(field.subscribeAvoidAreas(caseId, setAvoidAreas))
+        unsubs.push(subscribeLeads(caseId, setLeads))
+        void flushFieldActions()
+      })()
+    }, 2_000)
     const onOnline = () => void flushFieldActions()
     window.addEventListener('online', onOnline)
     return () => {
       cancelled = true
+      window.clearTimeout(timer)
       for (const u of unsubs) u()
       window.removeEventListener('online', onOnline)
     }
@@ -326,29 +327,27 @@ export function MapScreen() {
   return (
     <div className="map-screen map-only street-readable field-ops">
       <div className="map-layout">
-        <Suspense fallback={<div className="boot-splash">Cargando mapa…</div>}>
-          <OperationalMap
-            sightings={visible}
-            tipLeads={tipLeads}
-            coverage={coverage}
-            signs={signs}
-            avoidAreas={avoidAreas}
-            myPoint={myPoint}
-            riskSweepIds={riskSweepIds}
-            suggestIds={suggestIds}
-            placeMode={false}
-            posterMode={posterMode}
-            routePlan={routePlan}
-            routeMinutes={routeMinutes}
-            skippedIds={skippedIds}
-            routeOrigin={routeOrigin}
-            showSignRoute
-            onPlaceSign={(p) => void placeSignAt(p)}
-            onLongPressHex={(cellId) => {
-              if (riskMode) addRiskCell(cellId)
-            }}
-          />
-        </Suspense>
+        <OperationalMap
+          sightings={visible}
+          tipLeads={tipLeads}
+          coverage={coverage}
+          signs={signs}
+          avoidAreas={avoidAreas}
+          myPoint={myPoint}
+          riskSweepIds={riskSweepIds}
+          suggestIds={suggestIds}
+          placeMode={false}
+          posterMode={posterMode}
+          routePlan={routePlan}
+          routeMinutes={routeMinutes}
+          skippedIds={skippedIds}
+          routeOrigin={routeOrigin}
+          showSignRoute
+          onPlaceSign={(p) => void placeSignAt(p)}
+          onLongPressHex={(cellId) => {
+            if (riskMode) addRiskCell(cellId)
+          }}
+        />
       </div>
 
       <button

@@ -1,6 +1,14 @@
-import { MapContainer, Marker, Popup, useMap, CircleMarker, Polyline } from 'react-leaflet'
+import {
+  CircleMarker,
+  MapContainer,
+  Marker,
+  Polyline,
+  Popup,
+  useMap,
+  useMapEvents,
+} from 'react-leaflet'
 import L from 'leaflet'
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import type {
   AvoidArea,
   CoverageCell,
@@ -11,14 +19,12 @@ import type {
 } from '@/domain/schemas'
 import { PANZA_SIGN_ROUTE, type SignStop } from '@/lib/panzaCase'
 import { t } from '@/i18n/es-AR'
-import { CoverageLayer, MapLongPress } from './CoverageLayer'
 import { AvoidAreasLayer } from './AvoidAreasLayer'
 import { SignsLayer } from './SignsLayer'
 import { MyLocationMarker } from './MyLocationMarker'
 import { DesktopPlaceClick } from './DesktopPlaceClick'
 import { MapMobileChrome } from './MapMobileChrome'
 import { DayRouteLayer } from './DayRouteLayer'
-import { pointToCell } from '@/lib/geo/h3Coverage'
 import { calcLeadDecay, calcTipDecay } from '@/lib/geo/leadDecay'
 import { PANZA_LATEST_SIGHTING, PANZA_MAP_CENTER } from '@/lib/panzaCase'
 import {
@@ -30,6 +36,10 @@ import {
   type RoutePlanId,
 } from '@/lib/posterRoutes'
 import 'leaflet/dist/leaflet.css'
+
+const CoverageLayer = lazy(() =>
+  import('./CoverageLayer').then((m) => ({ default: m.CoverageLayer })),
+)
 
 const confidenceColor: Record<Sighting['confidence'], string> = {
   unverified: '#8a8a8a',
@@ -200,6 +210,8 @@ export function OperationalMap({
   const copy = t()
   const signStops =
     showSignRoute && routePlan !== 'roca-vias' ? PANZA_SIGN_ROUTE : []
+  const hasCoverage =
+    coverage.length > 0 || riskSweepIds.length > 0 || suggestIds.length > 0
 
   return (
     <div className="map-container">
@@ -270,12 +282,16 @@ export function OperationalMap({
             </Popup>
           </CircleMarker>
         ) : null}
-        <CoverageLayer
-          cells={coverage}
-          riskSweepIds={riskSweepIds}
-          suggestIds={suggestIds}
-          onLongPressCell={onLongPressHex}
-        />
+        {hasCoverage ? (
+          <Suspense fallback={null}>
+            <CoverageLayer
+              cells={coverage}
+              riskSweepIds={riskSweepIds}
+              suggestIds={suggestIds}
+              onLongPressCell={onLongPressHex}
+            />
+          </Suspense>
+        ) : null}
         {signStops.length > 0 ? (
           <Polyline
             positions={signStops.map((s) => [s.lat, s.lng] as [number, number])}
@@ -296,9 +312,7 @@ export function OperationalMap({
         <SignsLayer signs={signs} />
         <MyLocationMarker point={myPoint} />
         <DesktopPlaceClick enabled={placeMode} onPlace={onPlaceSign} />
-        <MapLongPress
-          onLongPress={(lat, lng) => onLongPressHex(pointToCell([lng, lat]))}
-        />
+        <DeferredMapLongPress onLongPressHex={onLongPressHex} />
         {tipLeads.map((lead) =>
           lead.claimedPoint ? (
             <Marker
@@ -362,6 +376,22 @@ export function OperationalMap({
       </MapContainer>
     </div>
   )
+}
+
+function DeferredMapLongPress({
+  onLongPressHex,
+}: {
+  onLongPressHex: (cellId: string) => void
+}) {
+  useMapEvents({
+    contextmenu(e) {
+      e.originalEvent.preventDefault()
+      void import('@/lib/geo/h3Coverage').then(({ pointToCell }) => {
+        onLongPressHex(pointToCell([e.latlng.lng, e.latlng.lat]))
+      })
+    },
+  })
+  return null
 }
 
 function ZoomBottomLeft() {

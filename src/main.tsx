@@ -11,3 +11,13 @@ createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </StrictMode>,
 )
+
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  const register = () => {
+    window.setTimeout(() => {
+      void navigator.serviceWorker.register('/sw.js')
+    }, 8_000)
+  }
+  if (document.readyState === 'complete') register()
+  else window.addEventListener('load', register, { once: true })
+}

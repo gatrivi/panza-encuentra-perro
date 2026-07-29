@@ -52,26 +52,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false
-    void (async () => {
-      try {
-        const { connectEmulatorsIfNeeded } = await import('@/lib/firebase/app')
-        const { ensureOperatorMember, ensurePanzaCase } = await import(
-          '@/lib/firebase/repos'
-        )
-        connectEmulatorsIfNeeded()
-        const id = await ensurePanzaCase()
-        if (cancelled) return
-        localStorage.setItem(CASE_CACHE_KEY, id)
-        setCaseId(id)
-        const m = await ensureOperatorMember(id, OPERATORS[opKey])
-        if (!cancelled) setMember(m)
-      } catch (e) {
-        console.error(e)
-        if (!cancelled) setError(t().errors.generic)
-      }
-    })()
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const { connectEmulatorsIfNeeded } = await import('@/lib/firebase/app')
+          const { ensureOperatorMember, ensurePanzaCase } = await import(
+            '@/lib/firebase/repos'
+          )
+          connectEmulatorsIfNeeded()
+          const id = await ensurePanzaCase()
+          if (cancelled) return
+          localStorage.setItem(CASE_CACHE_KEY, id)
+          setCaseId(id)
+          const m = await ensureOperatorMember(id, OPERATORS[opKey])
+          if (!cancelled) setMember(m)
+        } catch (e) {
+          console.error(e)
+          if (!cancelled) setError(t().errors.generic)
+        }
+      })()
+    }, 2_000)
     return () => {
       cancelled = true
+      window.clearTimeout(timer)
     }
   }, [opKey])
 

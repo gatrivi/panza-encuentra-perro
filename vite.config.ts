@@ -8,6 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: false,
       includeAssets: ['favicon.svg'],
       manifest: {
         name: 'Operativo Pancita',
@@ -32,9 +33,22 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Don't block first paint on huge precache of map vendors
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,webp}'],
+        // Case photos are ~5 MB: cache them only if a user actually opens them.
+        globPatterns: ['**/*.{js,css,html,svg,ico}', 'pwa-*.png'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        runtimeCaching: [
+          {
+            urlPattern: /\/panza\/.*\.(?:png|jpe?g|webp)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'panza-images',
+              expiration: {
+                maxEntries: 12,
+                maxAgeSeconds: 7 * 24 * 60 * 60,
+              },
+            },
+          },
+        ],
       },
     }),
   ],

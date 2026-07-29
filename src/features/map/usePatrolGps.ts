@@ -47,11 +47,14 @@ export function usePatrolGps({
 
   useEffect(() => {
     let cancelled = false
-    void import('@/lib/geo/h3Coverage').then((m) => {
-      if (!cancelled) h3Ref.current = m
-    })
+    const timer = window.setTimeout(() => {
+      void import('@/lib/geo/h3Coverage').then((m) => {
+        if (!cancelled) h3Ref.current = m
+      })
+    }, 2_500)
     return () => {
       cancelled = true
+      window.clearTimeout(timer)
     }
   }, [])
 

@@ -2,10 +2,8 @@ import { Suspense, lazy } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/features/cases/AuthProvider'
 import { AppShell } from '@/app/AppShell'
+import { MapScreen } from '@/features/map/MapScreen'
 
-const MapScreen = lazy(() =>
-  import('@/features/map/MapScreen').then((m) => ({ default: m.MapScreen })),
-)
 const InboxScreen = lazy(() =>
   import('@/features/leads/InboxScreen').then((m) => ({ default: m.InboxScreen })),
 )
