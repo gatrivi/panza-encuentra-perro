@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { POSTER_MODE_DEFAULT } from './posterRoutes'
 import {
-  advanceIndex,
   cueForPosition,
   flattenRouteNodes,
   relativeTurn,
