@@ -6,7 +6,7 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/features/cases/useAuth'
 import type {
   AvoidArea,
@@ -26,6 +26,7 @@ import { OperatorSwitch } from './OperatorSwitch'
 import { useTurnByTurnVoice } from './useTurnByTurnVoice'
 import {
   countRoutePosters,
+  FIELD_ROUTE_DEFAULT_MINUTES,
   FIELD_ROUTE_MAX_MINUTES,
   FIELD_ROUTE_MIN_MINUTES,
   FIELD_ROUTE_STEP_MINUTES,
@@ -73,10 +74,12 @@ export function MapScreen() {
     () => document.readyState === 'complete',
   )
   const routePlan: RoutePlanId =
-    searchParams.get('route') === 'roca-vias'
-      ? 'roca-vias'
-      : 'home-martelli'
-  const routeMinutes = normalizeRouteMinutes(searchParams.get('minutes'))
+    searchParams.get('route') === 'home-martelli'
+      ? 'home-martelli'
+      : 'roca-vias'
+  const routeMinutes = normalizeRouteMinutes(
+    searchParams.get('minutes') ?? String(FIELD_ROUTE_DEFAULT_MINUTES),
+  )
   const skippedParam = searchParams.get('skip') ?? ''
   const skippedIds = useMemo(
     () => skippedParam.split(',').filter(Boolean),
@@ -96,6 +99,15 @@ export function MapScreen() {
     window.addEventListener('load', revealMap, { once: true })
     return () => window.removeEventListener('load', revealMap)
   }, [mapReady])
+
+  // Default sticky: Roca × vías (user can pedir home-martelli)
+  useEffect(() => {
+    if (searchParams.get('route')) return
+    const next = new URLSearchParams(searchParams)
+    next.set('route', 'roca-vias')
+    next.set('minutes', String(FIELD_ROUTE_DEFAULT_MINUTES))
+    setSearchParams(next, { replace: true })
+  }, [searchParams, setSearchParams])
 
   useEffect(() => {
     if (!caseId) return
@@ -361,6 +373,25 @@ export function MapScreen() {
     if (myPoint) void placeSignAt(myPoint)
   }, [myPoint, placeSignAt])
 
+  const askMartelli = useCallback(() => {
+    const next = new URLSearchParams(searchParams)
+    next.set('route', 'home-martelli')
+    next.delete('skip')
+    setSearchParams(next, { replace: true })
+    setPhase('out')
+    void announceNav('Ruta casa a Martelli')
+  }, [searchParams, setSearchParams])
+
+  const askRoca = useCallback(() => {
+    updateFieldRoute(routeMinutes, skippedIds)
+    void announceNav('Ruta Roca por la vía')
+  }, [updateFieldRoute, routeMinutes, skippedIds])
+
+  // Sin itinerario usable → Plan
+  if (routePlan === 'roca-vias' && routePosterCount < 1) {
+    return <Navigate to="/plan" replace />
+  }
+
   return (
     <div className="map-screen map-only street-readable field-ops">
       <div className="map-layout">
@@ -436,8 +467,15 @@ export function MapScreen() {
                   Reponer paradas
                 </button>
               ) : null}
+              <button type="button" className="btn btn-ghost" onClick={askMartelli}>
+                Pedir Martelli
+              </button>
             </>
-          ) : null}
+          ) : (
+            <button type="button" className="btn btn-ghost" onClick={askRoca}>
+              Pedir Roca × vía
+            </button>
+          )}
           <button
             type="button"
             className={`btn btn-ghost map-voice-btn${voiceNavOn ? ' map-voice-on' : ''}`}
