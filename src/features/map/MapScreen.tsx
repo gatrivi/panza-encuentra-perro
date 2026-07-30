@@ -60,6 +60,16 @@ function FieldMapPreview() {
   )
 }
 
+const SENSORS_KEY = 'panza.field.sensors'
+
+function readSensorsGranted(): boolean {
+  try {
+    return localStorage.getItem(SENSORS_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
 /** Field-first: voz guía, pantalla confirma, un dedo. */
 export function MapScreen() {
   const { caseId, member } = useAuth()
@@ -72,7 +82,9 @@ export function MapScreen() {
   const [riskMode, setRiskMode] = useState(false)
   const [riskSweepIds, setRiskSweepIds] = useState<string[]>([])
   const [stopPromptPoint, setStopPromptPoint] = useState<GeoPoint | null>(null)
-  const [voiceNavOn, setVoiceNavOn] = useState(true)
+  const [sensorsOn, setSensorsOn] = useState(() => readSensorsGranted())
+  const [wantVoice, setWantVoice] = useState(true)
+  const [voiceNavOn, setVoiceNavOn] = useState(false)
   const [toolsOpen, setToolsOpen] = useState(false)
   const [phase, setPhase] = useState<RoutePhase>('out')
   const [suggestIds, setSuggestIds] = useState<string[]>([])
@@ -173,10 +185,21 @@ export function MapScreen() {
     caseId,
     actorUid,
     riskMode,
+    enabled: sensorsOn,
     onWalkedCells,
     onRiskCells: setRiskSweepIds,
     onStopPrompt: setStopPromptPoint,
   })
+
+  const enableSensors = useCallback(() => {
+    try {
+      localStorage.setItem(SENSORS_KEY, '1')
+    } catch {
+      /* ignore */
+    }
+    setSensorsOn(true)
+    setVoiceNavOn(wantVoice)
+  }, [wantVoice])
 
   const valueRoute = useMemo(() => {
     const from = myPoint
@@ -542,6 +565,7 @@ export function MapScreen() {
         </div>
       ) : null}
 
+      {sensorsOn ? (
       <div className="field-dock" role="region" aria-label="Navegación">
         <p className="field-cue" role="status">
           {currentPoster
@@ -629,9 +653,42 @@ export function MapScreen() {
           )}
         </div>
       </div>
+      ) : null}
+
+      {!sensorsOn ? (
+        <div className="field-perm-gate" role="dialog" aria-labelledby="field-perm-title">
+          <div className="field-perm-card">
+            <h2 id="field-perm-title">Permisos para el operativo</h2>
+            <p>
+              Primero mirá el mapa. Cuando quieras salir a pegar carteles, activá
+              ubicación (y voz si querés). El teléfono va a pedir permiso recién
+              al tocar el botón.
+            </p>
+            <label className="field-perm-voice">
+              <input
+                type="checkbox"
+                checked={wantVoice}
+                onChange={(e) => setWantVoice(e.target.checked)}
+              />{' '}
+              Incluir guía por voz
+            </label>
+            <button
+              type="button"
+              className="btn btn-accent field-btn"
+              onClick={enableSensors}
+            >
+              Activar y continuar
+            </button>
+            <p className="muted field-perm-note">
+              Sin esto igual ves la ruta; no podés marcar “Cartel acá” ni
+              navegación en vivo.
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <StopPosterPrompt
-        open={Boolean(stopPromptPoint) && !riskMode}
+        open={Boolean(stopPromptPoint) && !riskMode && sensorsOn}
         onYes={() => {
           if (stopPromptPoint) void placeSignAt(stopPromptPoint)
         }}

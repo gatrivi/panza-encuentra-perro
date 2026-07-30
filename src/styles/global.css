@@ -672,6 +672,59 @@ a {
   border: 1px solid var(--border);
 }
 
+.field-perm-gate {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1200;
+  padding: 0.75rem 0.75rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+}
+
+.field-perm-card {
+  pointer-events: auto;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 1rem 1rem 0.85rem;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg-elevated) 96%, transparent);
+  border: 1px solid var(--border);
+  box-shadow: 0 -6px 28px rgba(28, 36, 28, 0.18);
+  backdrop-filter: blur(10px);
+}
+
+.field-perm-card h2 {
+  font-size: 1.15rem;
+  color: var(--brand);
+  margin: 0 0 0.35rem;
+}
+
+.field-perm-card p {
+  margin: 0 0 0.65rem;
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+
+.field-perm-voice {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 650;
+  color: var(--ink-muted);
+}
+
+.field-perm-card .field-btn {
+  width: 100%;
+}
+
+.field-perm-note {
+  margin: 0.55rem 0 0 !important;
+  font-size: 0.8rem !important;
+}
+
 .plan-campaign {
   margin: 0.35rem 0 0.75rem;
   font-weight: 700;

@@ -22,6 +22,8 @@ type Args = {
   caseId: string | null
   actorUid: string | null
   riskMode: boolean
+  /** false until the user taps the permission gate (no auto prompt on first paint). */
+  enabled: boolean
   onWalkedCells: (cellIds: string[]) => void
   onRiskCells: (cellIds: string[]) => void
   onStopPrompt: (point: GeoPoint) => void
@@ -31,6 +33,7 @@ export function usePatrolGps({
   caseId,
   actorUid,
   riskMode,
+  enabled,
   onWalkedCells,
   onRiskCells,
   onStopPrompt,
@@ -46,6 +49,7 @@ export function usePatrolGps({
   const h3Ref = useRef<H3Api | null>(null)
 
   useEffect(() => {
+    if (!enabled) return
     let cancelled = false
     let timer: number | null = null
     const loadAfterMap = () => {
@@ -62,7 +66,7 @@ export function usePatrolGps({
       if (timer != null) window.clearTimeout(timer)
       window.removeEventListener('load', loadAfterMap)
     }
-  }, [])
+  }, [enabled])
 
   const flushWalked = useCallback(() => {
     if (!caseId || !actorUid || walkedBuffer.current.size === 0) return
@@ -126,6 +130,10 @@ export function usePatrolGps({
   )
 
   useEffect(() => {
+    if (!enabled) {
+      setError(null)
+      return
+    }
     if (!navigator.geolocation) {
       setError('Sin GPS')
       return
@@ -141,7 +149,7 @@ export function usePatrolGps({
       if (flushTimer.current) clearTimeout(flushTimer.current)
       flushWalked()
     }
-  }, [handleFix, riskMode, flushWalked])
+  }, [enabled, handleFix, riskMode, flushWalked])
 
   const takeRiskCells = useCallback(() => {
     const ids = [...riskCells.current]
