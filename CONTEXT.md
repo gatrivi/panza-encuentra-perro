@@ -1,5 +1,21 @@
 # Buscamos a Panza — context
 
+## Handoff (2026-07-30) — ¡otro agente: no pisar!
+
+**HEAD synced:** `2959db2` · **package `0.3.21`** · `master` = `origin/master`
+
+**v0.3.21 / commit msg v0.3.17:** precached “voy a X” + Maps export (plan `Voy a X field route`).
+- `posterRoutes.ts`: `FieldRouteStop.kind`, `FIELD_STOP_KIND_RANK`, `sortStopsByPriority`, `buildGmapsDirUrl` (≤9 waypoints), `getRocaViasStops` = budget + **disabled POIs** (`readDisabledPoiIds`) + priority then `restoreLoopOrder`
+- `MapScreen.tsx`: chips **Roca × vía | Martelli | Casa** + dock **Maps** → `window.open`
+- tests: `src/lib/posterRoutes.test.ts`
+- CSS: `.field-actions-adaptive` **4 cols** `1fr 0.7fr 0.7fr 1fr` (Cartel|Maps|Saltar|Cerrar)
+
+**Merge note:** rebase atop `a615683` (v0.3.20 Puntos). Keep both disabled-POI filter **and** priority helpers — do not drop either.
+
+**Out of scope still:** STT “voy a Florida”, live Places, travelmode picker.
+
+---
+
 **v0.3.20** · Puntos screen: toggle POIs + weights; declutter map (no orange rain).
 **v0.3.19** · OSM underlay — no floating map square; merge to ship pancita.gatrivi.com.
 **v0.3.18** · Permission gate: map first, GPS/voz only after button.
