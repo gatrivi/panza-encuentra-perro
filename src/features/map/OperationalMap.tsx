@@ -243,6 +243,8 @@ export type OperationalMapProps = {
   routeOrigin: RouteOrigin | null
   signPoints?: readonly { lat: number; lng: number }[]
   showSignRoute?: boolean
+  /** Hex coverage / suggest clutter — off on field by default. */
+  showCoverage?: boolean
   onPlaceSign: (point: GeoPoint) => void
   onLongPressHex: (cellId: string) => void
 }
@@ -264,6 +266,7 @@ export function OperationalMap({
   routeOrigin,
   signPoints = [],
   showSignRoute = true,
+  showCoverage = false,
   onPlaceSign,
   onLongPressHex,
 }: OperationalMapProps) {
@@ -330,6 +333,7 @@ export function OperationalMap({
           myPoint={myPoint}
           signPoints={signPoints}
           minutes={routeMinutes}
+          showMarks={false}
         />
         {routePlan === 'roca-vias' ? (
           <CircleMarker
@@ -369,7 +373,7 @@ export function OperationalMap({
             </Popup>
           </CircleMarker>
         ) : null}
-        {hasCoverage ? (
+        {hasCoverage && showCoverage ? (
           <Suspense fallback={null}>
             <CoverageLayer
               cells={coverage}

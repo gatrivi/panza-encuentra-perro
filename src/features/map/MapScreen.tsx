@@ -463,6 +463,7 @@ export function MapScreen() {
               routeOrigin={routeOrigin}
               signPoints={signPoints}
               showSignRoute
+              showCoverage={toolsOpen}
               onPlaceSign={(p) => void placeSignAt(p)}
               onLongPressHex={(cellId) => {
                 if (riskMode) addRiskCell(cellId)
@@ -555,6 +556,9 @@ export function MapScreen() {
               Volver a ruta
             </button>
           ) : null}
+          <Link className="btn btn-ghost" to="/puntos">
+            Puntos / pesos
+          </Link>
           <Link className="btn btn-ghost" to="/plan">
             Plan
           </Link>

@@ -4,49 +4,29 @@
  */
 
 import { haversineM } from '@/lib/geo'
-import { ROCA_VIAS_STOPS } from '@/lib/posterRoutes'
 import {
   coveredMartelliSlotIds,
   getMartelliPosterGrid,
   type MartelliSlot,
   type SignPoint,
 } from '@/lib/martelliPosterGrid'
+import { effectiveValueAnchors, POI_CATALOG } from '@/lib/poiCatalog'
 
-export type ValueAnchor = { lat: number; lng: number; w: number; label: string }
+/** @deprecated use effectiveValueAnchors / POI_CATALOG — kept for tests. */
+export const VALUE_ANCHORS = POI_CATALOG.map((p) => ({
+  lat: p.lat,
+  lng: p.lng,
+  label: p.label,
+  w: p.defaultW,
+}))
 
-/** Lugares donde rinde más pegar — hardcode, no API. */
-export const VALUE_ANCHORS: readonly ValueAnchor[] = [
-  ...ROCA_VIAS_STOPS.map((s) => ({
-    lat: s.lat,
-    lng: s.lng,
-    label: s.label,
-    w: s.minMinutes <= 30 ? 10 : s.minMinutes <= 45 ? 8 : 6,
-  })),
-  {
-    lat: -34.5633,
-    lng: -58.5152,
-    label: 'Constituyentes × Maipú',
-    w: 10,
-  },
-  {
-    lat: -34.5499,
-    lng: -58.5013,
-    label: 'Shell Gral Paz 3802',
-    w: 9,
-  },
-  {
-    lat: -34.5434,
-    lng: -58.5006,
-    label: 'Estación Padilla',
-    w: 9,
-  },
-]
+export type ValueAnchor = (typeof VALUE_ANCHORS)[number]
 
 export type ValuedSlot = MartelliSlot & { value: number }
 
 function scoreAt(lat: number, lng: number): number {
   let v = 1
-  for (const a of VALUE_ANCHORS) {
+  for (const a of effectiveValueAnchors()) {
     const d = haversineM({ lat, lng }, a)
     if (d <= 70) v = Math.max(v, a.w)
     else if (d <= 140) v = Math.max(v, a.w * 0.65)
@@ -56,6 +36,10 @@ function scoreAt(lat: number, lng: number): number {
 }
 
 let valuedCache: readonly ValuedSlot[] | null = null
+
+export function invalidateValueCache() {
+  valuedCache = null
+}
 
 export function getValuedMartelliSlots(): readonly ValuedSlot[] {
   if (valuedCache) return valuedCache

@@ -27,6 +27,7 @@ export function AppShell() {
             <NavLink to="/" end>
               {copy.nav.map}
             </NavLink>
+            <NavLink to="/puntos">{copy.nav.pois}</NavLink>
             <NavLink to="/bandeja">{copy.nav.inbox}</NavLink>
             <NavLink to="/plan">{copy.nav.plan}</NavLink>
           </nav>

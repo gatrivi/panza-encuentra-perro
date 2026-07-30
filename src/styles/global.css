@@ -149,11 +149,7 @@ a {
   height: calc(var(--nav-h) + var(--safe-bottom));
   padding-bottom: var(--safe-bottom);
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  background: var(--bg-elevated);
-  border-top: 1px solid var(--border);
-  z-index: 30;
-}
+  grid-template-columns: repeat(4, 1fr);
 
 .bottom-nav a {
   display: flex;
@@ -545,12 +541,11 @@ a {
   bottom: 0;
   z-index: 1100;
   padding: 0.55rem 0.75rem calc(0.6rem + env(safe-area-inset-bottom, 0px));
-  background: color-mix(in srgb, var(--bg-elevated) 94%, transparent);
-  color: var(--ink);
-  border-top: 1px solid var(--border);
+  background: #fffdf8;
+  color: #1c241c;
+  border-top: 1px solid #d4cdc0;
   border-radius: 16px 16px 0 0;
   box-shadow: 0 -8px 28px rgba(28, 36, 28, 0.12);
-  backdrop-filter: blur(10px);
 }
 
 .field-cue {
@@ -723,6 +718,83 @@ a {
 .field-perm-note {
   margin: 0.55rem 0 0 !important;
   font-size: 0.8rem !important;
+}
+
+.poi-screen {
+  padding-bottom: 2rem;
+}
+
+.poi-head h1 {
+  margin-bottom: 0.25rem;
+}
+
+.poi-summary {
+  margin: 0.5rem 0;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.poi-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.poi-row {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+}
+
+.poi-row.poi-off {
+  opacity: 0.55;
+}
+
+.poi-check {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.poi-check input {
+  margin-top: 0.35rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
+}
+
+.poi-check strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.poi-meta {
+  display: block;
+  font-size: 0.78rem;
+  margin-top: 0.15rem;
+}
+
+.poi-weight {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.55rem;
+}
+
+.poi-w-label {
+  font-weight: 800;
+  color: var(--brand);
+  text-align: center;
+}
+
+.poi-weight input[type='range'] {
+  width: 100%;
 }
 
 .plan-campaign {

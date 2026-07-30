@@ -10,6 +10,9 @@ const InboxScreen = lazy(() =>
 const PlanScreen = lazy(() =>
   import('@/features/coverage/PlanScreen').then((m) => ({ default: m.PlanScreen })),
 )
+const PoiScreen = lazy(() =>
+  import('@/features/coverage/PoiScreen').then((m) => ({ default: m.PoiScreen })),
+)
 const PublicCasePage = lazy(() =>
   import('@/features/public-report/PublicCasePage').then((m) => ({
     default: m.PublicCasePage,
@@ -40,9 +43,10 @@ export function App() {
           <Route path="/c/:slug" element={<PublicCasePage />} />
           <Route path="/p/:posterCode" element={<PosterRedirect />} />
           <Route path="/" element={<AppShell />}>
-            <Route index element={<MapScreen />} />
-            <Route path="bandeja" element={<InboxScreen />} />
-            <Route path="plan" element={<PlanScreen />} />
+          <Route index element={<MapScreen />} />
+          <Route path="bandeja" element={<InboxScreen />} />
+          <Route path="plan" element={<PlanScreen />} />
+          <Route path="puntos" element={<PoiScreen />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -10,6 +10,8 @@ type Props = {
   myPoint: GeoPoint | null
   signPoints: readonly SignPoint[]
   minutes: number
+  /** Orange value dots clutter the field map — keep off by default. */
+  showMarks?: boolean
 }
 
 function valueColor(v: number): string {
@@ -18,9 +20,14 @@ function valueColor(v: number): string {
   return '#a16207'
 }
 
-/** Puntos de valor abiertos + mejor ruta dinámica desde el user. */
-export function ValueRouteLayer({ myPoint, signPoints, minutes }: Props) {
-  const marks = markedValueSlots(signPoints, 5)
+/** Optional value overlay; field default = route line only, no orange rain. */
+export function ValueRouteLayer({
+  myPoint,
+  signPoints,
+  minutes,
+  showMarks = false,
+}: Props) {
+  const marks = showMarks ? markedValueSlots(signPoints, 5) : []
   const from = myPoint
     ? { lat: myPoint[1], lng: myPoint[0] }
     : { lat: -34.5505, lng: -58.5105 }
@@ -28,7 +35,7 @@ export function ValueRouteLayer({ myPoint, signPoints, minutes }: Props) {
 
   return (
     <>
-      {marks.slice(0, 80).map((s) => (
+      {marks.slice(0, 40).map((s) => (
         <CircleMarker
           key={s.id}
           center={[s.lat, s.lng]}
@@ -45,7 +52,7 @@ export function ValueRouteLayer({ myPoint, signPoints, minutes }: Props) {
           </Tooltip>
         </CircleMarker>
       ))}
-      {route.points.length > 1 ? (
+      {showMarks && route.points.length > 1 ? (
         <Polyline
           positions={route.points}
           pathOptions={{
@@ -61,23 +68,6 @@ export function ValueRouteLayer({ myPoint, signPoints, minutes }: Props) {
           </Tooltip>
         </Polyline>
       ) : null}
-      {route.stops.map((s, i) => (
-        <CircleMarker
-          key={`rv-${s.id}`}
-          center={[s.lat, s.lng]}
-          radius={7}
-          pathOptions={{
-            color: '#1a3a2a',
-            fillColor: '#c45c26',
-            fillOpacity: 0.9,
-            weight: 2,
-          }}
-        >
-          <Tooltip direction="top">
-            #{i + 1} · v{s.value} · {Math.round(s.metersFromPrev)} m
-          </Tooltip>
-        </CircleMarker>
-      ))}
     </>
   )
 }

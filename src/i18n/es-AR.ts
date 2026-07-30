@@ -4,6 +4,7 @@ export const esAR = {
     map: 'Mapa',
     inbox: 'Bandeja',
     plan: 'Plan',
+    pois: 'Puntos',
   },
   actions: {
     possibleSighting: 'Posible avistaje',

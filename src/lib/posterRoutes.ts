@@ -390,9 +390,30 @@ export function getRocaViasStops(
 ): FieldRouteStop[] {
   const budget = normalizeRouteMinutes(minutes)
   const skipped = new Set(skippedIds)
+  // Keep in sync with poiCatalog KEY — avoid circular import.
+  const disabled = readDisabledPoiIds()
   return ROCA_VIAS_STOPS.filter(
-    (stop) => stop.minMinutes <= budget && !skipped.has(stop.id),
+    (stop) =>
+      stop.minMinutes <= budget &&
+      !skipped.has(stop.id) &&
+      !disabled.has(stop.id),
   )
+}
+
+/** Mirrors `disabledPoiIds` in poiCatalog (same localStorage key). */
+function readDisabledPoiIds(): Set<string> {
+  const out = new Set<string>()
+  try {
+    const raw = localStorage.getItem('panza.poi.overrides.v1')
+    if (!raw) return out
+    const parsed = JSON.parse(raw) as Record<string, { on?: boolean }>
+    for (const [id, o] of Object.entries(parsed)) {
+      if (o?.on === false) out.add(id)
+    }
+  } catch {
+    /* ignore */
+  }
+  return out
 }
 
 function rotateToNearest(
