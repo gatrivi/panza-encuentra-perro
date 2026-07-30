@@ -1,5 +1,7 @@
 # Buscamos a Panza — context
 
+**v0.3.17** · Field map full-bleed (no floating square) · cream dock · Roca × vías bird’s-eye.
+Mock: `docs/pancita-field-target-mock.png` · notes: `docs/FIELD_UI_TARGET.md`
 **v0.2.8** · Vista default = **solo mapa** (tools en `···`). P/G/R flotante. Campaña 1 viaje/día → `SIGNS_CAMPAIGN.md`.
 **Review completo:** `APP_REVIEW.md`
 Later (docs): [PANO OSINT](https://t.co/CGqvwn0HIi) → https://github.com/ALW1EZ/PANO

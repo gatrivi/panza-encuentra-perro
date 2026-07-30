@@ -118,6 +118,12 @@ function tipIcon(lead: Lead) {
   })
 }
 
+/** Dock + tools — keep route readable above the bottom sheet. */
+const FIELD_FIT_PAD = {
+  paddingTopLeft: [20, 56] as [number, number],
+  paddingBottomRight: [20, 210] as [number, number],
+}
+
 function FitBounds({
   sightings,
   tips,
@@ -139,19 +145,37 @@ function FitBounds({
 }) {
   const map = useMap()
   useEffect(() => {
-    // Local raster only covers this bbox — fit exactly, no gray rim.
+    map.invalidateSize({ pan: false })
     if (routePlan === 'roca-vias') {
       const { south, west, north, east } = ROCA_VIAS_FIELD_BOUNDS
       const field = L.latLngBounds([south, west], [north, east])
-      map.setMaxBounds(field)
-      map.options.maxBoundsViscosity = 1
-      map.fitBounds(field, {
+      // Soft maxBounds: stay in the preloaded neighborhood, allow slight overscroll.
+      map.setMaxBounds(field.pad(0.04))
+      map.options.maxBoundsViscosity = 0.85
+      // Prevent zooming out into letterboxed “floating square” on tall phones.
+      const fillZoom = map.getBoundsZoom(field, true)
+      if (Number.isFinite(fillZoom)) map.setMinZoom(fillZoom)
+
+      const effectiveOrigin = getRocaViasFieldOrigin(routeOrigin)
+      const routePts = buildPosterAwareRoute(posterMode, {
+        plan: routePlan,
+        minutes: routeMinutes,
+        skippedIds,
+        origin: effectiveOrigin,
+      }).flatMap((leg) => leg.points)
+      const focusPts: [number, number][] =
+        routePts.length > 0
+          ? routePts
+          : [[ROCA_VIAS_EPICENTER.lat, ROCA_VIAS_EPICENTER.lng]]
+      map.fitBounds(L.latLngBounds(focusPts).pad(0.08), {
         animate: false,
-        padding: [4, 4],
+        maxZoom: 16,
+        ...FIELD_FIT_PAD,
       })
       return
     }
     map.setMaxBounds(undefined as unknown as L.LatLngBoundsExpression)
+    map.setMinZoom(0)
     const effectiveOrigin = routeOrigin
     const routePts = buildPosterAwareRoute(posterMode, {
       plan: routePlan,

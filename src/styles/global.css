@@ -500,7 +500,7 @@ a {
   pointer-events: none;
 }
 
-/* Field ops: sol / noche / una mano — dock dominante */
+/* Field ops: full-bleed map + cream dock — no floating letterbox */
 .app-shell-map .bottom-nav,
 .app-shell-map .fab-wrap {
   display: none;
@@ -510,6 +510,18 @@ a {
 .map-screen.field-ops {
   min-height: 100dvh;
   height: 100dvh;
+  background: #e5e2d9;
+}
+
+.map-screen.field-ops .map-layout,
+.map-screen.field-ops .map-container,
+.map-screen.field-ops .map-container .leaflet-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  flex: none;
 }
 
 .field-tools-btn {
@@ -517,12 +529,13 @@ a {
   top: 10px;
   right: 10px;
   z-index: 1100;
-  width: 48px;
-  height: 48px;
-  font-size: 1.25rem;
-  background: #111;
-  color: #fff;
-  border-color: #333;
+  width: 44px;
+  height: 44px;
+  font-size: 1.15rem;
+  background: color-mix(in srgb, var(--bg-elevated) 94%, transparent);
+  color: var(--brand);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.16);
 }
 
 .field-dock {
@@ -531,26 +544,31 @@ a {
   right: 0;
   bottom: 0;
   z-index: 1100;
-  padding: 0.75rem 0.75rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
-  background: rgba(10, 14, 12, 0.92);
-  color: #f5f7f4;
-  border-top: 3px solid var(--accent);
+  padding: 0.7rem 0.85rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--bg-elevated) 94%, transparent);
+  color: var(--ink);
+  border-top: 1px solid var(--border);
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -8px 28px rgba(28, 36, 28, 0.12);
+  backdrop-filter: blur(10px);
 }
 
 .field-cue {
-  margin: 0 0 0.35rem;
-  font-size: 1.35rem;
-  font-weight: 800;
-  line-height: 1.2;
-  letter-spacing: 0.01em;
-  text-shadow: 0 1px 0 #000;
+  margin: 0 0 0.2rem;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--brand);
+  text-shadow: none;
 }
 
 .field-phase {
-  margin: 0 0 0.65rem;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #c8d4c8;
+  margin: 0 0 0.55rem;
+  font-size: 0.88rem;
+  font-weight: 650;
+  color: var(--ink-muted);
 }
 
 .field-time-controls {
@@ -558,20 +576,21 @@ a {
   grid-template-columns: 56px 1fr 56px;
   align-items: center;
   gap: 0.45rem;
-  margin: 0 0 0.65rem;
+  margin: 0 0 0.55rem;
 }
 
 .field-time-controls strong {
   text-align: center;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  color: var(--ink);
 }
 
 .field-time-controls button {
   min-height: 40px;
-  border: 1px solid #59635b;
+  border: 1px solid var(--border);
   border-radius: 10px;
-  background: #202722;
-  color: #fff;
+  background: var(--bg-elevated);
+  color: var(--ink);
   font: inherit;
   font-weight: 800;
 }
@@ -583,46 +602,74 @@ a {
 .field-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.55rem;
+  gap: 0.5rem;
 }
 
 .field-actions-adaptive {
-  grid-template-columns: 1.15fr 0.75fr 1fr;
+  grid-template-columns: 1.2fr 0.7fr 1fr;
 }
 
 .field-btn {
-  min-height: 56px;
+  min-height: 52px;
   border-radius: 14px;
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 800;
 }
 
 .field-skip-btn {
-  color: #fff;
-  border-color: #69716b;
+  color: var(--ink);
+  border-color: var(--border);
+  background: var(--bg-elevated);
 }
 
 .field-route-summary {
   margin: 0;
   padding: 0.35rem 0.5rem;
   border-radius: 8px;
-  background: rgba(20, 28, 22, 0.88);
-  color: #f5f2ea;
+  background: color-mix(in srgb, var(--brand) 8%, var(--bg-elevated));
+  color: var(--ink);
   font-size: 0.85rem;
   font-weight: 750;
 }
 
 .field-ops .map-mobile-controls {
-  right: 66px;
-  bottom: calc(220px + env(safe-area-inset-bottom, 0px));
+  top: 10px;
+  right: 58px;
+  bottom: auto;
+  left: auto;
 }
 
 .field-ops .map-ctl {
-  min-height: 48px;
-  font-weight: 800;
-  background: rgba(12, 16, 14, 0.88);
-  color: #fff;
-  border-color: #444;
+  min-height: 42px;
+  min-width: 0;
+  padding: 0.45rem 0.7rem;
+  font-weight: 750;
+  font-size: 0.8rem;
+  background: color-mix(in srgb, var(--bg-elevated) 94%, transparent);
+  color: var(--ink);
+  border-color: var(--border);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.14);
+}
+
+.field-ops .map-locate-btn {
+  position: absolute;
+  right: 10px;
+  bottom: calc(178px + env(safe-area-inset-bottom, 0px));
+  z-index: 1000;
+  min-width: 0;
+}
+
+.field-ops .leaflet-bottom.leaflet-left {
+  bottom: calc(178px + env(safe-area-inset-bottom, 0px));
+}
+
+.field-ops .map-base-status {
+  left: 10px;
+  right: auto;
+  max-width: min(220px, calc(100% - 140px));
+  background: color-mix(in srgb, var(--bg-elevated) 94%, transparent);
+  color: var(--ink);
+  border: 1px solid var(--border);
 }
 
 .plan-campaign {
@@ -691,6 +738,10 @@ a {
 .map-ctl-on {
   background: color-mix(in srgb, var(--accent) 20%, var(--bg-elevated));
   border-color: var(--accent);
+}
+
+.map-locate-btn {
+  align-self: flex-end;
 }
 
 .leaflet-control-zoom a {

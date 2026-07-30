@@ -250,6 +250,11 @@ export function MapScreen() {
     return ok[0] ?? null
   }, [sightings])
 
+  const activeSignCount = useMemo(
+    () => signs.filter((s) => s.status === 'active').length,
+    [signs],
+  )
+
   // h3/turf are heavy — defer suggest hexes off the first paint path
   useEffect(() => {
     const activeAvoid = avoidAreas.filter((a) => a.active)
@@ -539,7 +544,9 @@ export function MapScreen() {
 
       <div className="field-dock" role="region" aria-label="Navegación">
         <p className="field-cue" role="status">
-          {lastCue ?? preview}
+          {currentPoster
+            ? `Próximo · ${currentPoster.label}`
+            : (lastCue ?? preview)}
         </p>
         <p className="field-phase">
           {routePlan === 'roca-vias'
@@ -550,6 +557,7 @@ export function MapScreen() {
               ? 'Ida → avistaje'
               : 'Vuelta → casa + carteles'}
           {voiceNavOn ? ' · VOZ' : ' · silencio'}
+          {activeSignCount > 0 ? ` · ${activeSignCount} carteles` : ''}
         </p>
         {routePlan === 'roca-vias' && phase === 'out' ? (
           <div className="field-time-controls" aria-label="Tiempo de recorrido">

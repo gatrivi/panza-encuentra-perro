@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { TileLayer, useMap } from 'react-leaflet'
 import type { GeoPoint } from '@/domain/schemas'
 import { LocalStreetLayer } from './LocalStreetLayer'
+import { ROCA_VIAS_FIELD_BOUNDS } from '@/lib/posterRoutes'
+import L from 'leaflet'
 
 const OSM = {
   // One HTTP/2 connection. OSM explicitly requires this host (not a/b/c).
@@ -33,13 +35,15 @@ export function MapMobileChrome({
   const [tilesReady, setTilesReady] = useState(false)
 
   useEffect(() => {
-    const bump = () => map.invalidateSize()
+    const bump = () => map.invalidateSize({ pan: false })
     bump()
     const t = window.setTimeout(bump, 200)
+    const t2 = window.setTimeout(bump, 600)
     window.addEventListener('resize', bump)
     window.addEventListener('orientationchange', bump)
     return () => {
       window.clearTimeout(t)
+      window.clearTimeout(t2)
       window.removeEventListener('resize', bump)
       window.removeEventListener('orientationchange', bump)
     }
@@ -96,32 +100,39 @@ export function MapMobileChrome({
             type="button"
             className="map-ctl"
             onClick={() => {
-              if (routePoints.length === 0) return
-              map.fitBounds([...routePoints], {
-                animate: false,
+              map.invalidateSize({ pan: false })
+              const pts =
+                routePoints.length > 0
+                  ? routePoints
+                  : ([
+                      [ROCA_VIAS_FIELD_BOUNDS.south, ROCA_VIAS_FIELD_BOUNDS.west],
+                      [ROCA_VIAS_FIELD_BOUNDS.north, ROCA_VIAS_FIELD_BOUNDS.east],
+                    ] as [number, number][])
+              map.fitBounds(L.latLngBounds([...pts]).pad(0.06), {
+                animate: true,
                 maxZoom: 16,
-                paddingTopLeft: [24, 24],
-                paddingBottomRight: [24, 220],
+                paddingTopLeft: [20, 56],
+                paddingBottomRight: [20, 210],
               })
             }}
           >
             Ver ruta
           </button>
         ) : null}
-        <button
-          type="button"
-          className="map-ctl"
-          disabled={!myPoint}
-          onClick={() => {
-            if (!myPoint) return
-            map.flyTo([myPoint[1], myPoint[0]], Math.max(map.getZoom(), 16), {
-              duration: 0.6,
-            })
-          }}
-        >
-          Mi ubicación
-        </button>
       </div>
+      <button
+        type="button"
+        className="map-ctl map-locate-btn"
+        disabled={!myPoint}
+        onClick={() => {
+          if (!myPoint) return
+          map.flyTo([myPoint[1], myPoint[0]], Math.max(map.getZoom(), 16), {
+            duration: 0.55,
+          })
+        }}
+      >
+        Mi ubicación
+      </button>
     </>
   )
 }
