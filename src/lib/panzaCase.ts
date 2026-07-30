@@ -5,6 +5,11 @@ import {
   ROCA_VIAS_STOPS,
 } from '@/lib/posterRoutes'
 
+export {
+  ACTIVE_FIELD_ZONE,
+  inActiveFieldZone,
+} from '@/lib/fieldZone'
+
 export const PANZA_CASE_ID = 'case_panza'
 export const PANZA_SLUG = 'pancita'
 

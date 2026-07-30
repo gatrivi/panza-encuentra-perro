@@ -24,6 +24,12 @@ import { announceNav, VOICE_NAV } from '@/lib/voiceNav'
 import { FieldHud } from './FieldHud'
 import { OperatorSwitch } from './OperatorSwitch'
 import { useTurnByTurnVoice } from './useTurnByTurnVoice'
+import { preloadLocalMap } from '@/lib/localMap'
+import {
+  FIELD_TEAMS,
+  teamForUsername,
+} from '@/lib/fieldTeams'
+import { buildMaxValueRoute } from '@/lib/maxValueRoute'
 import {
   countRoutePosters,
   FIELD_ROUTE_DEFAULT_MINUTES,
@@ -70,9 +76,7 @@ export function MapScreen() {
   const [toolsOpen, setToolsOpen] = useState(false)
   const [phase, setPhase] = useState<RoutePhase>('out')
   const [suggestIds, setSuggestIds] = useState<string[]>([])
-  const [mapReady, setMapReady] = useState(
-    () => document.readyState === 'complete',
-  )
+  const [mapReady, setMapReady] = useState(false)
   const routePlan: RoutePlanId =
     searchParams.get('route') === 'home-martelli'
       ? 'home-martelli'
@@ -92,13 +96,23 @@ export function MapScreen() {
     return 'dest_return'
   })
   const actorUid = member?.uid ?? null
-
+  const myTeam = FIELD_TEAMS[teamForUsername(actorUid)]
+  const signPoints = useMemo(
+    () =>
+      signs
+        .filter((s) => s.status === 'active')
+        .map((s) => ({ lat: s.point[1], lng: s.point[0] })),
+    [signs],
+  )
   useEffect(() => {
-    if (mapReady) return
-    const revealMap = () => setMapReady(true)
-    window.addEventListener('load', revealMap, { once: true })
-    return () => window.removeEventListener('load', revealMap)
-  }, [mapReady])
+    let cancelled = false
+    void preloadLocalMap().then(() => {
+      if (!cancelled) setMapReady(true)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // Default sticky: Roca × vías (user can pedir home-martelli)
   useEffect(() => {
@@ -163,6 +177,13 @@ export function MapScreen() {
     onRiskCells: setRiskSweepIds,
     onStopPrompt: setStopPromptPoint,
   })
+
+  const valueRoute = useMemo(() => {
+    const from = myPoint
+      ? { lat: myPoint[1], lng: myPoint[0] }
+      : { lat: -34.5505, lng: -58.5105 }
+    return buildMaxValueRoute(from, signPoints, routeMinutes)
+  }, [myPoint, signPoints, routeMinutes])
 
   const { lastCue, preview, currentPoster } = useTurnByTurnVoice({
     enabled: voiceNavOn && !riskMode,
@@ -412,6 +433,7 @@ export function MapScreen() {
               routeMinutes={routeMinutes}
               skippedIds={skippedIds}
               routeOrigin={routeOrigin}
+              signPoints={signPoints}
               showSignRoute
               onPlaceSign={(p) => void placeSignAt(p)}
               onLongPressHex={(cellId) => {
@@ -437,6 +459,13 @@ export function MapScreen() {
       {toolsOpen ? (
         <div className="map-float-panel">
           <OperatorSwitch />
+          <p className="field-route-summary">
+            {myTeam.label} · max valor · {valueRoute.stops.length} paradas · Σ
+            {Math.round(valueRoute.totalValue)}
+            {valueRoute.stops[0]
+              ? ` · 1º ${valueRoute.stops[0].id} (~${Math.round(valueRoute.stops[0].metersFromPrev)} m)`
+              : ''}
+          </p>
           <FieldHud riskOn={riskMode} />
           <RiskModeChip
             active={riskMode}

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { ROCA_VIAS_FIELD_BOUNDS } from './posterRoutes'
-import { getLocalRasterTiles, LOCAL_RASTER_TILE_COUNT } from './localMap'
+import {
+  getLocalRasterTiles,
+  LOCAL_RASTER_TILE_COUNT,
+  preloadLocalMap,
+} from './localMap'
 
 describe('local raster map', () => {
   it('covers the complete field area with five contiguous images', () => {
@@ -14,5 +18,10 @@ describe('local raster map', () => {
         tiles[index]!.bounds[0][1],
       )
     }
+  })
+
+  it('preloadLocalMap resolves once', async () => {
+    await expect(preloadLocalMap()).resolves.toBeUndefined()
+    await expect(preloadLocalMap()).resolves.toBeUndefined()
   })
 })

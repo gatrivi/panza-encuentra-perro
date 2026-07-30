@@ -3,9 +3,11 @@
  * Detalle: SIGNS_CAMPAIGN.md
  */
 
+import { MARTELLI_POSTER_TARGET } from '@/lib/martelliPosterGrid'
+
 export const SIGNS_CAMPAIGN = {
-  /** Meta blanda de carteles activos en la red casa→Martelli */
-  targetActiveSigns: 24,
+  /** Meta mínima = grilla Villa Martelli */
+  targetActiveSigns: MARTELLI_POSTER_TARGET,
   tripsPerDay: 1,
   homeLabel: 'Fray Justo Sarmiento × Pelliza',
   /** Día 0 campaña (ISO date local AR) */

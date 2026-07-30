@@ -28,7 +28,8 @@ export function MapMobileChrome({
 }) {
   const map = useMap()
   const [sat, setSat] = useState(false)
-  const [tilesEnabled, setTilesEnabled] = useState(false)
+  // Local rasters are preloaded before MapScreen mounts — show immediately.
+  const [tilesEnabled, setTilesEnabled] = useState(localArea)
   const [tilesReady, setTilesReady] = useState(false)
 
   useEffect(() => {
@@ -45,13 +46,17 @@ export function MapMobileChrome({
   }, [map])
 
   useEffect(() => {
+    if (localArea) {
+      setTilesEnabled(true)
+      return
+    }
     const enable = () => {
       window.requestAnimationFrame(() => setTilesEnabled(true))
     }
     if (document.readyState === 'complete') enable()
     else window.addEventListener('load', enable, { once: true })
     return () => window.removeEventListener('load', enable)
-  }, [])
+  }, [localArea])
 
   return (
     <>

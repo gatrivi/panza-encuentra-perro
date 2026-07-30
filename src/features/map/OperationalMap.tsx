@@ -25,6 +25,7 @@ import { MyLocationMarker } from './MyLocationMarker'
 import { DesktopPlaceClick } from './DesktopPlaceClick'
 import { MapMobileChrome } from './MapMobileChrome'
 import { DayRouteLayer } from './DayRouteLayer'
+import { ValueRouteLayer } from './ValueRouteLayer'
 import { calcLeadDecay, calcTipDecay } from '@/lib/geo/leadDecay'
 import { PANZA_LATEST_SIGHTING, PANZA_MAP_CENTER } from '@/lib/panzaCase'
 import {
@@ -32,6 +33,7 @@ import {
   getRocaViasFieldOrigin,
   getRouteStart,
   ROCA_VIAS_EPICENTER,
+  ROCA_VIAS_FIELD_BOUNDS,
   type PosterMode,
   type RouteOrigin,
   type RoutePlanId,
@@ -137,10 +139,20 @@ function FitBounds({
 }) {
   const map = useMap()
   useEffect(() => {
-    const effectiveOrigin =
-      routePlan === 'roca-vias'
-        ? getRocaViasFieldOrigin(routeOrigin)
-        : routeOrigin
+    // Local raster only covers this bbox — fit exactly, no gray rim.
+    if (routePlan === 'roca-vias') {
+      const { south, west, north, east } = ROCA_VIAS_FIELD_BOUNDS
+      const field = L.latLngBounds([south, west], [north, east])
+      map.setMaxBounds(field)
+      map.options.maxBoundsViscosity = 1
+      map.fitBounds(field, {
+        animate: false,
+        padding: [4, 4],
+      })
+      return
+    }
+    map.setMaxBounds(undefined as unknown as L.LatLngBoundsExpression)
+    const effectiveOrigin = routeOrigin
     const routePts = buildPosterAwareRoute(posterMode, {
       plan: routePlan,
       minutes: routeMinutes,
@@ -148,12 +160,10 @@ function FitBounds({
       origin: effectiveOrigin,
     }).flatMap((leg) => leg.points)
     const routeStart = effectiveOrigin ?? getRouteStart(routePlan)
-    const fitSightings = routePlan === 'roca-vias' ? [] : sightings
-    const fitTips = routePlan === 'roca-vias' ? [] : tips
     const pts: [number, number][] = [
       [routeStart.lat, routeStart.lng],
-      ...fitSightings.map((s) => [s.point[1], s.point[0]] as [number, number]),
-      ...fitTips
+      ...sightings.map((s) => [s.point[1], s.point[0]] as [number, number]),
+      ...tips
         .filter((l) => l.claimedPoint)
         .map((l) => [l.claimedPoint![1], l.claimedPoint![0]] as [number, number]),
       ...signStops.map((s) => [s.lat, s.lng] as [number, number]),
@@ -163,7 +173,7 @@ function FitBounds({
       animate: false,
       maxZoom: 16,
       paddingTopLeft: [24, 24],
-      paddingBottomRight: [24, routePlan === 'roca-vias' ? 220 : 24],
+      paddingBottomRight: [24, 24],
     })
   }, [
     map,
@@ -195,6 +205,7 @@ export type OperationalMapProps = {
   routeMinutes: number
   skippedIds: readonly string[]
   routeOrigin: RouteOrigin | null
+  signPoints?: readonly { lat: number; lng: number }[]
   showSignRoute?: boolean
   onPlaceSign: (point: GeoPoint) => void
   onLongPressHex: (cellId: string) => void
@@ -215,6 +226,7 @@ export function OperationalMap({
   routeMinutes,
   skippedIds,
   routeOrigin,
+  signPoints = [],
   showSignRoute = true,
   onPlaceSign,
   onLongPressHex,
@@ -224,6 +236,13 @@ export function OperationalMap({
     showSignRoute && routePlan !== 'roca-vias' ? PANZA_SIGN_ROUTE : []
   const hasCoverage =
     coverage.length > 0 || riskSweepIds.length > 0 || suggestIds.length > 0
+  const localArea = routePlan === 'roca-vias'
+  const mapCenter: [number, number] = localArea
+    ? [
+        (ROCA_VIAS_FIELD_BOUNDS.south + ROCA_VIAS_FIELD_BOUNDS.north) / 2,
+        (ROCA_VIAS_FIELD_BOUNDS.west + ROCA_VIAS_FIELD_BOUNDS.east) / 2,
+      ]
+    : [PANZA_MAP_CENTER[1], PANZA_MAP_CENTER[0]]
   const routePoints = useMemo(() => {
     if (routePlan !== 'roca-vias') return []
     const effectiveOrigin = getRocaViasFieldOrigin(routeOrigin)
@@ -238,8 +257,8 @@ export function OperationalMap({
   return (
     <div className="map-container">
       <MapContainer
-        center={[PANZA_MAP_CENTER[1], PANZA_MAP_CENTER[0]]}
-        zoom={15}
+        center={mapCenter}
+        zoom={localArea ? 14 : 15}
         style={{ height: '100%', width: '100%' }}
         scrollWheelZoom
         zoomControl={false}
@@ -247,10 +266,19 @@ export function OperationalMap({
         doubleClickZoom
         dragging
         preferCanvas
+        maxBounds={
+          localArea
+            ? [
+                [ROCA_VIAS_FIELD_BOUNDS.south, ROCA_VIAS_FIELD_BOUNDS.west],
+                [ROCA_VIAS_FIELD_BOUNDS.north, ROCA_VIAS_FIELD_BOUNDS.east],
+              ]
+            : undefined
+        }
+        maxBoundsViscosity={localArea ? 1 : 0}
       >
         <MapMobileChrome
           myPoint={myPoint}
-          localArea={routePlan === 'roca-vias'}
+          localArea={localArea}
           routePoints={routePoints}
         />
         <ZoomBottomLeft />
@@ -270,6 +298,11 @@ export function OperationalMap({
           minutes={routeMinutes}
           skippedIds={skippedIds}
           origin={routeOrigin}
+        />
+        <ValueRouteLayer
+          myPoint={myPoint}
+          signPoints={signPoints}
+          minutes={routeMinutes}
         />
         {routePlan === 'roca-vias' ? (
           <CircleMarker

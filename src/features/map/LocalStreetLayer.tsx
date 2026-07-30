@@ -3,6 +3,7 @@ import { ImageOverlay, useMap } from 'react-leaflet'
 import { ROCA_VIAS_FIELD_BOUNDS } from '@/lib/posterRoutes'
 import {
   getLocalRasterTiles,
+  LOCAL_MAP_PREVIEW_URL,
   LOCAL_RASTER_TILE_COUNT,
 } from '@/lib/localMap'
 
@@ -11,11 +12,12 @@ const BOUNDS: [[number, number], [number, number]] = [
   [ROCA_VIAS_FIELD_BOUNDS.north, ROCA_VIAS_FIELD_BOUNDS.east],
 ]
 
-/** Immediate preview, then five local raster strips in parallel. */
+/** Preview + five local raster strips (preloaded before mount). */
 export function LocalStreetLayer({ onReady }: { onReady: () => void }) {
   const map = useMap()
   const settledTiles = useRef(new Set<number>())
   const tiles = useMemo(() => getLocalRasterTiles(), [])
+  const readyOnce = useRef(false)
 
   useEffect(() => {
     const attribution =
@@ -26,15 +28,31 @@ export function LocalStreetLayer({ onReady }: { onReady: () => void }) {
     }
   }, [map])
 
+  useEffect(() => {
+    // Cache hit → ImageOverlay may not fire load; settle after paint.
+    const t = window.setTimeout(() => {
+      if (readyOnce.current) return
+      readyOnce.current = true
+      onReady()
+    }, 120)
+    return () => window.clearTimeout(t)
+  }, [onReady])
+
   const markSettled = (id: number) => {
     settledTiles.current.add(id)
-    if (settledTiles.current.size === LOCAL_RASTER_TILE_COUNT) onReady()
+    if (
+      settledTiles.current.size === LOCAL_RASTER_TILE_COUNT &&
+      !readyOnce.current
+    ) {
+      readyOnce.current = true
+      onReady()
+    }
   }
 
   return (
     <>
       <ImageOverlay
-        url="/map/florida-martelli-preview.svg"
+        url={LOCAL_MAP_PREVIEW_URL}
         bounds={BOUNDS}
         opacity={1}
         zIndex={1}

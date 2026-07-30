@@ -10,6 +10,8 @@
 
 ## Target operativo (maps + timeline)
 
+**Meta mínima:** **1200** carteles activos (`SIGNS_CAMPAIGN.targetActiveSigns`).
+
 **Regla:** 1 viaje / día desde **Fray Justo Sarmiento × Pelliza** hasta completar la red de carteles.
 
 | Día | Fecha (aprox) | Mapa / foco | Carteles (meta) | Modo app |

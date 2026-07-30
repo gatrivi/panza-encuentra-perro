@@ -31,6 +31,11 @@ import {
   SIGNS_CAMPAIGN,
   signsProgress,
 } from '@/lib/signsCampaign'
+import {
+  martelliGridProgress,
+  type SignPoint,
+} from '@/lib/martelliPosterGrid'
+import { FIELD_TEAMS, teamForUsername } from '@/lib/fieldTeams'
 import { useAuth } from '@/features/cases/useAuth'
 import { subscribeSigns } from '@/lib/firebase/fieldRepos'
 import { t } from '@/i18n/es-AR'
@@ -134,18 +139,28 @@ export function PlanScreen() {
   }
 
   const doneCount = [...done].filter((n) => stops.some((s) => s.n === n)).length
-  const { caseId } = useAuth()
+  const { caseId, member } = useAuth()
   const [mode, setMode] = useState<PosterMode>(() => readPosterMode())
   const [activeSigns, setActiveSigns] = useState(0)
+  const [signPoints, setSignPoints] = useState<SignPoint[]>([])
 
   useEffect(() => {
     if (!caseId) return
     return subscribeSigns(caseId, (signs) => {
-      setActiveSigns(signs.filter((s) => s.status === 'active').length)
+      const active = signs.filter((s) => s.status === 'active')
+      setActiveSigns(active.length)
+      setSignPoints(
+        active.map((s) => ({ lat: s.point[1], lng: s.point[0] })),
+      )
     })
   }, [caseId])
 
   const progress = signsProgress(activeSigns)
+  const martelli = useMemo(
+    () => martelliGridProgress(signPoints),
+    [signPoints],
+  )
+  const myTeam = FIELD_TEAMS[teamForUsername(member?.uid)]
   const day = campaignDayIndex()
 
   return (
@@ -196,6 +211,20 @@ export function PlanScreen() {
         </strong>{' '}
         ({progress.pct}%)
         {progress.done ? ' · red completa' : ''}
+      </p>
+      <p className="muted">
+        Villa Martelli grilla{' '}
+        <strong>
+          {martelli.covered}/{martelli.total}
+        </strong>{' '}
+        ({martelli.pct}%) · van libres · app solo marca huecos cerca (≤180 m)
+      </p>
+      <p className="muted">
+        {myTeam.label} en campo · NO {martelli.bySector.NO.covered}/
+        {martelli.bySector.NO.total} · NE {martelli.bySector.NE.covered}/
+        {martelli.bySector.NE.total} · SO {martelli.bySector.SO.covered}/
+        {martelli.bySector.SO.total} · SE {martelli.bySector.SE.covered}/
+        {martelli.bySector.SE.total}
       </p>
       <p className="muted">Salida: {SIGNS_CAMPAIGN.homeLabel}</p>
 

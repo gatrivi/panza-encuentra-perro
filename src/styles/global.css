@@ -96,6 +96,21 @@ a {
   align-items: center;
 }
 
+.op-team-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0 0.35rem;
+  border-radius: 8px;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+}
+
 .op-chip {
   appearance: none;
   display: inline-flex;
