@@ -30,8 +30,7 @@ export function MapMobileChrome({
 }) {
   const map = useMap()
   const [sat, setSat] = useState(false)
-  // Local rasters are preloaded before MapScreen mounts — show immediately.
-  const [tilesEnabled, setTilesEnabled] = useState(localArea)
+  const [tilesEnabled, setTilesEnabled] = useState(true)
   const [tilesReady, setTilesReady] = useState(false)
 
   useEffect(() => {
@@ -50,33 +49,45 @@ export function MapMobileChrome({
   }, [map])
 
   useEffect(() => {
-    if (localArea) {
-      setTilesEnabled(true)
-      return
-    }
     const enable = () => {
       window.requestAnimationFrame(() => setTilesEnabled(true))
     }
     if (document.readyState === 'complete') enable()
     else window.addEventListener('load', enable, { once: true })
     return () => window.removeEventListener('load', enable)
-  }, [localArea])
+  }, [])
 
   return (
     <>
-      {tilesEnabled && localArea && !sat ? (
-        <LocalStreetLayer onReady={() => setTilesReady(true)} />
-      ) : tilesEnabled ? (
+      {/* Always fill the phone with streets — local rasters sit on top.
+          Without this, tall screens letterbox the Florida–Martelli strip
+          into a floating square on empty void. */}
+      {tilesEnabled && !sat ? (
         <TileLayer
-          key={sat ? 'sat' : 'osm'}
-          attribution={sat ? SAT.attr : OSM.attr}
-          url={sat ? SAT.url : OSM.url}
+          key="osm-base"
+          attribution={OSM.attr}
+          url={OSM.url}
           maxZoom={19}
           eventHandlers={{
             loading: () => setTilesReady(false),
             load: () => setTilesReady(true),
           }}
         />
+      ) : null}
+      {tilesEnabled && sat ? (
+        <TileLayer
+          key="sat"
+          attribution={SAT.attr}
+          url={SAT.url}
+          maxZoom={19}
+          eventHandlers={{
+            loading: () => setTilesReady(false),
+            load: () => setTilesReady(true),
+          }}
+        />
+      ) : null}
+      {tilesEnabled && localArea && !sat ? (
+        <LocalStreetLayer onReady={() => setTilesReady(true)} />
       ) : null}
       {!tilesReady ? (
         <div className="map-base-status" role="status">
@@ -111,8 +122,8 @@ export function MapMobileChrome({
               map.fitBounds(L.latLngBounds([...pts]).pad(0.06), {
                 animate: true,
                 maxZoom: 16,
-                paddingTopLeft: [20, 56],
-                paddingBottomRight: [20, 210],
+                paddingTopLeft: [12, 48],
+                paddingBottomRight: [12, 200],
               })
             }}
           >

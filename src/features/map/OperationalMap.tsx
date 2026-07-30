@@ -120,8 +120,41 @@ function tipIcon(lead: Lead) {
 
 /** Dock + tools — keep route readable above the bottom sheet. */
 const FIELD_FIT_PAD = {
-  paddingTopLeft: [20, 56] as [number, number],
-  paddingBottomRight: [20, 210] as [number, number],
+  paddingTopLeft: [12, 48] as [number, number],
+  paddingBottomRight: [12, 200] as [number, number],
+}
+
+function fitRocaField(
+  map: L.Map,
+  posterMode: PosterMode,
+  routeMinutes: number,
+  skippedIds: readonly string[],
+  routeOrigin: RouteOrigin | null,
+) {
+  map.invalidateSize({ pan: false })
+  const { south, west, north, east } = ROCA_VIAS_FIELD_BOUNDS
+  const field = L.latLngBounds([south, west], [north, east])
+  // Soft cage around the ops area — OSM fills the rest of the phone.
+  map.setMaxBounds(field.pad(0.35))
+  map.options.maxBoundsViscosity = 0.4
+  map.setMinZoom(13)
+
+  const effectiveOrigin = getRocaViasFieldOrigin(routeOrigin)
+  const routePts = buildPosterAwareRoute(posterMode, {
+    plan: 'roca-vias',
+    minutes: routeMinutes,
+    skippedIds,
+    origin: effectiveOrigin,
+  }).flatMap((leg) => leg.points)
+  const focusPts: [number, number][] =
+    routePts.length > 0
+      ? routePts
+      : [[ROCA_VIAS_EPICENTER.lat, ROCA_VIAS_EPICENTER.lng]]
+  map.fitBounds(L.latLngBounds(focusPts).pad(0.1), {
+    animate: false,
+    maxZoom: 16,
+    ...FIELD_FIT_PAD,
+  })
 }
 
 function FitBounds({
@@ -145,34 +178,13 @@ function FitBounds({
 }) {
   const map = useMap()
   useEffect(() => {
-    map.invalidateSize({ pan: false })
     if (routePlan === 'roca-vias') {
-      const { south, west, north, east } = ROCA_VIAS_FIELD_BOUNDS
-      const field = L.latLngBounds([south, west], [north, east])
-      // Soft maxBounds: stay in the preloaded neighborhood, allow slight overscroll.
-      map.setMaxBounds(field.pad(0.04))
-      map.options.maxBoundsViscosity = 0.85
-      // Prevent zooming out into letterboxed “floating square” on tall phones.
-      const fillZoom = map.getBoundsZoom(field, true)
-      if (Number.isFinite(fillZoom)) map.setMinZoom(fillZoom)
-
-      const effectiveOrigin = getRocaViasFieldOrigin(routeOrigin)
-      const routePts = buildPosterAwareRoute(posterMode, {
-        plan: routePlan,
-        minutes: routeMinutes,
-        skippedIds,
-        origin: effectiveOrigin,
-      }).flatMap((leg) => leg.points)
-      const focusPts: [number, number][] =
-        routePts.length > 0
-          ? routePts
-          : [[ROCA_VIAS_EPICENTER.lat, ROCA_VIAS_EPICENTER.lng]]
-      map.fitBounds(L.latLngBounds(focusPts).pad(0.08), {
-        animate: false,
-        maxZoom: 16,
-        ...FIELD_FIT_PAD,
-      })
-      return
+      fitRocaField(map, posterMode, routeMinutes, skippedIds, routeOrigin)
+      // Second pass after layout settles (first paint often has wrong size).
+      const t = window.setTimeout(() => {
+        fitRocaField(map, posterMode, routeMinutes, skippedIds, routeOrigin)
+      }, 350)
+      return () => window.clearTimeout(t)
     }
     map.setMaxBounds(undefined as unknown as L.LatLngBoundsExpression)
     map.setMinZoom(0)
@@ -290,15 +302,6 @@ export function OperationalMap({
         doubleClickZoom
         dragging
         preferCanvas
-        maxBounds={
-          localArea
-            ? [
-                [ROCA_VIAS_FIELD_BOUNDS.south, ROCA_VIAS_FIELD_BOUNDS.west],
-                [ROCA_VIAS_FIELD_BOUNDS.north, ROCA_VIAS_FIELD_BOUNDS.east],
-              ]
-            : undefined
-        }
-        maxBoundsViscosity={localArea ? 1 : 0}
       >
         <MapMobileChrome
           myPoint={myPoint}
