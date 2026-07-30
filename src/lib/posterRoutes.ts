@@ -89,10 +89,29 @@ type Stop = {
   poster?: boolean
 }
 
+export type FieldStopKind =
+  | 'vet'
+  | 'pet'
+  | 'pharmacy'
+  | 'transit'
+  | 'fuel'
+  | 'other'
+
+/** Lower = pegá primero (vet/pet antes que nafta). */
+export const FIELD_STOP_KIND_RANK: Record<FieldStopKind, number> = {
+  vet: 0,
+  pet: 1,
+  pharmacy: 2,
+  transit: 3,
+  fuel: 4,
+  other: 5,
+}
+
 export type FieldRouteStop = Required<
   Pick<Stop, 'id' | 'label' | 'why' | 'lat' | 'lng'>
 > & {
   minMinutes: number
+  kind: FieldStopKind
 }
 
 /**
@@ -108,6 +127,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5371432,
     lng: -58.5130649,
     minMinutes: 30,
+    kind: 'transit',
   },
   {
     id: 'luna-yrigoyen',
@@ -116,6 +136,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5375559,
     lng: -58.5186835,
     minMinutes: 45,
+    kind: 'other',
   },
   {
     id: 'plaza-la-paz',
@@ -124,6 +145,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5388166,
     lng: -58.5235635,
     minMinutes: 45,
+    kind: 'other',
   },
   {
     id: 'caps-bermudez',
@@ -132,6 +154,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5392013,
     lng: -58.522956,
     minMinutes: 60,
+    kind: 'pharmacy',
   },
   {
     id: 'roca-comercios',
@@ -140,6 +163,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.54297,
     lng: -58.5153,
     minMinutes: 15,
+    kind: 'transit',
   },
   {
     id: 'puma-oeste',
@@ -148,6 +172,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5447706,
     lng: -58.5265441,
     minMinutes: 120,
+    kind: 'fuel',
   },
   {
     id: 'parque-zagala',
@@ -156,6 +181,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5479718,
     lng: -58.5271062,
     minMinutes: 120,
+    kind: 'other',
   },
   {
     id: 'outlet-pet',
@@ -164,6 +190,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5486616,
     lng: -58.5293572,
     minMinutes: 120,
+    kind: 'pet',
   },
   {
     id: 'plaza-almafuerte',
@@ -172,6 +199,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5503229,
     lng: -58.5192651,
     minMinutes: 105,
+    kind: 'other',
   },
   {
     id: 'caps-ravazzoli',
@@ -180,6 +208,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5509653,
     lng: -58.5182503,
     minMinutes: 105,
+    kind: 'pharmacy',
   },
   {
     id: 'pet-laprida-oeste',
@@ -188,6 +217,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5514309,
     lng: -58.5120884,
     minMinutes: 105,
+    kind: 'pet',
   },
   {
     id: 'maternidad-santa-rosa',
@@ -196,6 +226,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5440457,
     lng: -58.5124267,
     minMinutes: 30,
+    kind: 'transit',
   },
   {
     id: 'veterinaria-melo',
@@ -204,6 +235,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5431321,
     lng: -58.5089563,
     minMinutes: 15,
+    kind: 'vet',
   },
   {
     id: 'plaza-intendentes',
@@ -212,6 +244,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5530901,
     lng: -58.5060235,
     minMinutes: 60,
+    kind: 'other',
   },
   {
     id: 'pet-el-arca',
@@ -220,6 +253,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5509129,
     lng: -58.510531,
     minMinutes: 45,
+    kind: 'pet',
   },
   {
     id: 'pet-nuevo-sol',
@@ -228,6 +262,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5481653,
     lng: -58.5042856,
     minMinutes: 60,
+    kind: 'pet',
   },
   {
     id: 'plaza-vienni',
@@ -236,6 +271,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5463981,
     lng: -58.4995403,
     minMinutes: 45,
+    kind: 'transit',
   },
   {
     id: 'plaza-americas-padilla',
@@ -244,6 +280,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5432644,
     lng: -58.5004784,
     minMinutes: 30,
+    kind: 'transit',
   },
   {
     id: 'shell-mitre',
@@ -252,6 +289,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5414494,
     lng: -58.5058781,
     minMinutes: 15,
+    kind: 'fuel',
   },
   {
     id: 'vet-roca',
@@ -260,6 +298,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5357654,
     lng: -58.5011908,
     minMinutes: 75,
+    kind: 'vet',
   },
   {
     id: 'coto-san-martin',
@@ -268,6 +307,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5327908,
     lng: -58.5024296,
     minMinutes: 90,
+    kind: 'transit',
   },
   {
     id: 'comisaria-florida',
@@ -276,6 +316,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5342888,
     lng: -58.5046496,
     minMinutes: 90,
+    kind: 'transit',
   },
   {
     id: 'puppis-mitre',
@@ -284,6 +325,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5327097,
     lng: -58.5112902,
     minMinutes: 75,
+    kind: 'pet',
   },
   {
     id: 'axion-florida',
@@ -292,6 +334,7 @@ export const ROCA_VIAS_STOPS: readonly FieldRouteStop[] = [
     lat: -34.5348743,
     lng: -58.5094398,
     minMinutes: 75,
+    kind: 'fuel',
   },
 ] as const
 
@@ -384,6 +427,27 @@ export function normalizeRouteMinutes(value: unknown): number {
   )
 }
 
+export function sortStopsByPriority(
+  stops: readonly FieldRouteStop[],
+): FieldRouteStop[] {
+  return [...stops].sort((a, b) => {
+    const rank =
+      FIELD_STOP_KIND_RANK[a.kind] - FIELD_STOP_KIND_RANK[b.kind]
+    if (rank !== 0) return rank
+    return a.minMinutes - b.minMinutes
+  })
+}
+
+/** Keep catalog loop order among a selected id set. */
+function restoreLoopOrder(selected: readonly FieldRouteStop[]): FieldRouteStop[] {
+  const ids = new Set(selected.map((s) => s.id))
+  return ROCA_VIAS_STOPS.filter((s) => ids.has(s.id))
+}
+
+/**
+ * Budget filter, then priority-first selection ranking, then loop order
+ * for geometry (rotateToNearest applied by caller).
+ */
 export function getRocaViasStops(
   minutes = FIELD_ROUTE_DEFAULT_MINUTES,
   skippedIds: readonly string[] = [],
@@ -392,11 +456,58 @@ export function getRocaViasStops(
   const skipped = new Set(skippedIds)
   // Keep in sync with poiCatalog KEY — avoid circular import.
   const disabled = readDisabledPoiIds()
-  return ROCA_VIAS_STOPS.filter(
+  const eligible = ROCA_VIAS_STOPS.filter(
     (stop) =>
       stop.minMinutes <= budget &&
       !skipped.has(stop.id) &&
       !disabled.has(stop.id),
+  )
+  // Priority decides which matter most (GMaps cap / cues); path stays loop-ordered.
+  void sortStopsByPriority(eligible)
+  return restoreLoopOrder(eligible)
+}
+
+/** Google Maps dir: origin → waypoints (≤9) → destination. */
+export function buildGmapsDirUrl(
+  origin: { lat: number; lng: number },
+  stops: readonly { lat: number; lng: number; kind?: FieldStopKind }[],
+  travelmode: 'driving' | 'walking' | 'bicycling' = 'driving',
+): string | null {
+  if (stops.length === 0) return null
+  const pin = (p: { lat: number; lng: number }) => `${p.lat},${p.lng}`
+  if (stops.length === 1) {
+    return (
+      `https://www.google.com/maps/dir/?api=1` +
+      `&origin=${encodeURIComponent(pin(origin))}` +
+      `&destination=${encodeURIComponent(pin(stops[0]!))}` +
+      `&travelmode=${travelmode}`
+    )
+  }
+
+  const dest = stops[stops.length - 1]!
+  const middle = stops.slice(0, -1)
+  // Cap intermediate waypoints at 9 — keep highest-priority, preserve route order.
+  let waypoints = middle
+  if (middle.length > 9) {
+    waypoints = middle
+      .map((s, i) => ({
+        s,
+        i,
+        rank: s.kind ? FIELD_STOP_KIND_RANK[s.kind] : 5,
+      }))
+      .sort((a, b) => a.rank - b.rank || a.i - b.i)
+      .slice(0, 9)
+      .sort((a, b) => a.i - b.i)
+      .map((x) => x.s)
+  }
+
+  const wp = waypoints.map((s) => pin(s)).join('|')
+  return (
+    `https://www.google.com/maps/dir/?api=1` +
+    `&origin=${encodeURIComponent(pin(origin))}` +
+    `&destination=${encodeURIComponent(pin(dest))}` +
+    (wp ? `&waypoints=${encodeURIComponent(wp)}` : '') +
+    `&travelmode=${travelmode}`
   )
 }
 

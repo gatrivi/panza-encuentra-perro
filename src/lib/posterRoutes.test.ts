@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  buildGmapsDirUrl,
   buildPosterAwareRoute,
   getRocaViasFieldOrigin,
   getRocaViasStops,
@@ -7,6 +8,8 @@ import {
   PANZA_HOME_BASE,
   POSTER_MODE_DEFAULT,
   ROCA_VIAS_EPICENTER,
+  ROCA_VIAS_STOPS,
+  sortStopsByPriority,
 } from './posterRoutes'
 
 describe('posterRoutes', () => {
@@ -75,5 +78,38 @@ describe('posterRoutes', () => {
       ROCA_VIAS_EPICENTER.lat,
       ROCA_VIAS_EPICENTER.lng,
     ])
+  })
+
+  it('priority-ranks vet and pet before fuel among eligible stops', () => {
+    const ranked = sortStopsByPriority(getRocaViasStops(120))
+    const firstFuel = ranked.findIndex((s) => s.kind === 'fuel')
+    const lastVetOrPet = ranked.reduce(
+      (acc, s, i) => (s.kind === 'vet' || s.kind === 'pet' ? i : acc),
+      -1,
+    )
+    expect(ranked.some((s) => s.kind === 'vet')).toBe(true)
+    expect(ranked.some((s) => s.kind === 'pet')).toBe(true)
+    expect(lastVetOrPet).toBeGreaterThanOrEqual(0)
+    expect(lastVetOrPet).toBeLessThan(firstFuel)
+  })
+
+  it('keeps loop order after priority selection', () => {
+    const stops = getRocaViasStops(60)
+    const catalogIds = ROCA_VIAS_STOPS.filter((s) =>
+      stops.some((x) => x.id === s.id),
+    ).map((s) => s.id)
+    expect(stops.map((s) => s.id)).toEqual(catalogIds)
+  })
+
+  it('builds Google Maps dir URL with ≤9 intermediate waypoints', () => {
+    const stops = getRocaViasStops(120)
+    expect(stops.length).toBeGreaterThan(11)
+    const url = buildGmapsDirUrl(ROCA_VIAS_EPICENTER, stops, 'driving')
+    expect(url).toMatch(/^https:\/\/www\.google\.com\/maps\/dir\/\?api=1/)
+    expect(url).toContain('origin=')
+    expect(url).toContain('destination=')
+    const wp = new URL(url!).searchParams.get('waypoints')
+    expect(wp).toBeTruthy()
+    expect(wp!.split('|').length).toBeLessThanOrEqual(9)
   })
 })

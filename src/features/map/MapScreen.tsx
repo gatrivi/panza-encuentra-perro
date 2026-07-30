@@ -31,11 +31,14 @@ import {
 } from '@/lib/fieldTeams'
 import { buildMaxValueRoute } from '@/lib/maxValueRoute'
 import {
+  buildGmapsDirUrl,
   countRoutePosters,
   FIELD_ROUTE_DEFAULT_MINUTES,
   FIELD_ROUTE_MAX_MINUTES,
   FIELD_ROUTE_MIN_MINUTES,
   FIELD_ROUTE_STEP_MINUTES,
+  getRocaViasStops,
+  getRouteStart,
   normalizeRouteMinutes,
   readPosterMode,
   writePosterMode,
@@ -436,6 +439,31 @@ export function MapScreen() {
     void announceNav('Ruta Roca por la vía')
   }, [updateFieldRoute, routeMinutes, skippedIds])
 
+  const askCasa = useCallback(() => {
+    if (myPoint) {
+      setRouteOrigin({ lat: myPoint[1], lng: myPoint[0] })
+    }
+    setPhase('back')
+    setVoiceNavOn(true)
+    void announceNav(VOICE_NAV.goingHome)
+  }, [myPoint])
+
+  const gmapsUrl = useMemo(() => {
+    const start = routeOrigin ?? getRouteStart(routePlan)
+    if (routePlan === 'roca-vias') {
+      const stops = getRocaViasStops(routeMinutes, skippedIds)
+      return buildGmapsDirUrl(start, stops, 'driving')
+    }
+    // Martelli / casa: epicenter pin as single destination
+    const dest = getRouteStart('home-martelli')
+    return buildGmapsDirUrl(start, [dest], 'driving')
+  }, [routePlan, routeMinutes, skippedIds, routeOrigin])
+
+  const openGmaps = useCallback(() => {
+    if (!gmapsUrl) return
+    window.open(gmapsUrl, '_blank', 'noopener,noreferrer')
+  }, [gmapsUrl])
+
   // Sin itinerario usable → Plan
   if (routePlan === 'roca-vias' && routePosterCount < 1) {
     return <Navigate to="/plan" replace />
@@ -576,6 +604,32 @@ export function MapScreen() {
             ? `Próximo · ${currentPoster.label}`
             : (lastCue ?? preview)}
         </p>
+        <div className="poster-mode-row field-dest-chips" role="group" aria-label="Voy a">
+          <button
+            type="button"
+            className={`poster-mode-chip${routePlan === 'roca-vias' && phase === 'out' ? ' poster-mode-on' : ''}`}
+            aria-pressed={routePlan === 'roca-vias' && phase === 'out'}
+            onClick={askRoca}
+          >
+            Roca × vía
+          </button>
+          <button
+            type="button"
+            className={`poster-mode-chip${routePlan === 'home-martelli' ? ' poster-mode-on' : ''}`}
+            aria-pressed={routePlan === 'home-martelli'}
+            onClick={askMartelli}
+          >
+            Martelli
+          </button>
+          <button
+            type="button"
+            className={`poster-mode-chip${phase === 'back' ? ' poster-mode-on' : ''}`}
+            aria-pressed={phase === 'back'}
+            onClick={askCasa}
+          >
+            Casa
+          </button>
+        </div>
         <p className="field-phase">
           {routePlan === 'roca-vias'
             ? phase === 'out'
@@ -624,6 +678,15 @@ export function MapScreen() {
             onClick={placeHere}
           >
             Cartel acá
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost field-btn"
+            disabled={!gmapsUrl}
+            onClick={openGmaps}
+            title="Abrir en Google Maps"
+          >
+            Maps
           </button>
           {routePlan === 'roca-vias' && phase === 'out' ? (
             <button
