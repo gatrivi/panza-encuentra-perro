@@ -1,7 +1,12 @@
 import type { Member } from '@/domain/schemas'
 
-/** ponytail: shared family password in client — no Firebase Auth / Blaze. */
-export const FAMILY_PASSWORD = 'LasHeras413'
+/**
+ * Family password is injected at build time via VITE_FAMILY_PASSWORD
+ * (see .env.example). Never hardcode it here — this file ships in the bundle.
+ */
+export const FAMILY_PASSWORD = (import.meta.env.VITE_FAMILY_PASSWORD as
+  | string
+  | undefined) ?? ''
 
 export const OPERATORS = {
   paula: {

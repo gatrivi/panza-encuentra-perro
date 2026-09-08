@@ -488,6 +488,39 @@ export async function updateLeadStatus(
   })
 }
 
+/**
+ * Merge a repeated report into its original: mark it duplicate, keep the
+ * anchor's canonical entry, and bump the anchor to high priority when the
+ * repost comes from an independent reporter (corroboration, not noise).
+ */
+export async function markLeadDuplicate(
+  caseId: string,
+  leadId: string,
+  anchorLeadId: string,
+  actorUid: string,
+  corroborates = false,
+): Promise<void> {
+  await updateDoc(doc(db, 'cases', caseId, 'leads', leadId), {
+    status: 'duplicate',
+    duplicateOf: anchorLeadId,
+    reviewNotes: 'Unido automáticamente por detección de repetidos',
+  })
+  if (corroborates) {
+    await updateDoc(doc(db, 'cases', caseId, 'leads', anchorLeadId), {
+      priority: 'high',
+    })
+  }
+  await addDoc(collection(db, 'cases', caseId, 'audit'), {
+    actorUid,
+    action: 'lead.markDuplicate',
+    objectType: 'lead',
+    objectId: leadId,
+    before: { duplicateOf: null },
+    after: { duplicateOf: anchorLeadId, corroborates },
+    createdAt: serverTimestamp(),
+  })
+}
+
 function mapSighting(id: string, caseId: string, d: Record<string, unknown>): Sighting {
   return {
     id,

@@ -323,6 +323,19 @@ a {
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
+.dup-banner {
+  margin-top: 0.6rem;
+  padding: 0.6rem;
+  border-radius: var(--radius);
+  border: 1px dashed var(--border);
+  background: color-mix(in srgb, var(--bg-elevated) 70%, var(--ink-muted) 8%);
+  font-size: 0.85rem;
+}
+
+.dup-banner .badge {
+  margin-right: 0.35rem;
+}
+
 .lead-meta {
   display: flex;
   flex-wrap: wrap;

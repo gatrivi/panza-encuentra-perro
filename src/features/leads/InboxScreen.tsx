@@ -7,13 +7,25 @@ import {
   subscribeLeads,
   updateLeadStatus,
   promoteLeadToSighting,
+  markLeadDuplicate,
 } from '@/lib/firebase/repos'
 import { storage } from '@/lib/firebase/app'
+import { findDuplicateCandidates, type DedupeMatch } from '@/lib/dedupe/leadDedupe'
 import { newDraftId, saveDraft, type IntakeDraft } from '@/lib/offline/drafts'
 import type { CompassDirection, Lead, SightingConfidence } from '@/domain/schemas'
 import { canPromoteSightings } from '@/domain/schemas'
 import { formatAge, t } from '@/i18n/es-AR'
 import { detectIntake } from '@/features/intake/detectIntake'
+
+const DISMISS_KEY = 'panza.dedup.dismissed'
+
+function readDismissed(): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(DISMISS_KEY) ?? '[]') as string[])
+  } catch {
+    return new Set()
+  }
+}
 
 export function InboxScreen() {
   const { caseId, user, member } = useAuth()
@@ -21,6 +33,7 @@ export function InboxScreen() {
   const [toast, setToast] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [promoteLead, setPromoteLead] = useState<Lead | null>(null)
+  const [dismissed, setDismissed] = useState<Set<string>>(() => readDismissed())
   const [params] = useSearchParams()
   const fileRef = useRef<HTMLInputElement>(null)
   const copy = t()
@@ -40,6 +53,50 @@ export function InboxScreen() {
     () => leads.filter((l) => l.status === 'new' || l.status === 'needs_details'),
     [leads],
   )
+
+  const duplicateCount = useMemo(
+    () => leads.filter((l) => l.status === 'duplicate').length,
+    [leads],
+  )
+
+  /** Best duplicate candidate per open lead — recomputed as leads stream in. */
+  const dupMatches = useMemo(() => {
+    const map = new Map<string, DedupeMatch>()
+    for (const lead of openLeads) {
+      if (dismissed.has(lead.id)) continue
+      const best = findDuplicateCandidates(lead, leads)[0]
+      if (best) map.set(lead.id, best)
+    }
+    return map
+  }, [openLeads, leads, dismissed])
+
+  function dismissDup(leadId: string) {
+    const next = new Set(dismissed)
+    next.add(leadId)
+    setDismissed(next)
+    try {
+      localStorage.setItem(DISMISS_KEY, JSON.stringify([...next]))
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function onMarkDuplicate(lead: Lead, match: DedupeMatch) {
+    if (!caseId || !user) return
+    // Reposts (same link/text) are noise; phone/place matches from a different
+    // reporter are independent corroboration and bump the anchor's priority.
+    const corroborates =
+      !match.reasons.includes('same_link') && !match.reasons.includes('same_text')
+    try {
+      await markLeadDuplicate(caseId, lead.id, match.lead.id, user.uid, corroborates)
+      setToast(copy.actions.saved)
+      setTimeout(() => setToast(null), 2000)
+    } catch (e) {
+      console.error(e)
+      setToast(copy.errors.generic)
+      setTimeout(() => setToast(null), 3000)
+    }
+  }
 
   async function persistCapture(input: {
     rawText?: string
@@ -201,6 +258,13 @@ export function InboxScreen() {
               {lead.claimedLocationText ? (
                 <p className="muted">{lead.claimedLocationText}</p>
               ) : null}
+              {dupMatches.get(lead.id) ? (
+                <DuplicateBanner
+                  match={dupMatches.get(lead.id)!}
+                  onMerge={() => void onMarkDuplicate(lead, dupMatches.get(lead.id)!)}
+                  onDismiss={() => dismissDup(lead.id)}
+                />
+              ) : null}
               <div className="lead-actions">
                 <button
                   type="button"
@@ -231,8 +295,14 @@ export function InboxScreen() {
               </div>
             </li>
           ))}
-        </ul>
+          </ul>
       )}
+
+      {duplicateCount > 0 ? (
+        <p className="muted" style={{ marginTop: '0.75rem' }}>
+          {copy.inbox.duplicatesCollapsed.replace('{n}', String(duplicateCount))}
+        </p>
+      ) : null}
 
       {promoteLead && caseId && user ? (
         <PromoteSheet
@@ -249,6 +319,45 @@ export function InboxScreen() {
       ) : null}
 
       {toast ? <div className="toast">{toast}</div> : null}
+    </div>
+  )
+}
+
+function DuplicateBanner({
+  match,
+  onMerge,
+  onDismiss,
+}: {
+  match: DedupeMatch
+  onMerge: () => void
+  onDismiss: () => void
+}) {
+  const copy = t()
+  return (
+    <div className="dup-banner">
+      <p style={{ margin: 0, fontWeight: 600 }}>{copy.inbox.dupBanner}</p>
+      <p className="muted" style={{ margin: '0.25rem 0 0' }}>
+        {match.lead.rawText?.slice(0, 120) ?? match.lead.sourceUrl} ·{' '}
+        {copy.inbox.captureAge.replace(
+          '{age}',
+          formatAge(Date.now() - match.lead.capturedAt.getTime()),
+        )}
+      </p>
+      <p style={{ margin: '0.25rem 0 0.5rem' }}>
+        {match.reasons.map((r) => (
+          <span key={r} className="badge">
+            {copy.inbox.dupReasons[r]}
+          </span>
+        ))}
+      </p>
+      <div className="lead-actions">
+        <button type="button" className="btn btn-primary" onClick={onMerge}>
+          {copy.inbox.markDuplicate}
+        </button>
+        <button type="button" className="btn btn-ghost" onClick={onDismiss}>
+          {copy.inbox.notDuplicate}
+        </button>
+      </div>
     </div>
   )
 }

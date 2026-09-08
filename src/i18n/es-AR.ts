@@ -28,6 +28,17 @@ export const esAR = {
     pasteSub: 'Texto, enlace, captura o foto',
     empty: 'Sin pendientes. Pegá una publicación o esperá un reporte público.',
     captureAge: 'Hace {age}',
+    dupBanner: 'Parece repetido de este reporte:',
+    dupReasons: {
+      same_text: 'texto igual',
+      same_phone: 'mismo teléfono',
+      same_link: 'mismo link',
+      same_photo: 'misma foto',
+      same_place_time: 'mismo lugar y hora',
+    },
+    markDuplicate: 'Es repetido · unir',
+    notDuplicate: 'No, es otro',
+    duplicatesCollapsed: '{n} repetidos unidos (ocultos)',
   },
   map: {
     title: 'Mapa operativo',
