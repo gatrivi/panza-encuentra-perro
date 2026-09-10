@@ -1,5 +1,32 @@
 # Buscamos a Panza — context
 
+## Handoff (2026-09-09) — ¡otro agente: no pisar!
+
+**HEAD:** `package 0.5.0` · `master`
+
+**v0.5.0 — asesor de carteles (dónde + cómo pegar):**
+- `src/lib/signPlacement.ts`: `rankSignSpots({pois, sightings, activeSigns, now, limit})` →
+  candidatos `SignCandidate` (score 0–12, tier A/B/C, `reasons[]`, `how`).
+  Gravedad = confianza×recencia (`sightingRecencyW`, hotspot ≤150 m `clusterSightings`,
+  tope peso 1.5). POI boost si hotspot ≤400 m. Supresión: cartel activo ≤45 m
+  (`SIGN_SUPPRESS_M`). Hotspot cand. solo si peso ≥0.4 (los viejos no molestan).
+  `SIGN_CHECKLIST` = cómo pegar bien. Tests: `signPlacement.test.ts` (13).
+- `PlanScreen`: sección **"Dónde pegar ahora"** (top 6) — tier + distancia GPS + reasons +
+  how + Maps (`buildGmapsDirUrl`) + **Cartel puesto** → `runOrEnqueue place_sign`
+  (misma cola offline que el mapa). `signsLoaded` con fallback 6 s offline (sugerir con
+  POIs aunque Firestore no responda). Collapsible **"Cómo pegar bien"**.
+- **FIX global.css**: `.bottom-nav` tenía `{` sin cerrar (línea ~144) → media stylesheet
+  anidada como CSS-nesting inválido y TODAS las reglas posteriores (lead-cards, badges,
+  plan-sign-list, dock…) estaban muertas. Cerrado el brace + fondo/borde del bottom-nav
+  (estilo app-header). Cambio visual global: cientos de reglas volvieron a la vida.
+- FIX typecheck preexistente: `leadDedupe.ts` (GeoPoint sin usar) y `leadDedupe.test.ts`
+  (id duplicado en spread).
+
+**Rumbo SAR (multi-persona):** próximo = sectores reclamables por voluntario + timestamp
+"peinado a las HH:MM" (collection `sectorClaims`, patrón `fieldRepos` + `fieldQueue`).
+
+---
+
 ## Handoff (2026-07-30) — ¡otro agente: no pisar!
 
 **HEAD synced:** `2959db2` · **package `0.3.21`** · `master` = `origin/master`

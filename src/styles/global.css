@@ -150,6 +150,11 @@ a {
   padding-bottom: var(--safe-bottom);
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+  background: color-mix(in srgb, var(--bg-elevated) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--border);
+  z-index: 20;
+}
 
 .bottom-nav a {
   display: flex;
@@ -1230,6 +1235,24 @@ a {
   letter-spacing: 0.04em;
   color: var(--ink-muted);
   margin: 1rem 0 0.35rem;
+}
+
+/* Dónde pegar ahora — asesor de carteles */
+.plan-advisor .lead-list {
+  list-style: none;
+  margin: 0.25rem 0 0.6rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.plan-advisor .lead-card {
+  font-size: 0.9rem;
+}
+
+.plan-advisor .lead-actions {
+  grid-template-columns: 1fr 1fr;
 }
 
 .plan-bike-note {

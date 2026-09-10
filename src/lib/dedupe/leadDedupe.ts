@@ -1,5 +1,5 @@
 import { latLngToCell } from 'h3-js'
-import type { GeoPoint, Lead } from '@/domain/schemas'
+import type { Lead } from '@/domain/schemas'
 
 /**
  * Deduplication of leads — the "same FB post pasted five times" problem.

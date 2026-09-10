@@ -24,6 +24,8 @@ import {
   POSTER_MODES,
   readPosterMode,
   writePosterMode,
+  buildGmapsDirUrl,
+  PANZA_HOME_BASE,
   type PosterMode,
 } from '@/lib/posterRoutes'
 import {
@@ -38,7 +40,16 @@ import {
 import { FIELD_TEAMS, teamForUsername } from '@/lib/fieldTeams'
 import { useAuth } from '@/features/cases/useAuth'
 import { subscribeSigns } from '@/lib/firebase/fieldRepos'
+import { subscribeSightings } from '@/lib/firebase/repos'
+import { listPois } from '@/lib/poiCatalog'
+import {
+  rankSignSpots,
+  SIGN_CHECKLIST,
+  type SignCandidate,
+} from '@/lib/signPlacement'
+import { runOrEnqueue } from '@/lib/offline/fieldQueue'
 import { t } from '@/i18n/es-AR'
+import type { Sighting } from '@/domain/schemas'
 import { useLivePosition } from './useLivePosition'
 
 const SignRouteMap = lazy(() =>
@@ -139,20 +150,35 @@ export function PlanScreen() {
   }
 
   const doneCount = [...done].filter((n) => stops.some((s) => s.n === n)).length
-  const { caseId, member } = useAuth()
+  const { caseId, user, member } = useAuth()
   const [mode, setMode] = useState<PosterMode>(() => readPosterMode())
   const [activeSigns, setActiveSigns] = useState(0)
   const [signPoints, setSignPoints] = useState<SignPoint[]>([])
+  const [signsLoaded, setSignsLoaded] = useState(false)
+  const [sightings, setSightings] = useState<Sighting[]>([])
+  const [placedIds, setPlacedIds] = useState<ReadonlySet<string>>(new Set())
+  const [showHow, setShowHow] = useState(false)
 
   useEffect(() => {
     if (!caseId) return
-    return subscribeSigns(caseId, (signs) => {
-      const active = signs.filter((s) => s.status === 'active')
-      setActiveSigns(active.length)
-      setSignPoints(
-        active.map((s) => ({ lat: s.point[1], lng: s.point[0] })),
-      )
-    })
+    const unsubs: Array<() => void> = []
+    unsubs.push(
+      subscribeSigns(caseId, (signs) => {
+        const active = signs.filter((s) => s.status === 'active')
+        setActiveSigns(active.length)
+        setSignPoints(
+          active.map((s) => ({ lat: s.point[1], lng: s.point[0] })),
+        )
+        setSignsLoaded(true)
+      }),
+    )
+    unsubs.push(subscribeSightings(caseId, setSightings))
+    // Offline: si nunca llega el primer snapshot, sugerimos igual con POIs.
+    const fallback = window.setTimeout(() => setSignsLoaded(true), 6_000)
+    return () => {
+      window.clearTimeout(fallback)
+      for (const u of unsubs) u()
+    }
   }, [caseId])
 
   const progress = signsProgress(activeSigns)
@@ -162,6 +188,38 @@ export function PlanScreen() {
   )
   const myTeam = FIELD_TEAMS[teamForUsername(member?.uid)]
   const day = campaignDayIndex()
+  const actorUid = user?.uid ?? member?.uid ?? null
+
+  const visibleSightings = useMemo(
+    () => sightings.filter((s) => s.confidence !== 'rejected'),
+    [sightings],
+  )
+
+  /** Dónde pegar ahora — se recalcula al entrar avistajes o carteles nuevos. */
+  const signCandidates = useMemo(() => {
+    if (!signsLoaded) return []
+    return rankSignSpots({
+      pois: listPois(),
+      sightings: visibleSightings,
+      activeSigns: signPoints,
+      limit: 6,
+    }).filter((c) => !placedIds.has(c.id))
+  }, [visibleSightings, signPoints, signsLoaded, placedIds])
+
+  async function markCandidatePlaced(c: SignCandidate) {
+    if (!caseId || !actorUid) return
+    setPlacedIds((prev) => new Set(prev).add(c.id))
+    try {
+      await runOrEnqueue({
+        kind: 'place_sign',
+        caseId,
+        point: [c.point.lng, c.point.lat],
+        actorUid,
+      })
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   return (
     <div className="screen plan-screen">
@@ -227,6 +285,83 @@ export function PlanScreen() {
         {martelli.bySector.SE.total}
       </p>
       <p className="muted">Salida: {SIGNS_CAMPAIGN.homeLabel}</p>
+
+      <div className="plan-advisor">
+        <p className="plan-half-label">Dónde pegar ahora</p>
+        <p className="muted">
+          Avistajes recientes + puntos de alto tránsito. Lo que ya tiene cartel
+          activo a menos de 45 m se descarta solo.
+        </p>
+        {signCandidates.length === 0 ? (
+          <p className="muted">
+            {signsLoaded
+              ? 'Sin sugerencias por ahora: seguí la red fija de abajo.'
+              : 'Cargando datos del caso…'}
+          </p>
+        ) : (
+          <ul className="lead-list">
+            {signCandidates.map((c) => {
+              const mapsUrl = buildGmapsDirUrl(
+                pos ?? PANZA_HOME_BASE,
+                [c.point],
+                'driving',
+              )
+              return (
+                <li key={c.id} className="lead-card">
+                  <div className="lead-meta">
+                    <span className={`badge${c.tier === 'A' ? ' warn' : ''}`}>
+                      {c.tier}
+                    </span>
+                    {c.kind === 'hotspot' ? (
+                      <span className="badge warn">avistaje</span>
+                    ) : null}
+                    {pos ? (
+                      <span>{formatDistanceM(haversineM(pos, c.point))}</span>
+                    ) : null}
+                  </div>
+                  <strong>{c.label}</strong>
+                  <p className="muted" style={{ margin: '0.15rem 0 0' }}>
+                    {c.reasons.join(' · ')}
+                  </p>
+                  <p style={{ margin: '0.25rem 0 0' }}>{c.how}</p>
+                  <div className="lead-actions">
+                    <a
+                      className="btn btn-ghost"
+                      href={mapsUrl ?? undefined}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Maps
+                    </a>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      disabled={!caseId || !actorUid}
+                      onClick={() => void markCandidatePlaced(c)}
+                    >
+                      Cartel puesto
+                    </button>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+        <button
+          type="button"
+          className="btn-link"
+          onClick={() => setShowHow((v) => !v)}
+        >
+          {showHow ? 'Ocultar cómo pegar' : 'Cómo pegar bien'}
+        </button>
+        {showHow ? (
+          <ul className="plan-list">
+            {SIGN_CHECKLIST.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
 
       <p className="plan-half-label">Carteles en el recorrido</p>
       <div className="poster-mode-row plan-poster-modes">

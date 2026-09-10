@@ -59,7 +59,7 @@ para coordinar búsquedas de perros perdidos en una zona (Florida–Martelli y m
 4. En el mapa: los sin-foto con traits compatibles se muestran como puntos punteados
    (ya existe el estilo para unverified) con los traits al tocar.
 
-### Fase 3 — Deduplicación de posts repetidos (el dolor de Facebook)
+### Fase 3 — Deduplicación de posts repetidos (el dolor de Facebook) — ✅ v0.4.0
  El schema ya tiene `status='duplicate'` + `duplicateOf`; hay que usarlo:
 1. Flujo "pegar post de FB" (ya existe `detectIntake`): al pegar, calcular firma de
    similitud contra leads existentes del caso:
@@ -84,10 +84,12 @@ para coordinar búsquedas de perros perdidos en una zona (Florida–Martelli y m
 
 ### Fase 5 — Coordinación de campo (ya medio construido, generalizar)
 - Patrullas: ya hay GPS + cobertura H3 + "voy a X"; agregar asignación de zonas a
-  voluntarios y timestamp de "peinado a las HH:MM".
-- Cartels: ya hay Signs con tiers y QR; generar PDF del cartel automáticamente desde el
-  caso (foto + QR + teléfono) y "top lugares" por densidad de avistamientos (POI weights
-  ya existen).
+  voluntarios y timestamp de "peinado a las HH:MM". **Próximo paso:** sectores
+  reclamables (`sectorClaims`, mismo patrón fieldRepos + fieldQueue).
+- Cartels: ✅ v0.5.0 asesor de carteles (`signPlacement.ts` + sección "Dónde pegar
+  ahora" en Plan): ranking por gravedad de avistajes recientes + POIs + supresión de
+  lugares ya carteledos, con guía de colocación por tipo de lugar y checklist
+  "cómo pegar bien". Falta: PDF del cartel automático desde el caso.
 - Notificaciones push (hoy no hay ninguna): avistamiento confirmado → alerta a members.
 - PWA real: el SW actual es un kill-switch; habilitar vite-plugin-pwa para "instalar"
   desde el QR.

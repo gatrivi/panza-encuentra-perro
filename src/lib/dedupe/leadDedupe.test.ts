@@ -11,7 +11,6 @@ import {
 function makeLead(overrides: Partial<Lead> & { id: string }): Lead {
   const now = new Date('2026-07-25T12:00:00Z')
   return {
-    id: overrides.id,
     caseId: 'case_x',
     origin: 'facebook',
     rawText: undefined,
